@@ -1,0 +1,643 @@
+{
+  "description": "Terminal Quest - Beginner to Intermediate Item Database",
+  "version": "1.0.0",
+  "levelRange": "1-15",
+
+  "weapons": {
+    "swords": [
+      {
+        "id": "rusty-sword",
+        "name": "녹슨 검 (Rusty Sword)",
+        "type": "sword",
+        "tier": "common",
+        "level": 1,
+        "stats": {
+          "attackPower": 8,
+          "critChance": 0,
+          "critDamage": 0
+        },
+        "price": 50,
+        "sellPrice": 25,
+        "description": "An old, worn sword that has seen better days. Perfect for beginners."
+      },
+      {
+        "id": "compiler-blade",
+        "name": "컴파일러 블레이드 (Compiler Blade)",
+        "type": "sword",
+        "tier": "uncommon",
+        "level": 3,
+        "stats": {
+          "attackPower": 25,
+          "critChance": 5,
+          "critDamage": 0.2,
+          "bonusAttack": 3
+        },
+        "price": 250,
+        "sellPrice": 125,
+        "description": "A blade forged from pure syntax. Optimizes damage output efficiently."
+      },
+      {
+        "id": "parser-sword",
+        "name": "파서 소드 (Parser Sword)",
+        "type": "sword",
+        "tier": "uncommon",
+        "level": 5,
+        "stats": {
+          "attackPower": 32,
+          "critChance": 6,
+          "critDamage": 0.25,
+          "bonusAttack": 4
+        },
+        "price": 400,
+        "sellPrice": 200,
+        "description": "Analyzes enemy weaknesses before striking. High precision weapon."
+      },
+      {
+        "id": "algorithm-katana",
+        "name": "알고리즘 카타나 (Algorithm Katana)",
+        "type": "sword",
+        "tier": "rare",
+        "level": 10,
+        "stats": {
+          "attackPower": 48,
+          "critChance": 12,
+          "critDamage": 0.5,
+          "bonusAttack": 6,
+          "bonusSpeed": 3
+        },
+        "price": 800,
+        "sellPrice": 400,
+        "description": "Executes attacks with algorithmic precision. Swift and deadly."
+      },
+      {
+        "id": "recursive-blade",
+        "name": "재귀 블레이드 (Recursive Blade)",
+        "type": "sword",
+        "tier": "rare",
+        "level": 15,
+        "stats": {
+          "attackPower": 65,
+          "critChance": 15,
+          "critDamage": 0.6,
+          "bonusAttack": 8,
+          "bonusMagicPower": 5
+        },
+        "price": 1500,
+        "sellPrice": 750,
+        "description": "A blade that calls upon itself for maximum power. Legendary craftsmanship."
+      }
+    ],
+
+    "blunt": [
+      {
+        "id": "debug-hammer",
+        "name": "디버그 해머 (Debug Hammer)",
+        "type": "mace",
+        "tier": "common",
+        "level": 2,
+        "stats": {
+          "attackPower": 15,
+          "critChance": 2,
+          "critDamage": 0.3,
+          "bonusDefense": 2
+        },
+        "price": 120,
+        "sellPrice": 60,
+        "description": "Smashes bugs with brutal efficiency. Heavy but reliable."
+      },
+      {
+        "id": "refactor-mace",
+        "name": "리팩터 메이스 (Refactor Mace)",
+        "type": "mace",
+        "tier": "uncommon",
+        "level": 7,
+        "stats": {
+          "attackPower": 40,
+          "critChance": 5,
+          "critDamage": 0.4,
+          "bonusDefense": 4,
+          "bonusHp": 20
+        },
+        "price": 600,
+        "sellPrice": 300,
+        "description": "Restructures enemy defenses with each blow. Built for endurance."
+      },
+      {
+        "id": "optimize-maul",
+        "name": "최적화 몰 (Optimize Maul)",
+        "type": "mace",
+        "tier": "rare",
+        "level": 12,
+        "stats": {
+          "attackPower": 58,
+          "critChance": 8,
+          "critDamage": 0.5,
+          "bonusDefense": 6,
+          "bonusHp": 35
+        },
+        "price": 1200,
+        "sellPrice": 600,
+        "description": "Maximizes impact through perfect weight distribution. Devastating power."
+      }
+    ],
+
+    "ranged": [
+      {
+        "id": "pointer-bow",
+        "name": "포인터 보우 (Pointer Bow)",
+        "type": "bow",
+        "tier": "common",
+        "level": 3,
+        "stats": {
+          "attackPower": 18,
+          "critChance": 10,
+          "critDamage": 0.4,
+          "bonusSpeed": 2,
+          "range": 3
+        },
+        "price": 200,
+        "sellPrice": 100,
+        "description": "Points to targets with precision. Good range and accuracy."
+      },
+      {
+        "id": "array-crossbow",
+        "name": "배열 석궁 (Array Crossbow)",
+        "type": "bow",
+        "tier": "uncommon",
+        "level": 8,
+        "stats": {
+          "attackPower": 42,
+          "critChance": 14,
+          "critDamage": 0.6,
+          "bonusSpeed": 4,
+          "bonusCritChance": 5,
+          "range": 4
+        },
+        "price": 700,
+        "sellPrice": 350,
+        "description": "Fires bolts in indexed sequences. Multi-target capability."
+      },
+      {
+        "id": "function-longbow",
+        "name": "함수 장궁 (Function Longbow)",
+        "type": "bow",
+        "tier": "rare",
+        "level": 13,
+        "stats": {
+          "attackPower": 60,
+          "critChance": 18,
+          "critDamage": 0.8,
+          "bonusSpeed": 6,
+          "bonusCritChance": 8,
+          "range": 5
+        },
+        "price": 1400,
+        "sellPrice": 700,
+        "description": "Executes perfect shots through mathematical calculation. Extreme range."
+      }
+    ],
+
+    "magic": [
+      {
+        "id": "debugger-staff",
+        "name": "디버거 스태프 (Debugger Staff)",
+        "type": "staff",
+        "tier": "uncommon",
+        "level": 3,
+        "stats": {
+          "attackPower": 12,
+          "magicPower": 15,
+          "critChance": 3,
+          "bonusMp": 20,
+          "twoHanded": true
+        },
+        "price": 300,
+        "sellPrice": 150,
+        "description": "Points out all the flaws in your enemies. Enhanced magic power."
+      },
+      {
+        "id": "variable-wand",
+        "name": "변수 완드 (Variable Wand)",
+        "type": "wand",
+        "tier": "common",
+        "level": 2,
+        "stats": {
+          "attackPower": 8,
+          "magicPower": 10,
+          "critChance": 5,
+          "bonusMp": 15
+        },
+        "price": 150,
+        "sellPrice": 75,
+        "description": "Stores magical energy in flexible variables. Quick casting."
+      },
+      {
+        "id": "recursion-staff",
+        "name": "재귀 스태프 (Recursion Staff)",
+        "type": "staff",
+        "tier": "rare",
+        "level": 9,
+        "stats": {
+          "attackPower": 20,
+          "magicPower": 35,
+          "critChance": 8,
+          "bonusMp": 40,
+          "bonusMagicDefense": 5,
+          "twoHanded": true
+        },
+        "price": 900,
+        "sellPrice": 450,
+        "description": "Amplifies spells through recursive casting. Master-tier staff."
+      },
+      {
+        "id": "lambda-scepter",
+        "name": "람다 셉터 (Lambda Scepter)",
+        "type": "wand",
+        "tier": "rare",
+        "level": 14,
+        "stats": {
+          "attackPower": 28,
+          "magicPower": 50,
+          "critChance": 12,
+          "bonusMp": 60,
+          "bonusMagicPower": 10
+        },
+        "price": 1600,
+        "sellPrice": 800,
+        "description": "Channels pure functional magic. Anonymous but powerful."
+      }
+    ]
+  },
+
+  "armor": {
+    "helmets": [
+      {
+        "id": "bit-helmet",
+        "name": "비트 헬멧 (Bit Helmet)",
+        "type": "helmet",
+        "tier": "common",
+        "level": 1,
+        "stats": {
+          "defense": 4,
+          "magicDefense": 2,
+          "bonusHp": 5
+        },
+        "price": 80,
+        "sellPrice": 40,
+        "description": "Basic protection for your data core. Better than nothing."
+      },
+      {
+        "id": "iron-helmet",
+        "name": "아이언 헬멧 (Iron Helmet)",
+        "type": "helmet",
+        "tier": "common",
+        "level": 2,
+        "stats": {
+          "defense": 6,
+          "magicDefense": 3,
+          "bonusHp": 10
+        },
+        "price": 100,
+        "sellPrice": 50,
+        "description": "A sturdy helmet made of iron. Reliable protection."
+      },
+      {
+        "id": "cache-helm",
+        "name": "캐시 투구 (Cache Helm)",
+        "type": "helmet",
+        "tier": "uncommon",
+        "level": 6,
+        "stats": {
+          "defense": 12,
+          "magicDefense": 8,
+          "bonusHp": 20,
+          "bonusDefense": 3
+        },
+        "price": 500,
+        "sellPrice": 250,
+        "description": "Stores defensive data for quick access. Enhanced durability."
+      },
+      {
+        "id": "firewall-crown",
+        "name": "방화벽 왕관 (Firewall Crown)",
+        "type": "helmet",
+        "tier": "rare",
+        "level": 12,
+        "stats": {
+          "defense": 20,
+          "magicDefense": 15,
+          "bonusHp": 40,
+          "bonusDefense": 6,
+          "bonusMagicDefense": 4,
+          "fireResist": 0.2
+        },
+        "price": 1200,
+        "sellPrice": 600,
+        "description": "Blocks both physical and magical attacks. Royal protection."
+      }
+    ],
+
+    "chest": [
+      {
+        "id": "leather-armor",
+        "name": "가죽 갑옷 (Leather Armor)",
+        "type": "chest",
+        "tier": "common",
+        "level": 1,
+        "stats": {
+          "defense": 8,
+          "magicDefense": 4,
+          "bonusHp": 10
+        },
+        "price": 80,
+        "sellPrice": 40,
+        "description": "Basic protection made from tanned hide. Flexible and light."
+      },
+      {
+        "id": "byte-chainmail",
+        "name": "바이트 체인메일 (Byte Chainmail)",
+        "type": "chest",
+        "tier": "uncommon",
+        "level": 5,
+        "stats": {
+          "defense": 16,
+          "magicDefense": 10,
+          "bonusHp": 25,
+          "bonusDefense": 4
+        },
+        "price": 400,
+        "sellPrice": 200,
+        "description": "Interlocking bytes provide flexible protection. Good all-rounder."
+      },
+      {
+        "id": "firewall-armor",
+        "name": "방화벽 갑옷 (Firewall Armor)",
+        "type": "chest",
+        "tier": "rare",
+        "level": 10,
+        "stats": {
+          "defense": 24,
+          "magicDefense": 18,
+          "bonusHp": 30,
+          "bonusDefense": 5,
+          "bonusMagicDefense": 3,
+          "fireResist": 0.3,
+          "darkResist": 0.2
+        },
+        "price": 1000,
+        "sellPrice": 500,
+        "description": "Blocks unauthorized access and attacks. Superior defense."
+      },
+      {
+        "id": "encryption-plate",
+        "name": "암호화 판금 (Encryption Plate)",
+        "type": "chest",
+        "tier": "rare",
+        "level": 15,
+        "stats": {
+          "defense": 32,
+          "magicDefense": 24,
+          "bonusHp": 50,
+          "bonusDefense": 8,
+          "bonusMagicDefense": 6,
+          "allResist": 0.15
+        },
+        "price": 1800,
+        "sellPrice": 900,
+        "description": "Military-grade encryption protects against all damage types."
+      }
+    ],
+
+    "gloves": [
+      {
+        "id": "pointer-gloves",
+        "name": "포인터 장갑 (Pointer Gloves)",
+        "type": "gloves",
+        "tier": "common",
+        "level": 2,
+        "stats": {
+          "defense": 3,
+          "magicDefense": 2,
+          "bonusAttack": 2,
+          "bonusCritChance": 3
+        },
+        "price": 100,
+        "sellPrice": 50,
+        "description": "Points to weak spots with precision. Increased accuracy."
+      },
+      {
+        "id": "encryption-gloves",
+        "name": "암호화 장갑 (Encryption Gloves)",
+        "type": "gloves",
+        "tier": "uncommon",
+        "level": 8,
+        "stats": {
+          "defense": 8,
+          "magicDefense": 6,
+          "bonusAttack": 5,
+          "bonusCritChance": 8,
+          "bonusMagicPower": 3
+        },
+        "price": 700,
+        "sellPrice": 350,
+        "description": "Scrambles attack patterns for unpredictability. Versatile combat gear."
+      }
+    ],
+
+    "boots": [
+      {
+        "id": "stealth-boots",
+        "name": "은신 부츠 (Stealth Boots)",
+        "type": "boots",
+        "tier": "uncommon",
+        "level": 4,
+        "stats": {
+          "defense": 5,
+          "magicDefense": 3,
+          "bonusSpeed": 5,
+          "bonusEvasion": 8
+        },
+        "price": 250,
+        "sellPrice": 125,
+        "description": "Muffles footsteps for silent movement. High evasion."
+      },
+      {
+        "id": "speedrun-boots",
+        "name": "스피드런 부츠 (Speedrun Boots)",
+        "type": "boots",
+        "tier": "rare",
+        "level": 11,
+        "stats": {
+          "defense": 10,
+          "magicDefense": 8,
+          "bonusSpeed": 10,
+          "bonusEvasion": 12,
+          "bonusAttack": 3
+        },
+        "price": 1100,
+        "sellPrice": 550,
+        "description": "Optimized for maximum efficiency. Break all speed records."
+      }
+    ]
+  },
+
+  "consumables": [
+    {
+      "id": "memory-fragment-small",
+      "name": "작은 메모리 파편 (Small Memory Fragment)",
+      "type": "consumable",
+      "tier": "common",
+      "effect": {
+        "type": "heal",
+        "power": 30
+      },
+      "price": 30,
+      "sellPrice": 15,
+      "stackable": true,
+      "maxStack": 99,
+      "description": "A small piece of crystallized memory. Restores 30 HP."
+    },
+    {
+      "id": "memory-fragment-medium",
+      "name": "중형 메모리 파편 (Medium Memory Fragment)",
+      "type": "consumable",
+      "tier": "uncommon",
+      "effect": {
+        "type": "heal",
+        "power": 80
+      },
+      "price": 80,
+      "sellPrice": 40,
+      "stackable": true,
+      "maxStack": 99,
+      "description": "A medium-sized memory crystal. Restores 80 HP."
+    },
+    {
+      "id": "memory-fragment-large",
+      "name": "대형 메모리 파편 (Large Memory Fragment)",
+      "type": "consumable",
+      "tier": "rare",
+      "effect": {
+        "type": "heal",
+        "power": 150
+      },
+      "price": 150,
+      "sellPrice": 75,
+      "stackable": true,
+      "maxStack": 99,
+      "description": "A large memory crystal of exceptional quality. Restores 150 HP."
+    },
+    {
+      "id": "mana-potion",
+      "name": "마나 포션 (Mana Potion)",
+      "type": "consumable",
+      "tier": "common",
+      "effect": {
+        "type": "restore-mp",
+        "power": 30
+      },
+      "price": 40,
+      "sellPrice": 20,
+      "stackable": true,
+      "maxStack": 99,
+      "description": "Restores magical energy. Recovers 30 MP."
+    },
+    {
+      "id": "overclock-drink",
+      "name": "오버클럭 드링크 (Overclock Drink)",
+      "type": "consumable",
+      "tier": "uncommon",
+      "effect": {
+        "type": "buff",
+        "power": 0,
+        "duration": 5,
+        "stat": "attack",
+        "bonus": 15
+      },
+      "price": 100,
+      "sellPrice": 50,
+      "stackable": true,
+      "maxStack": 99,
+      "description": "Pushes your system beyond limits. +15 Attack for 5 turns."
+    },
+    {
+      "id": "defense-shell",
+      "name": "디펜스 쉘 (Defense Shell)",
+      "type": "consumable",
+      "tier": "uncommon",
+      "effect": {
+        "type": "buff",
+        "power": 0,
+        "duration": 5,
+        "stat": "defense",
+        "bonus": 20
+      },
+      "price": 100,
+      "sellPrice": 50,
+      "stackable": true,
+      "maxStack": 99,
+      "description": "Creates a protective barrier. +20 Defense for 5 turns."
+    },
+    {
+      "id": "antidote",
+      "name": "해독제 (Antidote)",
+      "type": "consumable",
+      "tier": "common",
+      "effect": {
+        "type": "cure",
+        "power": 0
+      },
+      "price": 60,
+      "sellPrice": 30,
+      "stackable": true,
+      "maxStack": 99,
+      "description": "Cures poison and other ailments. Essential for survival."
+    },
+    {
+      "id": "save-token",
+      "name": "세이브 토큰 (Save Token)",
+      "type": "special",
+      "tier": "uncommon",
+      "effect": {
+        "type": "save",
+        "power": 0
+      },
+      "price": 5000,
+      "sellPrice": 2500,
+      "stackable": true,
+      "maxStack": 10,
+      "description": "Allows emergency save anywhere outside combat. Max 10."
+    }
+  ],
+
+  "balancing": {
+    "weaponPowerByLevel": {
+      "1-5": "5-15 attack power",
+      "6-10": "15-30 attack power",
+      "11-15": "30-50 attack power",
+      "16-20": "50-75 attack power",
+      "21-25": "75-110 attack power",
+      "26-30": "110-150 attack power"
+    },
+    "armorDefenseByLevel": {
+      "1-5": "3-10 defense",
+      "6-10": "10-20 defense",
+      "11-15": "20-35 defense",
+      "16-20": "35-55 defense",
+      "21-25": "55-80 defense",
+      "26-30": "80-120 defense"
+    },
+    "priceFormula": {
+      "weapons": "level * 50 * tier_multiplier",
+      "armor": "level * 40 * tier_multiplier",
+      "consumables": "effect_power * 1-2"
+    },
+    "tierMultipliers": {
+      "common": 1.0,
+      "uncommon": 2.0,
+      "rare": 3.0,
+      "epic": 5.0,
+      "legendary": 10.0
+    }
+  }
+}

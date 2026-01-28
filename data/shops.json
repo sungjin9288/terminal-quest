@@ -1,0 +1,202 @@
+{
+  "description": "Terminal Quest - Shop System Data",
+  "version": "1.0.0",
+
+  "shops": {
+    "binary-weapons": {
+      "id": "binary-weapons",
+      "name": "바이너리 무기점 (Binary Weapons)",
+      "type": "weapon",
+      "ownerName": "무기상 캐시 (Cache)",
+      "ownerIcon": "👨‍🔧",
+      "greeting": "어서오세요, 코드 워커! 최고의 무기를 준비했습니다.",
+      "farewell": "좋은 사냥 되세요! 버그를 조심하시고!",
+      "buyMessage": "훌륭한 선택입니다! 이 무기로 많은 버그를 잡으세요.",
+      "sellMessage": "흠, 꽤 쓸만한 물건이군요. 이 가격에 사겠습니다.",
+      "noMoneyMessage": "골드가 부족하시군요... 몬스터를 좀 더 잡고 오세요!",
+      "icon": "🏪",
+      "buyPriceMultiplier": 1.0,
+      "sellPriceMultiplier": 0.5,
+      "inventory": {
+        "always": [
+          "rusty-sword",
+          "debug-hammer",
+          "pointer-bow",
+          "variable-wand"
+        ],
+        "level5": [
+          "compiler-blade",
+          "parser-sword",
+          "refactor-mace"
+        ],
+        "level10": [
+          "algorithm-katana",
+          "array-crossbow",
+          "recursion-staff"
+        ],
+        "level15": [
+          "recursive-blade",
+          "optimize-maul",
+          "function-longbow",
+          "lambda-scepter"
+        ],
+        "level20": [
+          "flaming-parser-sword"
+        ]
+      },
+      "specialStock": {
+        "enabled": true,
+        "refreshTime": 3600,
+        "slots": 2,
+        "rarityWeights": {
+          "uncommon": 60,
+          "rare": 35,
+          "epic": 5
+        }
+      }
+    },
+
+    "armor-code": {
+      "id": "armor-code",
+      "name": "아머 코드 방어구점 (Armor Code)",
+      "type": "armor",
+      "ownerName": "방어구상 버퍼 (Buffer)",
+      "ownerIcon": "👩‍🔧",
+      "greeting": "안녕하세요! 최고의 방어구로 데이터를 보호하세요.",
+      "farewell": "안전한 모험 되세요! 방어가 최선의 공격입니다!",
+      "buyMessage": "좋은 선택이에요! 이 방어구가 당신을 지켜줄 거예요.",
+      "sellMessage": "아, 이 방어구군요. 적정 가격에 매입하겠습니다.",
+      "noMoneyMessage": "골드가 모자라시네요... 조금 더 모아오세요!",
+      "icon": "🛡️",
+      "buyPriceMultiplier": 1.0,
+      "sellPriceMultiplier": 0.5,
+      "inventory": {
+        "always": [
+          "leather-armor",
+          "bit-helmet",
+          "cloth-gloves",
+          "leather-boots"
+        ],
+        "level5": [
+          "byte-chainmail",
+          "pointer-gloves"
+        ],
+        "level10": [
+          "cache-helm"
+        ],
+        "level15": [
+          "firewall-crown",
+          "encryption-plate",
+          "speedrun-boots"
+        ],
+        "level20": [
+          "gold-ring"
+        ]
+      },
+      "specialStock": {
+        "enabled": true,
+        "refreshTime": 3600,
+        "slots": 2,
+        "rarityWeights": {
+          "uncommon": 60,
+          "rare": 35,
+          "epic": 5
+        }
+      }
+    },
+
+    "buffer-potions": {
+      "id": "buffer-potions",
+      "name": "버퍼 포션점 (Buffer Potions)",
+      "type": "consumable",
+      "ownerName": "포션상 힙 (Heap)",
+      "ownerIcon": "🧙",
+      "greeting": "어서오세요~! 최고의 포션과 소모품이 있습니다!",
+      "farewell": "건강하세요! 포션 떨어지면 꼭 들러주세요!",
+      "buyMessage": "이 포션이 큰 도움이 될 거예요!",
+      "sellMessage": "오, 이런 걸 파시다니... 좋아요, 사겠습니다.",
+      "noMoneyMessage": "앗, 골드가 부족하시네요... HP 포션은 필수인데...",
+      "icon": "🧪",
+      "buyPriceMultiplier": 1.0,
+      "sellPriceMultiplier": 0.5,
+      "inventory": {
+        "always": [
+          "health-potion",
+          "mana-potion",
+          "memory-fragment-small",
+          "antidote"
+        ],
+        "level5": [
+          "memory-fragment-medium",
+          "overclock-drink",
+          "defense-shell"
+        ],
+        "level10": [
+          "memory-fragment-large",
+          "mega-health-potion"
+        ],
+        "level15": [
+          "mega-mana-potion"
+        ],
+        "level20": []
+      },
+      "bulkDiscounts": {
+        "enabled": true,
+        "tiers": [
+          { "quantity": 5, "discount": 0.05 },
+          { "quantity": 10, "discount": 0.10 },
+          { "quantity": 20, "discount": 0.15 }
+        ]
+      }
+    }
+  },
+
+  "shopConfig": {
+    "baseSellMultiplier": 0.5,
+    "levelUnlockThresholds": [1, 5, 10, 15, 20, 25],
+    "reputationBonuses": {
+      "friendly": { "buyDiscount": 0.05, "sellBonus": 0.05 },
+      "honored": { "buyDiscount": 0.10, "sellBonus": 0.10 },
+      "exalted": { "buyDiscount": 0.15, "sellBonus": 0.15 }
+    },
+    "haggleConfig": {
+      "enabled": false,
+      "maxDiscount": 0.20,
+      "successChanceBase": 0.3,
+      "charismaBonus": 0.05
+    }
+  },
+
+  "shopDialogs": {
+    "welcome": [
+      "어서오세요!",
+      "뭘 찾으시나요?",
+      "좋은 물건 많이 있어요!"
+    ],
+    "browse": [
+      "천천히 둘러보세요.",
+      "마음에 드는 게 있으면 말씀하세요.",
+      "오늘 신상품도 있답니다!"
+    ],
+    "buySuccess": [
+      "좋은 선택이에요!",
+      "이 물건이 도움이 될 거예요.",
+      "현명한 구매입니다!"
+    ],
+    "sellSuccess": [
+      "좋은 물건이네요.",
+      "잘 샀습니다.",
+      "다음에도 팔러 오세요!"
+    ],
+    "noMoney": [
+      "골드가 부족하시네요...",
+      "조금 더 모아오시면 어떨까요?",
+      "안타깝지만 외상은 안 됩니다."
+    ],
+    "inventoryFull": [
+      "가방이 꽉 찼네요!",
+      "인벤토리 정리 좀 하시고 오세요.",
+      "더 이상 담을 공간이 없어요."
+    ]
+  }
+}

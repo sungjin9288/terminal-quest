@@ -1,0 +1,679 @@
+{
+  "description": "Terminal Quest - Beginner Area Monster Data",
+  "regions": {
+    "memory-forest": {
+      "name": "메모리 숲 (Memory Forest)",
+      "act": 1,
+      "targetLevels": "1-5",
+      "playtime": "15-20분",
+      "monsters": [
+        {
+          "id": "bug-slime",
+          "name": "버그 슬라임 (Bug Slime)",
+          "level": 1,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 30,
+            "attack": 5,
+            "defense": 2,
+            "speed": 3
+          },
+          "drops": {
+            "gold": [5, 10],
+            "exp": 10,
+            "items": [
+              { "id": "slime-gel", "chance": 0.7 },
+              { "id": "health-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "단순 공격 (Passive)",
+          "icon": "🟢"
+        },
+        {
+          "id": "404-ghost",
+          "name": "404 고스트 (404 Ghost)",
+          "level": 2,
+          "type": "Undead",
+          "rank": "Normal",
+          "stats": {
+            "hp": 40,
+            "attack": 6,
+            "defense": 3,
+            "speed": 8
+          },
+          "drops": {
+            "gold": [8, 15],
+            "exp": 20,
+            "items": [
+              { "id": "ghost-essence", "chance": 0.5 },
+              { "id": "mana-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "회피형 (Cautious)",
+          "icon": "👻"
+        },
+        {
+          "id": "spambot",
+          "name": "스팸봇 (Spambot)",
+          "level": 2,
+          "type": "Construct",
+          "rank": "Normal",
+          "stats": {
+            "hp": 45,
+            "attack": 7,
+            "defense": 4,
+            "speed": 6
+          },
+          "drops": {
+            "gold": [10, 20],
+            "exp": 20,
+            "items": [
+              { "id": "scrap-metal", "chance": 0.6 },
+              { "id": "health-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "공격형 (Aggressive)",
+          "icon": "🤖"
+        },
+        {
+          "id": "glitch-rabbit",
+          "name": "글리치 래빗 (Glitch Rabbit)",
+          "level": 3,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 55,
+            "attack": 9,
+            "defense": 4,
+            "speed": 14
+          },
+          "drops": {
+            "gold": [15, 25],
+            "exp": 30,
+            "items": [
+              { "id": "rabbit-foot", "chance": 0.5 },
+              { "id": "glitch-fragment", "chance": 0.4 },
+              { "id": "health-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "회피형 (Evasive)",
+          "icon": "🐰"
+        },
+        {
+          "id": "data-crow",
+          "name": "데이터 크로우 (Data Crow)",
+          "level": 3,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 50,
+            "attack": 10,
+            "defense": 3,
+            "speed": 12
+          },
+          "drops": {
+            "gold": [15, 30],
+            "exp": 30,
+            "items": [
+              { "id": "crow-feather", "chance": 0.6 },
+              { "id": "data-chip", "chance": 0.4 },
+              { "id": "mana-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "공격형 (Aggressive)",
+          "icon": "🐦‍⬛"
+        },
+        {
+          "id": "virus-bee",
+          "name": "바이러스 비 (Virus Bee)",
+          "level": 4,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 60,
+            "attack": 12,
+            "defense": 4,
+            "speed": 13
+          },
+          "drops": {
+            "gold": [20, 35],
+            "exp": 40,
+            "items": [
+              { "id": "virus-sample", "chance": 0.6 },
+              { "id": "bee-sting", "chance": 0.5 },
+              { "id": "antidote", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "공격형 + 독 (Aggressive/Poison)",
+          "icon": "🐝"
+        },
+        {
+          "id": "compile-snake",
+          "name": "컴파일 스네이크 (Compile Snake)",
+          "level": 4,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 70,
+            "attack": 13,
+            "defense": 6,
+            "speed": 10
+          },
+          "drops": {
+            "gold": [20, 40],
+            "exp": 40,
+            "items": [
+              { "id": "snake-scale", "chance": 0.6 },
+              { "id": "compiler-core", "chance": 0.4 },
+              { "id": "health-potion", "chance": 0.3 }
+            ],
+            "rare": [
+              { "id": "snake-fang", "chance": 0.15 }
+            ]
+          },
+          "attackPattern": "균형형 (Balanced)",
+          "icon": "🐍"
+        },
+        {
+          "id": "process-bat",
+          "name": "프로세스 뱃 (Process Bat)",
+          "level": 5,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 75,
+            "attack": 14,
+            "defense": 5,
+            "speed": 15
+          },
+          "drops": {
+            "gold": [25, 45],
+            "exp": 50,
+            "items": [
+              { "id": "bat-wing", "chance": 0.6 },
+              { "id": "process-thread", "chance": 0.4 },
+              { "id": "mana-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "공격형 (Aggressive)",
+          "icon": "🦇"
+        },
+        {
+          "id": "glitch-wolf",
+          "name": "글리치 울프 (Glitch Wolf)",
+          "level": 6,
+          "type": "Beast",
+          "rank": "Elite",
+          "boss": "Mini-Boss",
+          "stats": {
+            "hp": 250,
+            "attack": 20,
+            "defense": 10,
+            "speed": 16
+          },
+          "drops": {
+            "gold": [150, 300],
+            "exp": 300,
+            "guaranteed": [
+              { "id": "glitch-core", "chance": 1.0 }
+            ],
+            "items": [
+              { "id": "wolf-pelt", "chance": 0.8 },
+              { "id": "health-potion", "chance": 0.6 },
+              { "id": "mana-potion", "chance": 0.5 }
+            ],
+            "rare": [
+              { "id": "glitch-fang", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "광폭화 (Berserker)",
+          "icon": "🐺"
+        },
+        {
+          "id": "memory-leak-titan",
+          "name": "메모리 리크 타이탄 (Memory Leak Titan)",
+          "level": 10,
+          "type": "Construct",
+          "rank": "Boss",
+          "boss": "Area Boss",
+          "stats": {
+            "hp": 800,
+            "attack": 30,
+            "defense": 15,
+            "speed": 8
+          },
+          "drops": {
+            "gold": [500, 1000],
+            "exp": 1000,
+            "guaranteed": [
+              { "id": "memory-core", "chance": 1.0 },
+              { "id": "save-token", "chance": 1.0 }
+            ],
+            "items": [
+              { "id": "health-potion", "chance": 1.0, "quantity": "3-5" },
+              { "id": "mana-potion", "chance": 1.0, "quantity": "2-4" },
+              { "id": "titan-fragment", "chance": 0.8 }
+            ],
+            "rare": [
+              { "id": "memory-blade", "chance": 0.4 },
+              { "id": "leak-ring", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "전술적 (Tactical)",
+          "icon": "🗿"
+        }
+      ]
+    },
+    "cache-cave": {
+      "name": "캐시 동굴 (Cache Cave)",
+      "act": 1,
+      "targetLevels": "5-8",
+      "playtime": "10-15분",
+      "monsters": [
+        {
+          "id": "cache-mite",
+          "name": "캐시 마이트 (Cache Mite)",
+          "level": 5,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 80,
+            "attack": 15,
+            "defense": 6,
+            "speed": 11
+          },
+          "drops": {
+            "gold": [25, 45],
+            "exp": 50,
+            "items": [
+              { "id": "mite-shell", "chance": 0.6 },
+              { "id": "cache-fragment", "chance": 0.5 },
+              { "id": "health-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "공격형 (Aggressive)",
+          "icon": "🪲"
+        },
+        {
+          "id": "buffer-bat",
+          "name": "버퍼 뱃 (Buffer Bat)",
+          "level": 5,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 75,
+            "attack": 14,
+            "defense": 5,
+            "speed": 16
+          },
+          "drops": {
+            "gold": [25, 50],
+            "exp": 50,
+            "items": [
+              { "id": "bat-wing", "chance": 0.6 },
+              { "id": "buffer-crystal", "chance": 0.4 },
+              { "id": "mana-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "회피형 (Evasive)",
+          "icon": "🦇"
+        },
+        {
+          "id": "overflow-spider",
+          "name": "오버플로우 스파이더 (Overflow Spider)",
+          "level": 6,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 100,
+            "attack": 16,
+            "defense": 8,
+            "speed": 12
+          },
+          "drops": {
+            "gold": [30, 55],
+            "exp": 60,
+            "items": [
+              { "id": "spider-silk", "chance": 0.7 },
+              { "id": "overflow-gem", "chance": 0.4 },
+              { "id": "health-potion", "chance": 0.3 }
+            ],
+            "rare": [
+              { "id": "spider-fang", "chance": 0.2 }
+            ]
+          },
+          "attackPattern": "전술적 (Tactical)",
+          "icon": "🕷️"
+        },
+        {
+          "id": "fetch-golem",
+          "name": "페치 골렘 (Fetch Golem)",
+          "level": 6,
+          "type": "Construct",
+          "rank": "Normal",
+          "stats": {
+            "hp": 120,
+            "attack": 18,
+            "defense": 12,
+            "speed": 6
+          },
+          "drops": {
+            "gold": [30, 60],
+            "exp": 60,
+            "items": [
+              { "id": "golem-core", "chance": 0.5 },
+              { "id": "stone-chunk", "chance": 0.7 },
+              { "id": "health-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "방어형 (Defensive)",
+          "icon": "🗿"
+        },
+        {
+          "id": "latency-lizard",
+          "name": "레이턴시 리자드 (Latency Lizard)",
+          "level": 7,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 110,
+            "attack": 19,
+            "defense": 9,
+            "speed": 10
+          },
+          "drops": {
+            "gold": [35, 65],
+            "exp": 70,
+            "items": [
+              { "id": "lizard-scale", "chance": 0.7 },
+              { "id": "delay-crystal", "chance": 0.4 },
+              { "id": "health-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "신중형 (Cautious)",
+          "icon": "🦎"
+        },
+        {
+          "id": "corrupted-cache",
+          "name": "손상된 캐시 (Corrupted Cache)",
+          "level": 7,
+          "type": "Construct",
+          "rank": "Elite",
+          "stats": {
+            "hp": 130,
+            "attack": 20,
+            "defense": 10,
+            "speed": 9
+          },
+          "drops": {
+            "gold": [60, 120],
+            "exp": 105,
+            "items": [
+              { "id": "corrupted-core", "chance": 0.8 },
+              { "id": "cache-crystal", "chance": 0.6 },
+              { "id": "health-potion", "chance": 0.4 }
+            ],
+            "rare": [
+              { "id": "unstable-gem", "chance": 0.25 }
+            ]
+          },
+          "attackPattern": "광폭화 (Berserker)",
+          "icon": "💥"
+        },
+        {
+          "id": "cache-guardian",
+          "name": "캐시 가디언 (Cache Guardian)",
+          "level": 8,
+          "type": "Construct",
+          "rank": "Boss",
+          "boss": "Area Boss",
+          "stats": {
+            "hp": 600,
+            "attack": 25,
+            "defense": 18,
+            "speed": 7
+          },
+          "drops": {
+            "gold": [400, 800],
+            "exp": 800,
+            "guaranteed": [
+              { "id": "guardian-core", "chance": 1.0 },
+              { "id": "save-token", "chance": 1.0 }
+            ],
+            "items": [
+              { "id": "health-potion", "chance": 1.0, "quantity": "3-5" },
+              { "id": "mana-potion", "chance": 1.0, "quantity": "2-4" },
+              { "id": "cache-shard", "chance": 0.8 }
+            ],
+            "rare": [
+              { "id": "guardian-shield", "chance": 0.4 },
+              { "id": "cache-ring", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "방어형 (Defensive)",
+          "icon": "🛡️"
+        }
+      ]
+    },
+    "bit-plains": {
+      "name": "비트 평원 (Bit Plains)",
+      "act": 1,
+      "targetLevels": "8-12",
+      "playtime": "15-20분",
+      "monsters": [
+        {
+          "id": "bit-hopper",
+          "name": "비트 호퍼 (Bit Hopper)",
+          "level": 8,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 120,
+            "attack": 22,
+            "defense": 10,
+            "speed": 14
+          },
+          "drops": {
+            "gold": [40, 70],
+            "exp": 80,
+            "items": [
+              { "id": "bit-fragment", "chance": 0.7 },
+              { "id": "hopper-leg", "chance": 0.5 },
+              { "id": "health-potion", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "회피형 (Evasive)",
+          "icon": "🦗"
+        },
+        {
+          "id": "byte-wolf",
+          "name": "바이트 울프 (Byte Wolf)",
+          "level": 9,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 140,
+            "attack": 24,
+            "defense": 11,
+            "speed": 16
+          },
+          "drops": {
+            "gold": [45, 80],
+            "exp": 90,
+            "items": [
+              { "id": "wolf-pelt", "chance": 0.7 },
+              { "id": "byte-core", "chance": 0.5 },
+              { "id": "health-potion", "chance": 0.3 }
+            ],
+            "rare": [
+              { "id": "wolf-fang", "chance": 0.25 }
+            ]
+          },
+          "attackPattern": "공격형 (Aggressive)",
+          "icon": "🐺"
+        },
+        {
+          "id": "binary-eagle",
+          "name": "바이너리 이글 (Binary Eagle)",
+          "level": 9,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 130,
+            "attack": 26,
+            "defense": 9,
+            "speed": 18
+          },
+          "drops": {
+            "gold": [45, 85],
+            "exp": 90,
+            "items": [
+              { "id": "eagle-feather", "chance": 0.7 },
+              { "id": "binary-chip", "chance": 0.5 },
+              { "id": "mana-potion", "chance": 0.3 }
+            ],
+            "rare": [
+              { "id": "eagle-talon", "chance": 0.2 }
+            ]
+          },
+          "attackPattern": "공격형 (Aggressive)",
+          "icon": "🦅"
+        },
+        {
+          "id": "packet-scorpion",
+          "name": "패킷 스콜피온 (Packet Scorpion)",
+          "level": 10,
+          "type": "Beast",
+          "rank": "Normal",
+          "stats": {
+            "hp": 150,
+            "attack": 27,
+            "defense": 13,
+            "speed": 12
+          },
+          "drops": {
+            "gold": [50, 90],
+            "exp": 100,
+            "items": [
+              { "id": "scorpion-tail", "chance": 0.7 },
+              { "id": "packet-venom", "chance": 0.6 },
+              { "id": "antidote", "chance": 0.3 }
+            ],
+            "rare": [
+              { "id": "venom-gland", "chance": 0.25 }
+            ]
+          },
+          "attackPattern": "전술적 + 독 (Tactical/Poison)",
+          "icon": "🦂"
+        },
+        {
+          "id": "logic-gate-knight",
+          "name": "로직 게이트 나이트 (Logic Gate Knight)",
+          "level": 10,
+          "type": "Construct",
+          "rank": "Elite",
+          "stats": {
+            "hp": 200,
+            "attack": 30,
+            "defense": 16,
+            "speed": 10
+          },
+          "drops": {
+            "gold": [100, 200],
+            "exp": 150,
+            "guaranteed": [
+              { "id": "logic-core", "chance": 1.0 }
+            ],
+            "items": [
+              { "id": "knight-plate", "chance": 0.6 },
+              { "id": "gate-circuit", "chance": 0.7 },
+              { "id": "health-potion", "chance": 0.5 }
+            ],
+            "rare": [
+              { "id": "logic-sword", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "균형형 (Balanced)",
+          "icon": "🤖"
+        },
+        {
+          "id": "algorithm-wyvern",
+          "name": "알고리즘 와이번 (Algorithm Wyvern)",
+          "level": 11,
+          "type": "Dragon",
+          "rank": "Elite",
+          "stats": {
+            "hp": 220,
+            "attack": 28,
+            "defense": 14,
+            "speed": 15
+          },
+          "drops": {
+            "gold": [110, 220],
+            "exp": 165,
+            "items": [
+              { "id": "wyvern-scale", "chance": 0.8 },
+              { "id": "algorithm-gem", "chance": 0.6 },
+              { "id": "mana-potion", "chance": 0.5 }
+            ],
+            "rare": [
+              { "id": "wyvern-wing", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "전술적 (Tactical)",
+          "icon": "🐉"
+        },
+        {
+          "id": "data-tyrant",
+          "name": "데이터 타이런트 (Data Tyrant)",
+          "level": 12,
+          "type": "Dragon",
+          "rank": "Boss",
+          "boss": "Area Boss",
+          "stats": {
+            "hp": 1000,
+            "attack": 35,
+            "defense": 20,
+            "speed": 12
+          },
+          "drops": {
+            "gold": [600, 1200],
+            "exp": 1200,
+            "guaranteed": [
+              { "id": "tyrant-core", "chance": 1.0 },
+              { "id": "save-token", "chance": 1.0, "quantity": 2 }
+            ],
+            "items": [
+              { "id": "health-potion", "chance": 1.0, "quantity": "4-6" },
+              { "id": "mana-potion", "chance": 1.0, "quantity": "3-5" },
+              { "id": "data-shard", "chance": 0.9 }
+            ],
+            "rare": [
+              { "id": "tyrant-crown", "chance": 0.5 },
+              { "id": "data-blade", "chance": 0.4 },
+              { "id": "lightning-ring", "chance": 0.3 }
+            ]
+          },
+          "attackPattern": "전술적 (Tactical)",
+          "icon": "👑"
+        }
+      ]
+    }
+  },
+  "balancing": {
+    "region": "초급 지역 (Lv 1-12)",
+    "difficulty": "쉬움",
+    "hpFormula": "플레이어 공격력 × 3-5회",
+    "attackFormula": "플레이어 체력의 5-10%",
+    "expFormula": "레벨 × 10 (일반), 레벨 × 100 (보스)",
+    "goldFormula": "레벨 × 5-10 (일반), 레벨 × 50-100 (보스)",
+    "potionDropRate": "30% (Act 1)",
+    "bossMultiplier": {
+      "hp": "일반 몬스터 × 10-15배",
+      "attack": "플레이어 체력의 30-40%",
+      "expReward": "레벨 × 100",
+      "goldReward": "레벨 × 50-100"
+    }
+  }
+}

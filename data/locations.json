@@ -1,0 +1,737 @@
+{
+  "description": "Terminal Quest - Complete Map/Location Database",
+  "version": "1.0.0",
+  "totalMaps": 12,
+  "totalActs": 4,
+
+  "hub": {
+    "id": "bit-town",
+    "name": "비트 타운 (Bit Town)",
+    "description": "The central hub town where adventurers gather. Safe zone with shops, inn, and quest board.",
+    "type": "town",
+    "facilities": ["shop", "inn", "save-point", "quest-board", "blacksmith"],
+    "connections": ["memory-forest", "cache-cave", "bit-plains"]
+  },
+
+  "locations": [
+    {
+      "id": "memory-forest",
+      "name": "메모리 숲 (Memory Forest)",
+      "act": 1,
+      "order": 1,
+      "recommendedLevel": [1, 5],
+      "targetPlaytime": "15-20분",
+      "description": "A mystical forest where fragmented memories drift like fireflies. The trees store ancient data, and corrupted creatures lurk in the shadows.",
+      "theme": "forest",
+      "difficulty": "easy",
+      "monsters": [
+        "bug-slime",
+        "404-ghost",
+        "spambot",
+        "glitch-rabbit",
+        "data-crow",
+        "virus-bee",
+        "compile-snake",
+        "process-bat",
+        "null-spider",
+        "overflow-mushroom"
+      ],
+      "miniBoss": "glitch-wolf",
+      "boss": "memory-leak-titan",
+      "savePoints": [
+        {
+          "id": "memory-forest-entrance",
+          "name": "숲 입구 (Forest Entrance)",
+          "position": "start"
+        },
+        {
+          "id": "memory-forest-middle",
+          "name": "고대 나무 (Ancient Tree)",
+          "position": "middle"
+        },
+        {
+          "id": "memory-forest-boss",
+          "name": "타이탄 문 앞 (Before Titan Gate)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["bit-town", "cache-cave"],
+      "unlockCondition": null,
+      "rewards": {
+        "firstClear": {
+          "exp": 500,
+          "gold": 300,
+          "items": ["memory-core"]
+        }
+      },
+      "environmentEffects": ["memory-fog"],
+      "bgm": "forest-of-memories"
+    },
+
+    {
+      "id": "cache-cave",
+      "name": "캐시 동굴 (Cache Cave)",
+      "act": 1,
+      "order": 2,
+      "recommendedLevel": [5, 8],
+      "targetPlaytime": "10-15분",
+      "description": "A crystalline cavern where temporary data is stored. Glowing cache crystals illuminate the darkness, but beware of data corruption.",
+      "theme": "cave",
+      "difficulty": "easy",
+      "monsters": [
+        "cache-bat",
+        "crystal-golem",
+        "data-miner",
+        "fragment-spider",
+        "storage-slime",
+        "temp-ghost",
+        "buffer-worm",
+        "index-crawler"
+      ],
+      "miniBoss": null,
+      "boss": "cache-guardian",
+      "savePoints": [
+        {
+          "id": "cache-cave-entrance",
+          "name": "동굴 입구 (Cave Entrance)",
+          "position": "start"
+        },
+        {
+          "id": "cache-cave-boss",
+          "name": "수정 방 앞 (Before Crystal Chamber)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["memory-forest", "bit-plains"],
+      "unlockCondition": {
+        "type": "boss-defeated",
+        "target": "memory-leak-titan"
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 800,
+          "gold": 500,
+          "items": ["cache-fragment"]
+        }
+      },
+      "environmentEffects": ["crystal-light"],
+      "bgm": "echoes-of-cache"
+    },
+
+    {
+      "id": "bit-plains",
+      "name": "비트 평원 (Bit Plains)",
+      "act": 1,
+      "order": 3,
+      "recommendedLevel": [8, 12],
+      "targetPlaytime": "15-20분",
+      "description": "Vast digital plains where binary winds blow. The landscape shifts between 0 and 1, home to powerful data constructs.",
+      "theme": "plains",
+      "difficulty": "medium",
+      "monsters": [
+        "bit-wolf",
+        "binary-eagle",
+        "zero-one-slime",
+        "data-bison",
+        "signal-hawk",
+        "pulse-snake",
+        "logic-boar",
+        "algorithm-wyvern"
+      ],
+      "miniBoss": "binary-knight",
+      "boss": "data-tyrant",
+      "savePoints": [
+        {
+          "id": "bit-plains-entrance",
+          "name": "평원 입구 (Plains Entrance)",
+          "position": "start"
+        },
+        {
+          "id": "bit-plains-middle",
+          "name": "바이너리 탑 (Binary Tower)",
+          "position": "middle"
+        },
+        {
+          "id": "bit-plains-boss",
+          "name": "데이터 왕좌 앞 (Before Data Throne)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["cache-cave", "registry-dungeon"],
+      "unlockCondition": {
+        "type": "boss-defeated",
+        "target": "cache-guardian"
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 1200,
+          "gold": 800,
+          "items": ["binary-core", "save-token", "save-token"],
+          "skillPoints": 5
+        },
+        "actClearBonus": true
+      },
+      "environmentEffects": ["binary-wind"],
+      "bgm": "digital-horizon"
+    },
+
+    {
+      "id": "registry-dungeon",
+      "name": "레지스트리 던전 (Registry Dungeon)",
+      "act": 2,
+      "order": 4,
+      "recommendedLevel": [12, 17],
+      "targetPlaytime": "25-30분",
+      "description": "A three-floor dungeon built from system registries. Each floor holds keys to deeper secrets, guarded by powerful entry guardians.",
+      "theme": "dungeon",
+      "difficulty": "medium",
+      "floors": 3,
+      "monsters": [
+        "registry-guard",
+        "key-phantom",
+        "value-golem",
+        "entry-specter",
+        "hive-drone",
+        "config-wraith",
+        "setting-spider",
+        "permission-knight",
+        "access-denied",
+        "policy-enforcer",
+        "backup-zombie",
+        "restore-ghost"
+      ],
+      "miniBoss": ["floor1-keeper", "floor2-keeper"],
+      "boss": "registry-lord",
+      "savePoints": [
+        {
+          "id": "registry-entrance",
+          "name": "던전 입구 (Dungeon Entrance)",
+          "position": "start"
+        },
+        {
+          "id": "registry-floor1",
+          "name": "1층 클리어 (Floor 1 Clear)",
+          "position": "floor1"
+        },
+        {
+          "id": "registry-floor2",
+          "name": "2층 클리어 (Floor 2 Clear)",
+          "position": "floor2"
+        },
+        {
+          "id": "registry-boss",
+          "name": "레지스트리 홀 앞 (Before Registry Hall)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["bit-plains", "swap-swamp"],
+      "unlockCondition": {
+        "type": "act-complete",
+        "target": 1
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 2500,
+          "gold": 1500,
+          "items": ["registry-key", "rare-equipment-box"]
+        }
+      },
+      "environmentEffects": ["data-streams"],
+      "bgm": "depths-of-registry"
+    },
+
+    {
+      "id": "swap-swamp",
+      "name": "스왑 늪지 (Swap Swamp)",
+      "act": 2,
+      "order": 5,
+      "recommendedLevel": [17, 19],
+      "targetPlaytime": "15-20분",
+      "description": "A murky swamp where memory swapping occurs. Data sinks and resurfaces unpredictably, and creatures adapt to the volatile environment.",
+      "theme": "swamp",
+      "difficulty": "medium",
+      "monsters": [
+        "swap-frog",
+        "memory-leech",
+        "alloc-alligator",
+        "dealloc-snake",
+        "pointer-fish",
+        "reference-turtle",
+        "garbage-collector",
+        "heap-hydra"
+      ],
+      "miniBoss": null,
+      "boss": "swap-witch",
+      "savePoints": [
+        {
+          "id": "swap-entrance",
+          "name": "늪지 입구 (Swamp Entrance)",
+          "position": "start"
+        },
+        {
+          "id": "swap-boss",
+          "name": "마녀의 오두막 앞 (Before Witch's Hut)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["registry-dungeon", "thread-forest"],
+      "unlockCondition": {
+        "type": "boss-defeated",
+        "target": "registry-lord"
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 2000,
+          "gold": 1200,
+          "items": ["swap-essence"]
+        }
+      },
+      "environmentEffects": ["swap-fog", "memory-bubbles"],
+      "bgm": "swamp-of-swaps"
+    },
+
+    {
+      "id": "thread-forest",
+      "name": "쓰레드 숲 (Thread Forest)",
+      "act": 2,
+      "order": 6,
+      "recommendedLevel": [19, 22],
+      "targetPlaytime": "20-25분",
+      "description": "A dense forest where execution threads interweave like vines. Parallel processes run wild, creating dangerous race conditions.",
+      "theme": "forest",
+      "difficulty": "hard",
+      "monsters": [
+        "thread-spider",
+        "parallel-wolf",
+        "sync-fairy",
+        "async-phantom",
+        "deadlock-tree",
+        "race-condition",
+        "mutex-guardian",
+        "semaphore-owl"
+      ],
+      "miniBoss": "thread-weaver",
+      "boss": "concurrency-queen",
+      "savePoints": [
+        {
+          "id": "thread-entrance",
+          "name": "쓰레드 게이트 (Thread Gate)",
+          "position": "start"
+        },
+        {
+          "id": "thread-middle",
+          "name": "동기화 지점 (Sync Point)",
+          "position": "middle"
+        },
+        {
+          "id": "thread-boss",
+          "name": "여왕의 둥지 앞 (Before Queen's Nest)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["swap-swamp", "stack-mountains"],
+      "unlockCondition": {
+        "type": "boss-defeated",
+        "target": "swap-witch"
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 3500,
+          "gold": 2000,
+          "items": ["thread-core", "save-token", "save-token"],
+          "skillPoints": 7
+        },
+        "actClearBonus": true
+      },
+      "environmentEffects": ["thread-webs", "parallel-echoes"],
+      "bgm": "forest-of-threads"
+    },
+
+    {
+      "id": "stack-mountains",
+      "name": "스택 산맥 (Stack Mountains)",
+      "act": 3,
+      "order": 7,
+      "recommendedLevel": [22, 25],
+      "targetPlaytime": "25-30분",
+      "description": "Towering mountains built from stacked data. Each peak represents a function call, and the summit holds ancient recursive secrets.",
+      "theme": "mountain",
+      "difficulty": "hard",
+      "monsters": [
+        "stack-goat",
+        "push-eagle",
+        "pop-bear",
+        "overflow-yeti",
+        "frame-hawk",
+        "return-wolf",
+        "call-condor",
+        "recursion-serpent",
+        "base-case-spirit",
+        "tail-call-phantom"
+      ],
+      "miniBoss": "stack-overflow-guardian",
+      "boss": "recursion-dragon",
+      "savePoints": [
+        {
+          "id": "stack-base",
+          "name": "베이스 캠프 (Base Camp)",
+          "position": "start"
+        },
+        {
+          "id": "stack-middle",
+          "name": "중간 캠프 (Middle Camp)",
+          "position": "middle"
+        },
+        {
+          "id": "stack-summit",
+          "name": "정상 (Summit)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["thread-forest", "heap-cave"],
+      "unlockCondition": {
+        "type": "act-complete",
+        "target": 2
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 4000,
+          "gold": 2500,
+          "items": ["stack-frame", "legendary-equipment-box"]
+        }
+      },
+      "environmentEffects": ["thin-air", "stack-winds"],
+      "bgm": "peaks-of-recursion"
+    },
+
+    {
+      "id": "heap-cave",
+      "name": "힙 동굴 (Heap Cave)",
+      "act": 3,
+      "order": 8,
+      "recommendedLevel": [25, 26],
+      "targetPlaytime": "15-20분",
+      "description": "A chaotic cave system where memory is allocated dynamically. The layout shifts constantly as data is created and destroyed.",
+      "theme": "cave",
+      "difficulty": "hard",
+      "monsters": [
+        "heap-bat",
+        "malloc-mole",
+        "free-phantom",
+        "fragment-golem",
+        "allocation-spider",
+        "memory-pool-fish",
+        "dangling-pointer",
+        "wild-pointer"
+      ],
+      "miniBoss": null,
+      "boss": "heap-corruption-beast",
+      "savePoints": [
+        {
+          "id": "heap-entrance",
+          "name": "힙 입구 (Heap Entrance)",
+          "position": "start"
+        },
+        {
+          "id": "heap-boss",
+          "name": "부패 영역 앞 (Before Corruption Zone)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["stack-mountains", "network-layer"],
+      "unlockCondition": {
+        "type": "boss-defeated",
+        "target": "recursion-dragon"
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 3000,
+          "gold": 2000,
+          "items": ["heap-crystal"]
+        }
+      },
+      "environmentEffects": ["shifting-terrain", "memory-leaks"],
+      "bgm": "chaos-of-heap"
+    },
+
+    {
+      "id": "network-layer",
+      "name": "네트워크 레이어 (Network Layer)",
+      "act": 3,
+      "order": 9,
+      "recommendedLevel": [26, 28],
+      "targetPlaytime": "20-25분",
+      "description": "The interconnected realm where data packets travel. Seven layers of protocols guard the path to the kernel.",
+      "theme": "cyber",
+      "difficulty": "hard",
+      "monsters": [
+        "packet-drone",
+        "protocol-knight",
+        "firewall-golem",
+        "proxy-phantom",
+        "router-spider",
+        "gateway-guard",
+        "dns-specter",
+        "ssl-serpent"
+      ],
+      "miniBoss": "layer4-guardian",
+      "boss": "network-overlord",
+      "savePoints": [
+        {
+          "id": "network-entrance",
+          "name": "레이어 1 입구 (Layer 1 Entrance)",
+          "position": "start"
+        },
+        {
+          "id": "network-middle",
+          "name": "레이어 4 게이트웨이 (Layer 4 Gateway)",
+          "position": "middle"
+        },
+        {
+          "id": "network-boss",
+          "name": "레이어 7 앞 (Before Layer 7)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["heap-cave", "kernel-fortress"],
+      "unlockCondition": {
+        "type": "boss-defeated",
+        "target": "heap-corruption-beast"
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 5000,
+          "gold": 3000,
+          "items": ["network-core", "save-token", "save-token", "save-token"],
+          "skillPoints": 10
+        },
+        "actClearBonus": true
+      },
+      "environmentEffects": ["data-streams", "packet-storms"],
+      "bgm": "network-pulse"
+    },
+
+    {
+      "id": "kernel-fortress",
+      "name": "커널 성채 (Kernel Fortress)",
+      "act": 4,
+      "order": 10,
+      "recommendedLevel": [28, 29],
+      "targetPlaytime": "20-25분",
+      "description": "The heavily fortified stronghold protecting the system core. Three sections - outer wall, inner chambers, and throne room - each with deadly guardians.",
+      "theme": "fortress",
+      "difficulty": "very-hard",
+      "sections": ["outer-wall", "inner-chambers", "throne-room"],
+      "monsters": [
+        "kernel-guard",
+        "system-call-knight",
+        "interrupt-handler",
+        "scheduler-golem",
+        "driver-phantom",
+        "io-controller",
+        "process-manager",
+        "memory-mapper",
+        "context-switcher",
+        "signal-handler",
+        "kernel-module",
+        "ring0-enforcer"
+      ],
+      "miniBoss": ["outer-wall-commander", "inner-chamber-lord"],
+      "boss": "kernel-emperor",
+      "savePoints": [
+        {
+          "id": "kernel-outer",
+          "name": "외벽 (Outer Wall)",
+          "position": "start"
+        },
+        {
+          "id": "kernel-inner",
+          "name": "내부 (Inner Chambers)",
+          "position": "middle"
+        },
+        {
+          "id": "kernel-throne",
+          "name": "왕좌 입구 (Throne Entrance)",
+          "position": "boss"
+        }
+      ],
+      "connections": ["network-layer", "root-directory"],
+      "unlockCondition": {
+        "type": "act-complete",
+        "target": 3
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 6000,
+          "gold": 4000,
+          "items": ["kernel-insignia", "legendary-equipment-box"]
+        }
+      },
+      "environmentEffects": ["system-authority", "privilege-aura"],
+      "bgm": "fortress-of-kernel"
+    },
+
+    {
+      "id": "root-directory",
+      "name": "루트 디렉토리 (Root Directory)",
+      "act": 4,
+      "order": 11,
+      "recommendedLevel": [29, 30],
+      "targetPlaytime": "15-20분",
+      "description": "The origin point of all data. Ancient files and primordial processes reside here, guarding the path to the source of corruption.",
+      "theme": "ancient",
+      "difficulty": "very-hard",
+      "sections": ["entrance", "deep-layer", "core"],
+      "monsters": [
+        "root-guardian",
+        "sudo-knight",
+        "permission-lord",
+        "ancient-process",
+        "init-specter",
+        "boot-golem",
+        "bios-phantom",
+        "firmware-dragon",
+        "master-boot",
+        "partition-keeper"
+      ],
+      "miniBoss": "deep-layer-sentinel",
+      "boss": "root-access-guardian",
+      "savePoints": [
+        {
+          "id": "root-entrance",
+          "name": "루트 입구 (Root Entrance)",
+          "position": "start"
+        },
+        {
+          "id": "root-deep",
+          "name": "심층 (Deep Layer)",
+          "position": "middle"
+        }
+      ],
+      "connections": ["kernel-fortress", "corruption-space"],
+      "unlockCondition": {
+        "type": "boss-defeated",
+        "target": "kernel-emperor"
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 5000,
+          "gold": 3500,
+          "items": ["root-key", "save-token", "save-token"]
+        }
+      },
+      "environmentEffects": ["primordial-code", "ancient-data"],
+      "bgm": "depths-of-root"
+    },
+
+    {
+      "id": "corruption-space",
+      "name": "코럽션 공간 (Corruption Space)",
+      "act": 4,
+      "order": 12,
+      "recommendedLevel": [30, 30],
+      "targetPlaytime": "10-15분",
+      "description": "The final battlefield - a dimension of pure corruption where the source of all system errors resides. No retreat, no mercy.",
+      "theme": "void",
+      "difficulty": "extreme",
+      "isFinalDungeon": true,
+      "monsters": [
+        "corruption-spawn",
+        "error-incarnate",
+        "crash-demon",
+        "blue-screen-horror",
+        "fatal-exception",
+        "system-failure",
+        "data-destroyer",
+        "memory-corruptor",
+        "process-killer",
+        "thread-reaper",
+        "stack-smasher",
+        "heap-breaker",
+        "buffer-overflow-beast",
+        "null-dereference",
+        "segfault-specter"
+      ],
+      "miniBoss": null,
+      "boss": "corruption-core",
+      "finalBoss": true,
+      "savePoints": [
+        {
+          "id": "corruption-entrance",
+          "name": "공허의 문 (Gate of Void)",
+          "position": "start"
+        }
+      ],
+      "connections": ["root-directory"],
+      "unlockCondition": {
+        "type": "boss-defeated",
+        "target": "root-access-guardian"
+      },
+      "rewards": {
+        "firstClear": {
+          "exp": 10000,
+          "gold": 10000,
+          "items": ["corruption-heart", "hero-title"],
+          "unlocks": ["new-game-plus", "true-ending"]
+        }
+      },
+      "environmentEffects": ["void-corruption", "reality-distortion", "data-decay"],
+      "bgm": "final-confrontation"
+    }
+  ],
+
+  "actSummary": {
+    "act1": {
+      "name": "기초 (Foundation)",
+      "maps": ["memory-forest", "cache-cave", "bit-plains"],
+      "targetPlaytime": "45-60분",
+      "levelRange": [1, 12],
+      "totalSavePoints": 8,
+      "clearRewards": {
+        "skillPoints": 5,
+        "saveTokens": 2
+      }
+    },
+    "act2": {
+      "name": "발전 (Development)",
+      "maps": ["registry-dungeon", "swap-swamp", "thread-forest"],
+      "targetPlaytime": "60-75분",
+      "levelRange": [12, 22],
+      "totalSavePoints": 9,
+      "clearRewards": {
+        "skillPoints": 7,
+        "saveTokens": 2
+      }
+    },
+    "act3": {
+      "name": "도전 (Challenge)",
+      "maps": ["stack-mountains", "heap-cave", "network-layer"],
+      "targetPlaytime": "60-75분",
+      "levelRange": [22, 28],
+      "totalSavePoints": 8,
+      "clearRewards": {
+        "skillPoints": 10,
+        "saveTokens": 3
+      }
+    },
+    "act4": {
+      "name": "최종 (Endgame)",
+      "maps": ["kernel-fortress", "root-directory", "corruption-space"],
+      "targetPlaytime": "45-60분",
+      "levelRange": [28, 30],
+      "totalSavePoints": 6,
+      "clearRewards": {
+        "unlocks": ["new-game-plus", "true-ending", "hero-title"]
+      }
+    }
+  },
+
+  "totalStats": {
+    "totalPlaytime": "210-270분 (3.5-4.5시간)",
+    "speedrunPlaytime": "150-180분 (2.5-3시간)",
+    "totalSavePoints": 31,
+    "totalMonsterTypes": 111,
+    "totalBosses": 15,
+    "totalMiniBosses": 10
+  }
+}

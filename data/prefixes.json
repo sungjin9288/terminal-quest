@@ -1,0 +1,672 @@
+{
+  "description": "Terminal Quest - Prefix System Data",
+  "version": "1.0.0",
+
+  "monsterPrefixes": {
+    "burning": {
+      "id": "burning",
+      "name": "불타는 (Burning)",
+      "namePrefix": "불타는",
+      "description": "화염에 휩싸인 몬스터. 공격 시 화상 피해를 입힘",
+      "statMultipliers": {
+        "attack": 1.3,
+        "speed": 1.1
+      },
+      "element": "fire",
+      "onHitEffect": {
+        "type": "burn",
+        "damage": 5,
+        "duration": 3,
+        "chance": 0.3
+      },
+      "expMultiplier": 1.3,
+      "goldMultiplier": 1.25,
+      "dropRateMultiplier": 1.2,
+      "color": "#FF4500",
+      "minLevel": 1,
+      "icon": "🔥"
+    },
+
+    "frozen": {
+      "id": "frozen",
+      "name": "얼어붙은 (Frozen)",
+      "namePrefix": "얼어붙은",
+      "description": "냉기로 뒤덮인 몬스터. 공격 시 감속 효과",
+      "statMultipliers": {
+        "defense": 1.25,
+        "magicDefense": 1.2
+      },
+      "element": "ice",
+      "onHitEffect": {
+        "type": "slow",
+        "speedReduction": 0.2,
+        "duration": 2,
+        "chance": 0.25
+      },
+      "expMultiplier": 1.25,
+      "goldMultiplier": 1.2,
+      "dropRateMultiplier": 1.15,
+      "color": "#00BFFF",
+      "minLevel": 3,
+      "icon": "❄️"
+    },
+
+    "electric": {
+      "id": "electric",
+      "name": "전기 (Electric)",
+      "namePrefix": "전기",
+      "description": "전기를 띤 몬스터. 연쇄 번개 공격",
+      "statMultipliers": {
+        "attack": 1.2,
+        "speed": 1.25,
+        "magicPower": 1.15
+      },
+      "element": "lightning",
+      "onHitEffect": {
+        "type": "chain-lightning",
+        "damage": 8,
+        "chainCount": 2,
+        "chance": 0.2
+      },
+      "expMultiplier": 1.35,
+      "goldMultiplier": 1.3,
+      "dropRateMultiplier": 1.25,
+      "color": "#FFD700",
+      "minLevel": 5,
+      "icon": "⚡"
+    },
+
+    "toxic": {
+      "id": "toxic",
+      "name": "맹독 (Toxic)",
+      "namePrefix": "맹독",
+      "description": "치명적인 독을 품은 몬스터. 강력한 독 피해",
+      "statMultipliers": {
+        "attack": 1.15,
+        "hp": 1.1
+      },
+      "element": "poison",
+      "onHitEffect": {
+        "type": "poison",
+        "damagePercent": 0.05,
+        "duration": 4,
+        "chance": 0.4
+      },
+      "expMultiplier": 1.3,
+      "goldMultiplier": 1.25,
+      "dropRateMultiplier": 1.2,
+      "color": "#32CD32",
+      "minLevel": 4,
+      "icon": "☠️"
+    },
+
+    "shadow": {
+      "id": "shadow",
+      "name": "그림자 (Shadow)",
+      "namePrefix": "그림자",
+      "description": "어둠에 숨은 몬스터. 높은 회피율과 크리티컬",
+      "statMultipliers": {
+        "speed": 1.3,
+        "critChance": 1.5,
+        "evasion": 1.4
+      },
+      "element": "dark",
+      "onHitEffect": {
+        "type": "blind",
+        "accuracyReduction": 0.15,
+        "duration": 2,
+        "chance": 0.2
+      },
+      "expMultiplier": 1.4,
+      "goldMultiplier": 1.35,
+      "dropRateMultiplier": 1.3,
+      "color": "#4B0082",
+      "minLevel": 8,
+      "icon": "👤"
+    },
+
+    "holy": {
+      "id": "holy",
+      "name": "신성한 (Holy)",
+      "namePrefix": "신성한",
+      "description": "신성한 힘을 지닌 몬스터. 자가 회복 능력",
+      "statMultipliers": {
+        "magicPower": 1.25,
+        "magicDefense": 1.3,
+        "hp": 1.15
+      },
+      "element": "light",
+      "passiveEffect": {
+        "type": "regeneration",
+        "healPercent": 0.03,
+        "perTurn": true
+      },
+      "expMultiplier": 1.4,
+      "goldMultiplier": 1.35,
+      "dropRateMultiplier": 1.3,
+      "color": "#FFFACD",
+      "minLevel": 10,
+      "icon": "✨"
+    },
+
+    "enraged": {
+      "id": "enraged",
+      "name": "광폭화 (Enraged)",
+      "namePrefix": "광폭화",
+      "description": "분노로 미쳐버린 몬스터. 공격력 급증, 방어력 감소",
+      "statMultipliers": {
+        "attack": 1.5,
+        "speed": 1.2,
+        "defense": 0.8,
+        "magicDefense": 0.8
+      },
+      "element": "physical",
+      "passiveEffect": {
+        "type": "berserk",
+        "damageBonus": 0.2,
+        "damageReceived": 1.25
+      },
+      "expMultiplier": 1.35,
+      "goldMultiplier": 1.3,
+      "dropRateMultiplier": 1.25,
+      "color": "#DC143C",
+      "minLevel": 6,
+      "icon": "😡"
+    },
+
+    "fortified": {
+      "id": "fortified",
+      "name": "강화된 (Fortified)",
+      "namePrefix": "강화된",
+      "description": "견고하게 무장한 몬스터. 높은 방어력",
+      "statMultipliers": {
+        "hp": 1.3,
+        "defense": 1.4,
+        "magicDefense": 1.35,
+        "speed": 0.9
+      },
+      "element": "physical",
+      "passiveEffect": {
+        "type": "armor",
+        "damageReduction": 0.15
+      },
+      "expMultiplier": 1.35,
+      "goldMultiplier": 1.3,
+      "dropRateMultiplier": 1.25,
+      "color": "#808080",
+      "minLevel": 5,
+      "icon": "🛡️"
+    },
+
+    "regenerating": {
+      "id": "regenerating",
+      "name": "재생 (Regenerating)",
+      "namePrefix": "재생",
+      "description": "빠르게 회복하는 몬스터. 매 턴 HP 회복",
+      "statMultipliers": {
+        "hp": 1.4,
+        "defense": 1.1
+      },
+      "element": "physical",
+      "passiveEffect": {
+        "type": "regeneration",
+        "healPercent": 0.05,
+        "perTurn": true
+      },
+      "expMultiplier": 1.3,
+      "goldMultiplier": 1.25,
+      "dropRateMultiplier": 1.2,
+      "color": "#98FB98",
+      "minLevel": 7,
+      "icon": "💚"
+    },
+
+    "elite": {
+      "id": "elite",
+      "name": "엘리트 (Elite)",
+      "namePrefix": "엘리트",
+      "description": "모든 면에서 강화된 정예 몬스터",
+      "statMultipliers": {
+        "hp": 1.25,
+        "attack": 1.25,
+        "defense": 1.25,
+        "magicPower": 1.25,
+        "magicDefense": 1.25,
+        "speed": 1.15,
+        "critChance": 1.15
+      },
+      "element": "physical",
+      "passiveEffect": {
+        "type": "elite-aura",
+        "allStatsBonus": 0.1
+      },
+      "expMultiplier": 1.5,
+      "goldMultiplier": 1.5,
+      "dropRateMultiplier": 1.5,
+      "guaranteedRareDrop": true,
+      "color": "#FFD700",
+      "minLevel": 1,
+      "icon": "⭐"
+    }
+  },
+
+  "itemPrefixes": {
+    "sharp": {
+      "id": "sharp",
+      "name": "날카로운 (Sharp)",
+      "namePrefix": "날카로운",
+      "description": "예리하게 연마된",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["sword", "dagger", "axe", "spear"],
+      "statModifiers": {
+        "attack": 5,
+        "critChance": 3
+      },
+      "percentModifiers": {},
+      "minRarity": "common",
+      "valueMultiplier": 1.2,
+      "icon": "🔪"
+    },
+
+    "deadly": {
+      "id": "deadly",
+      "name": "치명적인 (Deadly)",
+      "namePrefix": "치명적인",
+      "description": "치명타 확률이 크게 증가",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["all"],
+      "statModifiers": {
+        "critChance": 10,
+        "critDamage": 0.25
+      },
+      "percentModifiers": {},
+      "minRarity": "uncommon",
+      "valueMultiplier": 1.4,
+      "icon": "💀"
+    },
+
+    "flaming": {
+      "id": "flaming",
+      "name": "불꽃 (Flaming)",
+      "namePrefix": "불꽃",
+      "description": "화염 속성이 부여됨",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["all"],
+      "statModifiers": {
+        "attack": 3
+      },
+      "percentModifiers": {},
+      "elementalDamage": {
+        "type": "fire",
+        "damage": 10,
+        "chance": 0.25
+      },
+      "minRarity": "common",
+      "valueMultiplier": 1.35,
+      "icon": "🔥"
+    },
+
+    "freezing": {
+      "id": "freezing",
+      "name": "빙결 (Freezing)",
+      "namePrefix": "빙결",
+      "description": "냉기 속성이 부여됨",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["all"],
+      "statModifiers": {
+        "attack": 2
+      },
+      "percentModifiers": {},
+      "elementalDamage": {
+        "type": "ice",
+        "damage": 8,
+        "chance": 0.2
+      },
+      "onHitEffect": {
+        "type": "slow",
+        "value": 0.15,
+        "duration": 2,
+        "chance": 0.15
+      },
+      "minRarity": "common",
+      "valueMultiplier": 1.35,
+      "icon": "❄️"
+    },
+
+    "lightning": {
+      "id": "lightning",
+      "name": "번개 (Lightning)",
+      "namePrefix": "번개",
+      "description": "번개 속성이 부여됨",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["all"],
+      "statModifiers": {
+        "attack": 4,
+        "speed": 2
+      },
+      "percentModifiers": {},
+      "elementalDamage": {
+        "type": "lightning",
+        "damage": 12,
+        "chance": 0.2
+      },
+      "minRarity": "uncommon",
+      "valueMultiplier": 1.4,
+      "icon": "⚡"
+    },
+
+    "venomous": {
+      "id": "venomous",
+      "name": "맹독 (Venomous)",
+      "namePrefix": "맹독",
+      "description": "독 속성이 부여됨",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["sword", "dagger", "bow"],
+      "statModifiers": {},
+      "percentModifiers": {},
+      "elementalDamage": {
+        "type": "poison",
+        "damage": 6,
+        "chance": 0.35
+      },
+      "onHitEffect": {
+        "type": "poison",
+        "damagePerTurn": 4,
+        "duration": 3,
+        "chance": 0.3
+      },
+      "minRarity": "common",
+      "valueMultiplier": 1.3,
+      "icon": "🐍"
+    },
+
+    "holy": {
+      "id": "holy",
+      "name": "신성한 (Holy)",
+      "namePrefix": "신성한",
+      "description": "신성한 힘이 깃든",
+      "applicableTo": ["weapon", "armor"],
+      "weaponTypes": ["all"],
+      "armorTypes": ["all"],
+      "statModifiers": {
+        "magicPower": 8,
+        "magicDefense": 5
+      },
+      "percentModifiers": {},
+      "elementalDamage": {
+        "type": "light",
+        "damage": 15,
+        "bonusVsUndead": 0.5,
+        "chance": 0.3
+      },
+      "minRarity": "rare",
+      "valueMultiplier": 1.6,
+      "icon": "✨"
+    },
+
+    "vampiric": {
+      "id": "vampiric",
+      "name": "흡혈 (Vampiric)",
+      "namePrefix": "흡혈",
+      "description": "적에게 준 피해의 일부를 회복",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["sword", "dagger", "axe"],
+      "statModifiers": {
+        "attack": 2
+      },
+      "percentModifiers": {},
+      "onHitEffect": {
+        "type": "lifesteal",
+        "percent": 0.1,
+        "chance": 1.0
+      },
+      "minRarity": "rare",
+      "valueMultiplier": 1.7,
+      "icon": "🩸"
+    },
+
+    "sturdy": {
+      "id": "sturdy",
+      "name": "견고한 (Sturdy)",
+      "namePrefix": "견고한",
+      "description": "방어력이 증가",
+      "applicableTo": ["armor"],
+      "armorTypes": ["helmet", "chest", "gloves", "boots"],
+      "statModifiers": {
+        "defense": 8,
+        "maxHp": 15
+      },
+      "percentModifiers": {},
+      "minRarity": "common",
+      "valueMultiplier": 1.25,
+      "icon": "🪨"
+    },
+
+    "arcane": {
+      "id": "arcane",
+      "name": "신비한 (Arcane)",
+      "namePrefix": "신비한",
+      "description": "마법 능력이 증가",
+      "applicableTo": ["weapon", "armor"],
+      "weaponTypes": ["staff", "wand"],
+      "armorTypes": ["all"],
+      "statModifiers": {
+        "magicPower": 12,
+        "maxMp": 20
+      },
+      "percentModifiers": {},
+      "minRarity": "uncommon",
+      "valueMultiplier": 1.4,
+      "icon": "🔮"
+    },
+
+    "swift": {
+      "id": "swift",
+      "name": "신속한 (Swift)",
+      "namePrefix": "신속한",
+      "description": "속도와 회피가 증가",
+      "applicableTo": ["weapon", "armor"],
+      "weaponTypes": ["dagger", "bow"],
+      "armorTypes": ["boots", "gloves"],
+      "statModifiers": {
+        "speed": 8,
+        "evasion": 5
+      },
+      "percentModifiers": {},
+      "minRarity": "common",
+      "valueMultiplier": 1.3,
+      "icon": "💨"
+    },
+
+    "guardian": {
+      "id": "guardian",
+      "name": "수호자의 (Guardian's)",
+      "namePrefix": "수호자의",
+      "description": "모든 방어 능력 강화",
+      "applicableTo": ["armor"],
+      "armorTypes": ["helmet", "chest"],
+      "statModifiers": {
+        "defense": 12,
+        "magicDefense": 10,
+        "maxHp": 25
+      },
+      "percentModifiers": {},
+      "minRarity": "rare",
+      "valueMultiplier": 1.6,
+      "icon": "🛡️"
+    },
+
+    "berserker": {
+      "id": "berserker",
+      "name": "광전사의 (Berserker's)",
+      "namePrefix": "광전사의",
+      "description": "공격력 대폭 증가, 방어력 감소",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["sword", "axe", "mace"],
+      "statModifiers": {
+        "attack": 15,
+        "critDamage": 0.3,
+        "defense": -5
+      },
+      "percentModifiers": {},
+      "minRarity": "uncommon",
+      "valueMultiplier": 1.45,
+      "icon": "🪓"
+    },
+
+    "blessed": {
+      "id": "blessed",
+      "name": "축복받은 (Blessed)",
+      "namePrefix": "축복받은",
+      "description": "행운과 모든 스탯 소폭 증가",
+      "applicableTo": ["weapon", "armor"],
+      "weaponTypes": ["all"],
+      "armorTypes": ["all"],
+      "statModifiers": {
+        "attack": 3,
+        "defense": 3,
+        "magicPower": 3,
+        "magicDefense": 3,
+        "speed": 2,
+        "maxHp": 10
+      },
+      "percentModifiers": {},
+      "minRarity": "rare",
+      "valueMultiplier": 1.5,
+      "icon": "🙏"
+    },
+
+    "corrupted": {
+      "id": "corrupted",
+      "name": "부패한 (Corrupted)",
+      "namePrefix": "부패한",
+      "description": "어둠의 힘이 깃든",
+      "applicableTo": ["weapon"],
+      "weaponTypes": ["all"],
+      "statModifiers": {
+        "attack": 10,
+        "magicPower": 8
+      },
+      "percentModifiers": {},
+      "elementalDamage": {
+        "type": "dark",
+        "damage": 12,
+        "chance": 0.25
+      },
+      "onHitEffect": {
+        "type": "curse",
+        "defenseReduction": 0.1,
+        "duration": 3,
+        "chance": 0.15
+      },
+      "minRarity": "rare",
+      "valueMultiplier": 1.55,
+      "icon": "💜"
+    }
+  },
+
+  "prefixRarityWeights": {
+    "common": {
+      "noPrefixChance": 0.85,
+      "prefixWeights": {
+        "sharp": 20,
+        "flaming": 15,
+        "freezing": 15,
+        "venomous": 15,
+        "sturdy": 20,
+        "swift": 15
+      }
+    },
+    "uncommon": {
+      "noPrefixChance": 0.70,
+      "prefixWeights": {
+        "sharp": 15,
+        "deadly": 15,
+        "flaming": 12,
+        "freezing": 12,
+        "lightning": 12,
+        "venomous": 10,
+        "arcane": 12,
+        "swift": 12
+      }
+    },
+    "rare": {
+      "noPrefixChance": 0.50,
+      "prefixWeights": {
+        "deadly": 12,
+        "lightning": 12,
+        "holy": 10,
+        "vampiric": 10,
+        "guardian": 12,
+        "berserker": 12,
+        "blessed": 10,
+        "corrupted": 10,
+        "arcane": 12
+      }
+    },
+    "epic": {
+      "noPrefixChance": 0.30,
+      "prefixWeights": {
+        "deadly": 10,
+        "holy": 15,
+        "vampiric": 15,
+        "guardian": 12,
+        "berserker": 10,
+        "blessed": 15,
+        "corrupted": 13,
+        "arcane": 10
+      }
+    },
+    "legendary": {
+      "noPrefixChance": 0.10,
+      "prefixWeights": {
+        "holy": 20,
+        "vampiric": 18,
+        "guardian": 15,
+        "blessed": 20,
+        "corrupted": 15,
+        "deadly": 12
+      }
+    }
+  },
+
+  "monsterPrefixConfig": {
+    "baseChance": 0.15,
+    "bossDropPrefixChance": 0.30,
+    "eliteDropPrefixChance": 0.25,
+    "levelScaling": {
+      "enabled": true,
+      "bonusPerLevel": 0.005,
+      "maxBonus": 0.15
+    },
+    "areaRestrictions": {
+      "burning": ["memory-forest", "cache-cave", "bit-plains", "registry-dungeon", "swap-swamp", "thread-forest", "stack-mountain", "heap-cave", "network-layer", "kernel-fortress", "root-directory", "corruption-space"],
+      "frozen": ["cache-cave", "heap-cave", "network-layer", "kernel-fortress"],
+      "electric": ["bit-plains", "network-layer", "kernel-fortress", "root-directory"],
+      "toxic": ["swap-swamp", "thread-forest", "corruption-space"],
+      "shadow": ["registry-dungeon", "heap-cave", "corruption-space"],
+      "holy": ["stack-mountain", "kernel-fortress", "root-directory"],
+      "enraged": ["all"],
+      "fortified": ["all"],
+      "regenerating": ["all"],
+      "elite": ["all"]
+    }
+  },
+
+  "displayFormat": {
+    "monster": "{prefix} {name}",
+    "item": "{prefix} {name}",
+    "colorCodes": {
+      "burning": "§c",
+      "frozen": "§b",
+      "electric": "§e",
+      "toxic": "§a",
+      "shadow": "§5",
+      "holy": "§f",
+      "enraged": "§4",
+      "fortified": "§7",
+      "regenerating": "§2",
+      "elite": "§6"
+    }
+  }
+}

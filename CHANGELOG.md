@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.1] - 2026-03-04
+### Highlights
+- 222504a feat: finalize release automation and prompt-priority UX polish
+
 ## [v1.0.0] - 2026-03-04
 ### Highlights
 - Added quest depth expansion with 33 quests, branching prerequisites, and multi-objective progression.

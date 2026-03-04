@@ -7,7 +7,7 @@ import figlet from 'figlet';
 import Table from 'cli-table3';
 import { Player } from '../types/index.js';
 import { getLevelProgress } from '../systems/leveling.js';
-import { getLoadingProfile } from '../runtime/settings.js';
+import { getLoadingProfile, getRuntimeSettings } from '../runtime/settings.js';
 import { withSignalLabel } from './accessibility.js';
 
 /**
@@ -36,7 +36,7 @@ export async function showTitle(): Promise<void> {
         }
         console.log(chalk.cyan(data));
         console.log(chalk.gray('═'.repeat(60)));
-        console.log(chalk.yellow('    A Terminal-based RPG Adventure'));
+        console.log(chalk.yellow('      터미널 기반 RPG 어드벤처'));
         console.log(chalk.gray('═'.repeat(60)));
         console.log();
         resolve();
@@ -88,7 +88,7 @@ export function showStats(player: Player): void {
   showSeparator();
 
   const statsTable = new Table({
-    head: [chalk.yellow('Stat'), chalk.yellow('Value')],
+    head: [chalk.yellow('능력치'), chalk.yellow('수치')],
     colWidths: [20, 15],
     style: {
       head: [],
@@ -99,19 +99,19 @@ export function showStats(player: Player): void {
   statsTable.push(
     ['❤️  HP', `${player.stats.hp} / ${player.stats.maxHp}`],
     ['💙 MP', `${player.stats.mp} / ${player.stats.maxMp}`],
-    ['⚔️  Attack', player.stats.attack.toString()],
-    ['🛡️  Defense', player.stats.defense.toString()],
-    ['✨ Magic Power', player.stats.magicPower.toString()],
-    ['🌟 Magic Defense', player.stats.magicDefense.toString()],
-    ['⚡ Speed', player.stats.speed.toString()],
-    ['🎯 Crit Chance', `${player.stats.critChance}%`],
-    ['💥 Crit Damage', `${player.stats.critDamage}x`]
+    ['⚔️  공격력', player.stats.attack.toString()],
+    ['🛡️  방어력', player.stats.defense.toString()],
+    ['✨ 마법 공격', player.stats.magicPower.toString()],
+    ['🌟 마법 방어', player.stats.magicDefense.toString()],
+    ['⚡ 속도', player.stats.speed.toString()],
+    ['🎯 치명타 확률', `${player.stats.critChance}%`],
+    ['💥 치명타 배율', `${player.stats.critDamage}x`]
   );
 
   console.log(statsTable.toString());
 
   const infoTable = new Table({
-    head: [chalk.yellow('Info'), chalk.yellow('Value')],
+    head: [chalk.yellow('정보'), chalk.yellow('수치')],
     colWidths: [20, 15],
     style: {
       head: [],
@@ -123,12 +123,12 @@ export function showStats(player: Player): void {
   const expBar = createExpBar(player.experience, player.experienceToNextLevel);
 
   infoTable.push(
-    ['💰 Gold', player.gold.toString()],
-    ['⭐ Experience', `${player.experience} / ${player.experienceToNextLevel}`],
-    ['📊 Progress', `${expBar} ${expProgress}%`],
-    ['🎒 Inventory', `${player.inventory.length} / ${player.maxInventorySize}`],
-    ['🗡️  Enemies Defeated', player.enemiesDefeated.toString()],
-    ['💀 Deaths', player.deaths.toString()]
+    ['💰 골드', player.gold.toString()],
+    ['⭐ 경험치', `${player.experience} / ${player.experienceToNextLevel}`],
+    ['📊 진행도', `${expBar} ${expProgress}%`],
+    ['🎒 인벤토리', `${player.inventory.length} / ${player.maxInventorySize}`],
+    ['🗡️  처치 수', player.enemiesDefeated.toString()],
+    ['💀 사망 수', player.deaths.toString()]
   );
 
   console.log(infoTable.toString());
@@ -227,13 +227,47 @@ export function showBox(text: string, title?: string): void {
 /**
  * Wait for user to press enter
  */
-export async function pressEnterToContinue(): Promise<void> {
+export type ContinuePromptPriority = 'normal' | 'important' | 'critical';
+
+function getAutoContinueDelayMs(priority: ContinuePromptPriority): number {
+  const settings = getRuntimeSettings();
+  if (priority === 'critical') {
+    return 0;
+  }
+
+  const baseDelayByPace = {
+    snappy: 140,
+    balanced: 260,
+    cinematic: 460
+  } as const;
+
+  const speedMultiplier = settings.textSpeed === 'slow'
+    ? 1.35
+    : settings.textSpeed === 'fast'
+      ? 0.72
+      : 1.0;
+  const priorityMultiplier = priority === 'important' ? 1.65 : 1.0;
+
+  const baseDelay = baseDelayByPace[settings.continueAutoPace];
+  const adjustedDelay = Math.round(baseDelay * speedMultiplier * priorityMultiplier);
+  return Math.max(90, Math.min(1200, adjustedDelay));
+}
+
+export async function pressEnterToContinue(
+  priority: ContinuePromptPriority = 'normal'
+): Promise<void> {
+  const settings = getRuntimeSettings();
+  if (settings.continuePromptMode === 'streamlined' && priority !== 'critical') {
+    await new Promise(resolve => setTimeout(resolve, getAutoContinueDelayMs(priority)));
+    return;
+  }
+
   const { default: inquirer } = await import('inquirer');
   await inquirer.prompt([
     {
       type: 'input',
       name: 'continue',
-      message: chalk.gray('Press Enter to continue...')
+      message: chalk.gray('계속하려면 Enter를 누르세요...')
     }
   ]);
 }
@@ -243,9 +277,9 @@ export async function pressEnterToContinue(): Promise<void> {
  */
 export function showCombatHeader(enemyName: string, enemyLevel: number): void {
   console.log();
-  console.log(chalk.red.bold('⚔️  COMBAT ENCOUNTER!'));
+  console.log(chalk.red.bold('⚔️  전투 발생!'));
   showSeparator();
-  console.log(chalk.red(`💀 ${enemyName} (Level ${enemyLevel}) appears!`));
+  console.log(chalk.red(`💀 ${enemyName} (Lv ${enemyLevel}) 등장!`));
   showSeparator();
   console.log();
 }
@@ -255,9 +289,9 @@ export function showCombatHeader(enemyName: string, enemyLevel: number): void {
  */
 export function showLevelUp(level: number): void {
   console.log();
-  console.log(chalk.yellow.bold('🌟 LEVEL UP! 🌟'));
-  console.log(chalk.green(`You are now level ${level}!`));
-  showMessage('Your stats have increased!', 'success');
+  console.log(chalk.yellow.bold('🌟 레벨 업! 🌟'));
+  console.log(chalk.green(`현재 레벨: ${level}`));
+  showMessage('능력치가 상승했습니다!', 'success');
   console.log();
 }
 
@@ -266,9 +300,9 @@ export function showLevelUp(level: number): void {
  */
 export function showGameOver(): void {
   console.log();
-  console.log(chalk.red.bold('💀 GAME OVER 💀'));
+  console.log(chalk.red.bold('💀 게임 오버 💀'));
   showSeparator();
-  console.log(chalk.gray('You have fallen in battle...'));
+  console.log(chalk.gray('전투에서 쓰러졌습니다...'));
   console.log();
 }
 
@@ -277,9 +311,9 @@ export function showGameOver(): void {
  */
 export function showVictory(exp: number, gold: number): void {
   console.log();
-  console.log(chalk.green.bold('🎉 VICTORY! 🎉'));
+  console.log(chalk.green.bold('🎉 승리! 🎉'));
   showSeparator();
   console.log(chalk.green(`+${exp} EXP`));
-  console.log(chalk.yellow(`+${gold} Gold`));
+  console.log(chalk.yellow(`+${gold} 골드`));
   console.log();
 }

@@ -9,6 +9,7 @@ import { gameLoop, loadGame, startNewGame } from '../game.js';
 import { MainMenuRuntimeDependencies } from '../types/runtime.js';
 import { mergeDependencies } from '../dependencies.js';
 import { trackTelemetryEvent } from './telemetry.js';
+import { initializeRuntimeSettings } from '../runtime/settings.js';
 
 export type { MainMenuRuntimeDependencies } from '../types/runtime.js';
 
@@ -23,6 +24,8 @@ const DEFAULT_MAIN_MENU_DEPENDENCIES: MainMenuRuntimeDependencies = {
 export async function runMainMenuRuntime(
   dependencies: Partial<MainMenuRuntimeDependencies> = {}
 ): Promise<void> {
+  initializeRuntimeSettings();
+
   const runtimeDependencies = mergeDependencies(
     DEFAULT_MAIN_MENU_DEPENDENCIES,
     dependencies
@@ -32,12 +35,12 @@ export async function runMainMenuRuntime(
   await showTitle();
 
   showBox(
-    'Welcome to Terminal Quest!\n\n' +
-    'Embark on an epic adventure through mysterious lands,\n' +
-    'battle fearsome monsters, complete challenging quests,\n' +
-    'and become the hero of legend!\n\n' +
-    'May your journey be filled with glory and treasure!',
-    'WELCOME'
+    '터미널 퀘스트에 오신 것을 환영합니다!\n\n' +
+    '신비한 대륙을 탐험하고,\n' +
+    '강력한 몬스터와 전투를 벌이며,\n' +
+    '도전적인 퀘스트를 완수해 전설의 영웅이 되어보세요!\n\n' +
+    '당신의 여정에 영광과 보물이 함께하길 바랍니다.',
+    '환영합니다'
   );
 
   console.log();
@@ -76,8 +79,8 @@ export async function runMainMenuRuntime(
       case 'exit':
         clearScreen();
         await showTitle();
-        showMessage('Thanks for playing Terminal Quest!', 'success');
-        showMessage('Your adventure awaits...', 'info');
+        showMessage('터미널 퀘스트를 플레이해주셔서 감사합니다!', 'success');
+        showMessage('다음 모험이 당신을 기다리고 있습니다...', 'info');
         console.log();
         running = false;
         break;

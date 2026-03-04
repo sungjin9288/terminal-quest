@@ -7,9 +7,11 @@ import { createTestGameState } from './helpers/gameStateFactory';
 import { createTestHubTown } from './helpers/dataFixtureFactory';
 import { mockDisplayPreset } from './helpers/uiMocks';
 import { getInnRestCost } from '../src/systems/economy';
+import { resetRuntimeSettings, updateRuntimeSettings } from '../src/runtime/settings';
 
 describe('Gameplay Loop', () => {
   afterEach(() => {
+    resetRuntimeSettings();
     jest.restoreAllMocks();
   });
 
@@ -232,5 +234,54 @@ describe('Gameplay Loop', () => {
     expect(result).toBe(false);
     expect(runEncounter).toHaveBeenCalledTimes(1);
     expect(handlePlayerDeath).toHaveBeenCalledTimes(1);
+  });
+
+  it('should show context guidance in town by default', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'GuideTester',
+        level: 3,
+        currentLocation: 'bit-town'
+      }
+    });
+    mockDisplayPreset('townLoop');
+
+    jest.spyOn(travelUi, 'showTownMenu')
+      .mockResolvedValueOnce('menu');
+
+    await townLoop(gameState, {
+      shopMenu: jest.fn(async () => undefined),
+      saveGame: jest.fn(async () => true),
+      handleTravel: jest.fn(async () => ({ locationChanged: false })),
+      inGameMenuLoop: jest.fn(async () => false)
+    });
+
+    const logs = (console.log as jest.Mock).mock.calls.map(args => String(args[0] ?? ''));
+    expect(logs.some(line => line.includes('추천 행동'))).toBe(true);
+  });
+
+  it('should hide context guidance when setting is disabled', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'GuideTester',
+        level: 3,
+        currentLocation: 'bit-town'
+      }
+    });
+    updateRuntimeSettings({ showContextHints: false }, { storage: false });
+    mockDisplayPreset('townLoop');
+
+    jest.spyOn(travelUi, 'showTownMenu')
+      .mockResolvedValueOnce('menu');
+
+    await townLoop(gameState, {
+      shopMenu: jest.fn(async () => undefined),
+      saveGame: jest.fn(async () => true),
+      handleTravel: jest.fn(async () => ({ locationChanged: false })),
+      inGameMenuLoop: jest.fn(async () => false)
+    });
+
+    const logs = (console.log as jest.Mock).mock.calls.map(args => String(args[0] ?? ''));
+    expect(logs.some(line => line.includes('추천 행동'))).toBe(false);
   });
 });

@@ -91,11 +91,11 @@ describe('Main Menu Runtime', () => {
     await runMainMenuRuntime(createMainMenuRuntimeDependencies());
 
     expect(display.showMessage).toHaveBeenCalledWith(
-      'Thanks for playing Terminal Quest!',
+      '터미널 퀘스트를 플레이해주셔서 감사합니다!',
       'success'
     );
     expect(display.showMessage).toHaveBeenCalledWith(
-      'Your adventure awaits...',
+      '다음 모험이 당신을 기다리고 있습니다...',
       'info'
     );
   });

@@ -10,7 +10,9 @@ import {
   getRuntimeSettings,
   getSettingsSummary,
   updateRuntimeSettings,
+  type ContinueAutoPace,
   type ColorMode,
+  type ContinuePromptMode,
   type TextSpeed
 } from '../runtime/settings.js';
 
@@ -28,27 +30,48 @@ function showListNavigationHint(): void {
   if (!getRuntimeSettings().showKeyHints) {
     return;
   }
-  console.log(chalk.gray('Tip: Use arrow keys to move, Enter to confirm.'));
+  console.log(chalk.gray('안내: 방향키로 이동하고 Enter로 선택하세요.'));
 }
 
 function showInputHint(): void {
   if (!getRuntimeSettings().showKeyHints) {
     return;
   }
-  console.log(chalk.gray('Tip: Type your input and press Enter.'));
+  console.log(chalk.gray('안내: 입력 후 Enter를 누르세요.'));
 }
 
 function getTextSpeedLabel(value: TextSpeed): string {
-  if (value === 'slow') return 'Slow';
-  if (value === 'fast') return 'Fast';
-  return 'Normal';
+  if (value === 'slow') return '느림';
+  if (value === 'fast') return '빠름';
+  return '보통';
 }
 
 function getColorModeLabel(value: ColorMode): string {
-  return value === 'mono' ? 'Mono' : 'Full';
+  return value === 'mono' ? '단색' : '컬러';
 }
 
-type SettingsMenuOption = 'text-speed' | 'color-mode' | 'key-hints' | 'back';
+function getContinuePromptModeLabel(value: ContinuePromptMode): string {
+  return value === 'classic' ? '항상 확인' : '간소화';
+}
+
+function getContinueAutoPaceLabel(value: ContinueAutoPace): string {
+  if (value === 'snappy') return '빠르게';
+  if (value === 'cinematic') return '몰입형';
+  return '균형형';
+}
+
+function getContextHintsLabel(value: boolean): string {
+  return value ? '켜짐' : '꺼짐';
+}
+
+type SettingsMenuOption =
+  | 'text-speed'
+  | 'color-mode'
+  | 'continue-mode'
+  | 'continue-pace'
+  | 'key-hints'
+  | 'context-hints'
+  | 'back';
 type ExtendedSettingsMenuOption = SettingsMenuOption | 'telemetry';
 
 export async function showSettingsMenu(): Promise<void> {
@@ -58,7 +81,7 @@ export async function showSettingsMenu(): Promise<void> {
     const settings = getRuntimeSettings();
 
     console.log();
-    showMessage('Game Settings', 'info');
+    showMessage('게임 설정', 'info');
     showSeparator();
     console.log(chalk.gray(getSettingsSummary(settings)));
     console.log();
@@ -68,26 +91,38 @@ export async function showSettingsMenu(): Promise<void> {
       {
         type: 'list',
         name: 'action',
-        message: chalk.cyan('Adjust settings:'),
+        message: chalk.cyan('설정을 조정하세요:'),
         choices: [
           {
-            name: `⏱️  Text Speed: ${getTextSpeedLabel(settings.textSpeed)}`,
+            name: `⏱️  텍스트 속도: ${getTextSpeedLabel(settings.textSpeed)}`,
             value: 'text-speed'
           },
           {
-            name: `🎨 Color Mode: ${getColorModeLabel(settings.colorMode)}`,
+            name: `🎨 색상 모드: ${getColorModeLabel(settings.colorMode)}`,
             value: 'color-mode'
           },
           {
-            name: `⌨️  Key Hints: ${settings.showKeyHints ? 'On' : 'Off'}`,
+            name: `⏩ 진행 템포: ${getContinuePromptModeLabel(settings.continuePromptMode)}`,
+            value: 'continue-mode'
+          },
+          {
+            name: `⏱️  자동 진행 속도: ${getContinueAutoPaceLabel(settings.continueAutoPace)}`,
+            value: 'continue-pace'
+          },
+          {
+            name: `⌨️  키 힌트: ${settings.showKeyHints ? '켜짐' : '꺼짐'}`,
             value: 'key-hints'
           },
           {
-            name: `📊 Anonymous Telemetry: ${settings.telemetryOptIn ? 'On' : 'Off'}`,
+            name: `🧭 추천 가이드: ${getContextHintsLabel(settings.showContextHints)}`,
+            value: 'context-hints'
+          },
+          {
+            name: `📊 익명 텔레메트리: ${settings.telemetryOptIn ? '켜짐' : '꺼짐'}`,
             value: 'telemetry'
           },
           {
-            name: '← Back',
+            name: '← 돌아가기',
             value: 'back'
           }
         ]
@@ -101,11 +136,11 @@ export async function showSettingsMenu(): Promise<void> {
           {
             type: 'list',
             name: 'textSpeed',
-            message: chalk.cyan('Select text speed:'),
+            message: chalk.cyan('텍스트 속도를 선택하세요:'),
             choices: [
-              { name: 'Slow', value: 'slow' },
-              { name: 'Normal', value: 'normal' },
-              { name: 'Fast', value: 'fast' }
+              { name: '느림', value: 'slow' },
+              { name: '보통', value: 'normal' },
+              { name: '빠름', value: 'fast' }
             ],
             default: settings.textSpeed
           }
@@ -113,7 +148,7 @@ export async function showSettingsMenu(): Promise<void> {
         const updated = updateRuntimeSettings({
           textSpeed: speedAnswer.textSpeed as TextSpeed
         });
-        showMessage(`Text speed set to ${getTextSpeedLabel(updated.textSpeed)}.`, 'success');
+        showMessage(`텍스트 속도를 ${getTextSpeedLabel(updated.textSpeed)}으로 설정했습니다.`, 'success');
         break;
       }
       case 'color-mode': {
@@ -122,10 +157,10 @@ export async function showSettingsMenu(): Promise<void> {
           {
             type: 'list',
             name: 'colorMode',
-            message: chalk.cyan('Select color mode:'),
+            message: chalk.cyan('색상 모드를 선택하세요:'),
             choices: [
-              { name: 'Full Color', value: 'full' },
-              { name: 'Monochrome', value: 'mono' }
+              { name: '컬러', value: 'full' },
+              { name: '단색', value: 'mono' }
             ],
             default: settings.colorMode
           }
@@ -133,7 +168,54 @@ export async function showSettingsMenu(): Promise<void> {
         const updated = updateRuntimeSettings({
           colorMode: colorAnswer.colorMode as ColorMode
         });
-        showMessage(`Color mode set to ${getColorModeLabel(updated.colorMode)}.`, 'success');
+        showMessage(`색상 모드를 ${getColorModeLabel(updated.colorMode)}으로 설정했습니다.`, 'success');
+        break;
+      }
+      case 'continue-mode': {
+        showListNavigationHint();
+        const continueAnswer = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'continuePromptMode',
+            message: chalk.cyan('진행 템포를 선택하세요:'),
+            choices: [
+              { name: '간소화 (자동 진행 중심)', value: 'streamlined' },
+              { name: '항상 확인 (안내마다 Enter)', value: 'classic' }
+            ],
+            default: settings.continuePromptMode
+          }
+        ]);
+        const updated = updateRuntimeSettings({
+          continuePromptMode: continueAnswer.continuePromptMode as ContinuePromptMode
+        });
+        showMessage(
+          `진행 템포를 ${getContinuePromptModeLabel(updated.continuePromptMode)}로 설정했습니다.`,
+          'success'
+        );
+        break;
+      }
+      case 'continue-pace': {
+        showListNavigationHint();
+        const paceAnswer = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'continueAutoPace',
+            message: chalk.cyan('자동 진행 속도를 선택하세요:'),
+            choices: [
+              { name: '빠르게 (짧은 대기)', value: 'snappy' },
+              { name: '균형형 (기본 추천)', value: 'balanced' },
+              { name: '몰입형 (긴 대기)', value: 'cinematic' }
+            ],
+            default: settings.continueAutoPace
+          }
+        ]);
+        const updated = updateRuntimeSettings({
+          continueAutoPace: paceAnswer.continueAutoPace as ContinueAutoPace
+        });
+        showMessage(
+          `자동 진행 속도를 ${getContinueAutoPaceLabel(updated.continueAutoPace)}으로 설정했습니다.`,
+          'success'
+        );
         break;
       }
       case 'key-hints': {
@@ -141,7 +223,17 @@ export async function showSettingsMenu(): Promise<void> {
           showKeyHints: !settings.showKeyHints
         });
         showMessage(
-          `Key hints ${updated.showKeyHints ? 'enabled' : 'disabled'}.`,
+          `키 힌트를 ${updated.showKeyHints ? '켰습니다' : '껐습니다'}.`,
+          'success'
+        );
+        break;
+      }
+      case 'context-hints': {
+        const updated = updateRuntimeSettings({
+          showContextHints: !settings.showContextHints
+        });
+        showMessage(
+          `추천 가이드를 ${getContextHintsLabel(updated.showContextHints)}으로 설정했습니다.`,
           'success'
         );
         break;
@@ -151,7 +243,7 @@ export async function showSettingsMenu(): Promise<void> {
           telemetryOptIn: !settings.telemetryOptIn
         });
         showMessage(
-          `Anonymous telemetry ${updated.telemetryOptIn ? 'enabled' : 'disabled'}.`,
+          `익명 텔레메트리를 ${updated.telemetryOptIn ? '켰습니다' : '껐습니다'}.`,
           'success'
         );
         break;
@@ -175,22 +267,22 @@ export async function showMainMenu(): Promise<MainMenuOption> {
     {
       type: 'list',
       name: 'choice',
-      message: chalk.cyan('What would you like to do?'),
+      message: chalk.cyan('무엇을 하시겠습니까?'),
       choices: [
         {
-          name: chalk.green('🎮 New Game'),
+          name: chalk.green('🎮 새 게임'),
           value: 'new-game'
         },
         {
-          name: chalk.blue('📂 Load Game'),
+          name: chalk.blue('📂 불러오기'),
           value: 'load-game'
         },
         {
-          name: chalk.yellow('⚙️  Settings'),
+          name: chalk.yellow('⚙️  설정'),
           value: 'settings'
         },
         {
-          name: chalk.red('🚪 Exit'),
+          name: chalk.red('🚪 종료'),
           value: 'exit'
         }
       ]
@@ -205,7 +297,7 @@ export async function showMainMenu(): Promise<MainMenuOption> {
  */
 export async function showGameModeSelect(): Promise<GameMode> {
   console.log();
-  showMessage('Select your difficulty:', 'info');
+  showMessage('난이도를 선택하세요:', 'info');
   showSeparator();
   showListNavigationHint();
 
@@ -213,22 +305,22 @@ export async function showGameModeSelect(): Promise<GameMode> {
     {
       type: 'list',
       name: 'mode',
-      message: chalk.cyan('Choose game mode:'),
+      message: chalk.cyan('게임 모드를 선택하세요:'),
       choices: [
         {
-          name: chalk.green('📖 Story Mode') + chalk.gray(' - Balanced for story experience'),
+          name: chalk.green('📖 스토리 모드') + chalk.gray(' - 스토리 중심의 균형 난이도'),
           value: GameMode.Story
         },
         {
-          name: chalk.blue('⚔️  Adventure Mode') + chalk.gray(' - Standard challenge'),
+          name: chalk.blue('⚔️  어드벤처 모드') + chalk.gray(' - 기본 도전 난이도'),
           value: GameMode.Adventure
         },
         {
-          name: chalk.yellow('🔥 Challenge Mode') + chalk.gray(' - Increased difficulty'),
+          name: chalk.yellow('🔥 챌린지 모드') + chalk.gray(' - 강화된 난이도'),
           value: GameMode.Challenge
         },
         {
-          name: chalk.red('💀 Hardcore Mode') + chalk.gray(' - Permadeath enabled!'),
+          name: chalk.red('💀 하드코어 모드') + chalk.gray(' - 퍼머데스 적용'),
           value: GameMode.Hardcore
         }
       ]
@@ -251,7 +343,7 @@ export interface CharacterCreationData {
  */
 export async function showCharacterCreation(): Promise<CharacterCreationData> {
   console.log();
-  showMessage('Character Creation', 'success');
+  showMessage('캐릭터 생성', 'success');
   showSeparator();
   showInputHint();
 
@@ -259,13 +351,13 @@ export async function showCharacterCreation(): Promise<CharacterCreationData> {
     {
       type: 'input',
       name: 'name',
-      message: chalk.cyan('Enter your character name:'),
+      message: chalk.cyan('캐릭터 이름을 입력하세요:'),
       validate: (input: string) => {
         if (input.trim().length < 2) {
-          return 'Name must be at least 2 characters long';
+          return '이름은 최소 2글자 이상이어야 합니다.';
         }
         if (input.trim().length > 20) {
-          return 'Name must be less than 20 characters';
+          return '이름은 20글자 이하여야 합니다.';
         }
         return true;
       }
@@ -273,13 +365,13 @@ export async function showCharacterCreation(): Promise<CharacterCreationData> {
   ]);
 
   console.log();
-  showMessage('Choose your class:', 'info');
+  showMessage('직업을 선택하세요:', 'info');
   console.log();
-  console.log(chalk.yellow('⚔️  Warrior') + chalk.gray(' - High HP and defense, melee specialist'));
-  console.log(chalk.magenta('🔮 Mage') + chalk.gray(' - Powerful magic, low defense'));
-  console.log(chalk.green('🗡️  Rogue') + chalk.gray(' - High speed and critical hits'));
-  console.log(chalk.cyan('✨ Cleric') + chalk.gray(' - Healing and support abilities'));
-  console.log(chalk.blue('🏹 Ranger') + chalk.gray(' - Ranged attacks, balanced stats'));
+  console.log(chalk.yellow('⚔️  Warrior') + chalk.gray(' - 높은 HP/방어, 근접 특화'));
+  console.log(chalk.magenta('🔮 Mage') + chalk.gray(' - 강력한 마법, 낮은 방어'));
+  console.log(chalk.green('🗡️  Rogue') + chalk.gray(' - 높은 속도와 치명타'));
+  console.log(chalk.cyan('✨ Cleric') + chalk.gray(' - 회복/지원 특화'));
+  console.log(chalk.blue('🏹 Ranger') + chalk.gray(' - 원거리 공격, 균형형'));
   console.log();
   showListNavigationHint();
 
@@ -287,7 +379,7 @@ export async function showCharacterCreation(): Promise<CharacterCreationData> {
     {
       type: 'list',
       name: 'class',
-      message: chalk.cyan('Select your class:'),
+      message: chalk.cyan('직업을 선택하세요:'),
       choices: [
         {
           name: chalk.yellow('⚔️  Warrior'),
@@ -331,34 +423,34 @@ export async function showInGameMenu(): Promise<InGameMenuOption> {
     {
       type: 'list',
       name: 'choice',
-      message: chalk.cyan('What would you like to do?'),
+      message: chalk.cyan('무엇을 하시겠습니까?'),
       choices: [
         {
-          name: chalk.green('▶️  Continue Adventure'),
+          name: chalk.green('▶️  모험 계속하기'),
           value: 'continue'
         },
         {
-          name: chalk.blue('🎒 Inventory'),
+          name: chalk.blue('🎒 인벤토리'),
           value: 'inventory'
         },
         {
-          name: chalk.yellow('📊 Character Stats'),
+          name: chalk.yellow('📊 캐릭터 정보'),
           value: 'stats'
         },
         {
-          name: chalk.magenta('✨ Skills'),
+          name: chalk.magenta('✨ 스킬'),
           value: 'skills'
         },
         {
-          name: chalk.cyan('💾 Save Game'),
+          name: chalk.cyan('💾 저장'),
           value: 'save'
         },
         {
-          name: chalk.gray('🏠 Return to Main Menu'),
+          name: chalk.gray('🏠 메인 메뉴로'),
           value: 'main-menu'
         },
         {
-          name: chalk.red('🚪 Exit Game'),
+          name: chalk.red('🚪 게임 종료'),
           value: 'exit'
         }
       ]
@@ -375,7 +467,7 @@ export type ExplorationOption = 'explore' | 'rest' | 'travel' | 'quest' | 'menu'
 
 export async function showExplorationMenu(locationName: string): Promise<ExplorationOption> {
   console.log();
-  console.log(chalk.cyan.bold(`📍 Current Location: ${locationName}`));
+  console.log(chalk.cyan.bold(`📍 현재 위치: ${locationName}`));
   showSeparator();
   showListNavigationHint();
 
@@ -383,26 +475,26 @@ export async function showExplorationMenu(locationName: string): Promise<Explora
     {
       type: 'list',
       name: 'choice',
-      message: chalk.cyan('What would you like to do?'),
+      message: chalk.cyan('무엇을 하시겠습니까?'),
       choices: [
         {
-          name: chalk.green('🚶 Explore'),
+          name: chalk.green('🚶 탐험'),
           value: 'explore'
         },
         {
-          name: chalk.blue('😴 Rest (Restore HP/MP)'),
+          name: chalk.blue('😴 휴식 (HP/MP 회복)'),
           value: 'rest'
         },
         {
-          name: chalk.yellow('🗺️  Travel'),
+          name: chalk.yellow('🗺️  이동'),
           value: 'travel'
         },
         {
-          name: chalk.magenta('📜 Quests'),
+          name: chalk.magenta('📜 퀘스트'),
           value: 'quest'
         },
         {
-          name: chalk.gray('⚙️  Menu'),
+          name: chalk.gray('⚙️  메뉴'),
           value: 'menu'
         }
       ]
@@ -426,26 +518,26 @@ export async function showCombatMenu(): Promise<CombatOption> {
     {
       type: 'list',
       name: 'choice',
-      message: chalk.cyan('Choose your action:'),
+      message: chalk.cyan('행동을 선택하세요:'),
       choices: [
         {
-          name: chalk.red('⚔️  Attack'),
+          name: chalk.red('⚔️  공격'),
           value: 'attack'
         },
         {
-          name: chalk.magenta('✨ Use Skill'),
+          name: chalk.magenta('✨ 스킬 사용'),
           value: 'skill'
         },
         {
-          name: chalk.green('🎒 Use Item'),
+          name: chalk.green('🎒 아이템 사용'),
           value: 'item'
         },
         {
-          name: chalk.blue('🛡️  Defend'),
+          name: chalk.blue('🛡️  방어'),
           value: 'defend'
         },
         {
-          name: chalk.yellow('🏃 Escape'),
+          name: chalk.yellow('🏃 도주'),
           value: 'escape'
         }
       ]
@@ -487,7 +579,7 @@ export async function showSaveFileList(saveFiles: string[]): Promise<SaveFileCho
   }));
 
   choices.push({
-    name: chalk.green('➕ New Save File'),
+    name: chalk.green('➕ 새 저장 파일'),
     value: '__new__'
   });
 
@@ -497,7 +589,7 @@ export async function showSaveFileList(saveFiles: string[]): Promise<SaveFileCho
     {
       type: 'list',
       name: 'file',
-      message: chalk.cyan('Select a save file:'),
+      message: chalk.cyan('저장 파일을 선택하세요:'),
       choices
     }
   ]);
@@ -508,10 +600,10 @@ export async function showSaveFileList(saveFiles: string[]): Promise<SaveFileCho
       {
         type: 'input',
         name: 'fileName',
-        message: chalk.cyan('Enter save file name:'),
+        message: chalk.cyan('새 저장 파일 이름을 입력하세요:'),
         validate: (input: string) => {
           if (input.trim().length < 1) {
-            return 'File name cannot be empty';
+            return '파일 이름은 비워둘 수 없습니다.';
           }
           return true;
         }

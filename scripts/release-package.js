@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
 import { spawnSync } from 'child_process';
 import {
   formatReleaseDate,
@@ -113,6 +114,18 @@ function writeManifest(targetDir, payload) {
   fs.writeFileSync(manifestPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf-8');
 }
 
+function computeFileSha256(filePath) {
+  const buffer = fs.readFileSync(filePath);
+  return createHash('sha256').update(buffer).digest('hex');
+}
+
+function writeChecksumFile(archivePath, sha256) {
+  const checksumPath = `${archivePath}.sha256`;
+  const line = `${sha256}  ${path.basename(archivePath)}\n`;
+  fs.writeFileSync(checksumPath, line, 'utf-8');
+  return checksumPath;
+}
+
 function createArchive(packageName, versionTag, releaseFolderName) {
   const archiveBaseName = `${packageName}-${versionTag}`;
   const releasesRoot = path.join(process.cwd(), RELEASES_DIR);
@@ -196,6 +209,10 @@ function main() {
     'utf-8'
   );
 
+  const archivePath = createArchive(packageName, versionTag, releaseFolderName);
+  const archiveSha256 = computeFileSha256(archivePath);
+  const checksumPath = writeChecksumFile(archivePath, archiveSha256);
+
   writeManifest(releaseFolderPath, {
     packageName,
     version,
@@ -203,15 +220,18 @@ function main() {
     releaseDate,
     commitHash,
     changelogUpdated: changelogUpdate.updated,
-    releaseNotesFile: RELEASE_NOTES_FILE
+    releaseNotesFile: RELEASE_NOTES_FILE,
+    archiveFile: path.basename(archivePath),
+    archiveSha256,
+    checksumFile: path.basename(checksumPath)
   });
-
-  const archivePath = createArchive(packageName, versionTag, releaseFolderName);
 
   console.log('[release-package] release package created');
   console.log(`- version: ${versionTag}`);
   console.log(`- release-dir: ${path.relative(process.cwd(), releaseFolderPath)}`);
   console.log(`- archive: ${path.relative(process.cwd(), archivePath)}`);
+  console.log(`- checksum: ${path.relative(process.cwd(), checksumPath)}`);
+  console.log(`- sha256: ${archiveSha256}`);
   console.log(`- commit: ${commitHash}`);
   console.log(`- changelog-updated: ${changelogUpdate.updated}`);
 }

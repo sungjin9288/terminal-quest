@@ -7,6 +7,7 @@ const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const steps = [
   { label: 'TypeScript build', command: [npmCommand, ['run', 'build']] },
   { label: 'Test suite', command: [npmCommand, ['test', '--', '--runInBand']] },
+  { label: 'Prompt priority validation', command: [npmCommand, ['run', 'validate:prompt-priority']] },
   { label: 'Save migration verification', command: [npmCommand, ['run', 'verify:save-migration']] },
   { label: 'Data validation', command: [npmCommand, ['run', 'validate:data']] }
 ];
@@ -17,6 +18,7 @@ const requiredDocs = [
   'docs/support-policy.md',
   'docs/live-balance-cadence.md',
   'docs/seasonal-events.md',
+  'docs/prompt-priority-policy.md',
   'docs/release-smoke-checklist.md',
   'docs/save-migration-verification.md'
 ];

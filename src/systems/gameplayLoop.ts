@@ -7,7 +7,8 @@ import {
 import {
   getLocationDisplayName,
   getLocationById,
-  isTownLocation
+  isTownLocation,
+  isLevelAppropriate
 } from '../data/locations.js';
 import {
   clearScreen,
@@ -28,6 +29,7 @@ import {
 import { getQuestTrackerSummary } from './questTracker.js';
 import { canAffordCost, getInnRestCost } from './economy.js';
 import { getActiveSeasonalEvent } from './seasonalEvents.js';
+import { getRuntimeSettings } from '../runtime/settings.js';
 
 export type {
   EncounterResult,
@@ -60,6 +62,77 @@ function showSeasonalEventSummary(gameState: GameState): void {
   console.log(chalk.gray(`   ${activeEvent.description}`));
 }
 
+type GuidanceContext = 'town' | 'dungeon';
+
+function showContextGuidance(
+  gameState: GameState,
+  context: GuidanceContext,
+  hasQuestBoard: boolean = false
+): void {
+  if (!getRuntimeSettings().showContextHints) {
+    return;
+  }
+
+  const hints: string[] = [];
+  const hpRatio = gameState.player.stats.maxHp > 0
+    ? gameState.player.stats.hp / gameState.player.stats.maxHp
+    : 1;
+  const mpRatio = gameState.player.stats.maxMp > 0
+    ? gameState.player.stats.mp / gameState.player.stats.maxMp
+    : 1;
+  const inventoryRatio = gameState.player.maxInventorySize > 0
+    ? gameState.player.inventory.length / gameState.player.maxInventorySize
+    : 0;
+
+  if (context === 'town') {
+    const questSummary = getQuestTrackerSummary(gameState);
+    const restCost = getInnRestCost(gameState.player.level);
+
+    if (questSummary?.status === 'ready') {
+      hints.push('완료 가능한 퀘스트가 있습니다. 게시판에서 보상을 수령하세요.');
+    } else if (!questSummary && hasQuestBoard) {
+      hints.push('활성 퀘스트가 없습니다. 게시판에서 다음 목표를 수락해 보세요.');
+    }
+
+    if (hpRatio <= 0.45) {
+      if (canAffordCost(gameState.player.gold, restCost)) {
+        hints.push(`HP가 낮습니다. 여관 휴식(${restCost} 골드)으로 안전하게 회복하세요.`);
+      } else {
+        hints.push('HP가 낮고 골드가 부족합니다. 주변 탐색으로 골드를 모아 회복을 준비하세요.');
+      }
+    }
+  } else {
+    const levelFit = isLevelAppropriate(
+      gameState.player.level,
+      gameState.player.currentLocation
+    );
+    if (levelFit === 'under') {
+      hints.push('현재 지역 난이도가 높습니다. 위험하면 마을로 돌아가 장비를 정비하세요.');
+    }
+    if (hpRatio <= 0.4 || mpRatio <= 0.3) {
+      hints.push('전투 자원이 부족합니다. 휴식 후 탐험하거나 이동으로 전환하세요.');
+    }
+  }
+
+  if (inventoryRatio >= 0.9) {
+    hints.push('인벤토리가 거의 가득 찼습니다. 상점에서 정리해 드랍 손실을 막으세요.');
+  }
+
+  if (hints.length === 0) {
+    hints.push(
+      context === 'town'
+        ? '퀘스트 확인 → 상점 정비 → 저장 순서로 다음 구간을 준비해 보세요.'
+        : '탐험 2~3회마다 상태를 점검하고, 위험하면 즉시 이동해 손실을 줄이세요.'
+    );
+  }
+
+  const displayed = hints.slice(0, 2);
+  console.log(chalk.cyan.bold('🧭 추천 행동'));
+  displayed.forEach((hint) => {
+    console.log(chalk.gray(`   • ${hint}`));
+  });
+}
+
 export async function townLoop(
   gameState: GameState,
   dependencies: TownLoopDependencies
@@ -81,6 +154,7 @@ export async function townLoop(
       'facilities' in currentLocation &&
       currentLocation.facilities.includes('quest-board')
     );
+    showContextGuidance(gameState, 'town', hasQuestBoard);
 
     const choice = await showTownMenu(locationName, hasQuestBoard);
 
@@ -97,7 +171,7 @@ export async function townLoop(
               `골드가 부족합니다. 여관 휴식 비용 ${innRestCost} 골드가 필요합니다. (현재 ${gameState.player.gold} 골드)`,
               'warning'
             );
-            await pressEnterToContinue();
+            await pressEnterToContinue('important');
             break;
           }
 
@@ -110,7 +184,7 @@ export async function townLoop(
           gameState.player.stats.hp = gameState.player.stats.maxHp;
           gameState.player.stats.mp = gameState.player.stats.maxMp;
           showMessage(`HP와 MP가 완전히 회복되었습니다! (잔액: ${gameState.player.gold} 골드)`, 'success');
-          await pressEnterToContinue();
+          await pressEnterToContinue('important');
           break;
         }
 
@@ -129,7 +203,7 @@ export async function townLoop(
         } else {
           showMessage('특별한 것은 발견하지 못했습니다.', 'info');
         }
-        await pressEnterToContinue();
+        await pressEnterToContinue('normal');
         break;
 
       case 'travel':
@@ -146,7 +220,7 @@ export async function townLoop(
           await questBoardLoop(gameState);
         } else {
           showMessage('이 지역에는 퀘스트 게시판이 없습니다.', 'warning');
-          await pressEnterToContinue();
+          await pressEnterToContinue('important');
         }
         break;
 
@@ -174,6 +248,7 @@ export async function dungeonLoop(
     showStats(gameState.player);
     showSeasonalEventSummary(gameState);
     showTrackedQuestSummary(gameState);
+    showContextGuidance(gameState, 'dungeon');
 
     const choice = await showDungeonMenu(locationName, true);
 
@@ -212,7 +287,7 @@ export async function dungeonLoop(
           } else {
             showMessage('아무것도 발견하지 못했습니다.', 'info');
           }
-          await pressEnterToContinue();
+          await pressEnterToContinue('normal');
         }
         break;
 
@@ -234,7 +309,7 @@ export async function dungeonLoop(
           );
           showMessage(`HP ${hpRestore}, MP ${mpRestore} 회복!`, 'success');
         }
-        await pressEnterToContinue();
+        await pressEnterToContinue('important');
         break;
 
       case 'travel':

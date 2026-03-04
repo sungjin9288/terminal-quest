@@ -14,16 +14,18 @@ Exit criteria:
 - Fatal runtime errors produce crash logs for postmortem debugging.
 
 ## Phase 2: Product Completeness
-- [ ] Minimum content depth target:
+- [x] Minimum content depth target:
   - [x] 12+ hour first clear playtime
   - [x] 25+ meaningful quests with branching objectives
   - [x] Endgame loop (repeatable challenge, scaling rewards)
 - [x] Economy balancing:
   - [x] Gold sinks and anti-inflation controls
   - [x] Item progression pacing by act
-- [ ] UX polish:
+- [x] UX polish:
   - [x] Settings menu (text speed, color mode, key hints)
   - [x] Accessibility pass for color-only signals
+  - [x] Prompt priority policy and pacing presets (`normal/important/critical`, auto-pace profiles)
+  - [x] Context-aware recommendation guide (town/dungeon action hints)
 
 Exit criteria:
 - Internal playthrough confirms full campaign completion without blockers.
@@ -38,6 +40,12 @@ Exit criteria:
   - [x] Issue triage and patch SLAs
 - [x] Quality operations:
   - [x] Smoke-test checklist for each release candidate
+  - [x] Smoke-report automation (`npm run release:smoke`)
+  - [x] Release candidate hard gate (`npm run release:candidate`)
+  - [x] Sign-off tracking automation (`npm run release:signoff`)
+  - [x] Package launch verification script (`npm run verify:package-launch`)
+  - [x] Runtime smoke verification script (`npm run verify:runtime-smoke`)
+  - [x] Release artifact integrity verification (`npm run verify:release-artifacts`)
   - [x] Save migration verification across previous versions
 
 Exit criteria:

@@ -53,7 +53,7 @@ export async function handleTravel(gameState: GameState): Promise<TravelFlowResu
 
   if (!isUnlocked) {
     showMessage('이 지역은 아직 해금되지 않았습니다.', 'warning');
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
     return { locationChanged: false };
   }
 
@@ -78,7 +78,7 @@ export async function handleTravel(gameState: GameState): Promise<TravelFlowResu
     showQuestProgressUpdates(gameState, questUpdates);
   }
 
-  await pressEnterToContinue();
+  await pressEnterToContinue('important');
 
   return { locationChanged: true };
 }

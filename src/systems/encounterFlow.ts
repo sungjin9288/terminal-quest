@@ -206,7 +206,7 @@ async function applyBossProgress(gameState: GameState, bossId: string): Promise<
   if (!currentLocation || !('act' in currentLocation)) {
     syncUnlockedConnections(gameState);
     if (hasProgressMessage) {
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
     }
     return;
   }
@@ -341,7 +341,7 @@ async function applyBossProgress(gameState: GameState, bossId: string): Promise<
   syncUnlockedConnections(gameState);
 
   if (hasProgressMessage) {
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
   }
 }
 
@@ -442,7 +442,7 @@ export async function runEncounter(gameState: GameState): Promise<'victory' | 'd
     '전투!'
   );
 
-  await pressEnterToContinue();
+  await pressEnterToContinue('important');
 
   const inventorySnapshotBeforeBattle = new Map<string, number>();
   for (const itemId of gameState.player.inventory) {
@@ -548,7 +548,7 @@ export async function runEncounter(gameState: GameState): Promise<'victory' | 'd
     if (locationBossId && monster.isBoss && monster.id === locationBossId) {
       await applyBossProgress(gameState, locationBossId);
     } else if (hasQuestProgress || hasChallengeProgressMessage) {
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
     }
 
     return 'victory';
@@ -556,14 +556,14 @@ export async function runEncounter(gameState: GameState): Promise<'victory' | 'd
     const previousStreak = resetEndgameChallengeStreak(gameState, challengeState);
     if (previousStreak > 0) {
       showMessage(`심연 도전 연승 종료 (${previousStreak}연승)`, 'warning');
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
     }
     return 'escape';
   } else {
     const previousStreak = resetEndgameChallengeStreak(gameState, challengeState);
     if (previousStreak > 0) {
       showMessage(`심연 도전 연승 종료 (${previousStreak}연승)`, 'warning');
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
     }
     return 'defeat';
   }

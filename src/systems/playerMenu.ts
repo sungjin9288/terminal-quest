@@ -50,12 +50,12 @@ async function inventoryMenuLoop(player: Player): Promise<void> {
     switch (choice) {
       case 'items':
         await showInventory(player);
-        await pressEnterToContinue();
+        await pressEnterToContinue('normal');
         break;
 
       case 'equipment':
         await showEquipment(player);
-        await pressEnterToContinue();
+        await pressEnterToContinue('normal');
         break;
 
       case 'manage':
@@ -65,7 +65,7 @@ async function inventoryMenuLoop(player: Player): Promise<void> {
       case 'sort':
         sortInventory(player);
         showMessage('인벤토리를 정렬했습니다!', 'success');
-        await pressEnterToContinue();
+        await pressEnterToContinue('normal');
         break;
 
       case 'back':
@@ -94,14 +94,14 @@ async function manageInventoryItems(player: Player): Promise<void> {
       switch (action) {
         case 'details':
           showItemDetail(slot.item);
-          await pressEnterToContinue();
+          await pressEnterToContinue('normal');
           break;
 
         case 'equip':
           {
             const equipResult = equipItem(player, slot.itemId);
             showMessage(equipResult.message, equipResult.success ? 'success' : 'error');
-            await pressEnterToContinue();
+            await pressEnterToContinue('normal');
             if (equipResult.success) continueManaging = false;
           }
           break;
@@ -110,7 +110,7 @@ async function manageInventoryItems(player: Player): Promise<void> {
           {
             const useResult = useItem(player, slot.itemId);
             showMessage(useResult.message, useResult.success ? 'success' : 'error');
-            await pressEnterToContinue();
+            await pressEnterToContinue('normal');
             if (useResult.success) continueManaging = false;
           }
           break;
@@ -118,7 +118,7 @@ async function manageInventoryItems(player: Player): Promise<void> {
         case 'drop':
           if (slot.item.type === ItemType.QuestItem) {
             showMessage('퀘스트 아이템은 버릴 수 없습니다.', 'warning');
-            await pressEnterToContinue();
+            await pressEnterToContinue('normal');
             break;
           }
 
@@ -130,7 +130,7 @@ async function manageInventoryItems(player: Player): Promise<void> {
 
             const dropResult = removeItem(player, slot.itemId, 1);
             showMessage(dropResult.message, dropResult.success ? 'success' : 'error');
-            await pressEnterToContinue();
+            await pressEnterToContinue('normal');
 
             if (dropResult.success) continueManaging = false;
           }
@@ -233,7 +233,7 @@ async function skillMenuLoop(player: Player): Promise<void> {
 
     const result = learnSkill(player, learnAnswer.skillId);
     showMessage(result.message, result.success ? 'success' : 'error');
-    await pressEnterToContinue();
+    await pressEnterToContinue('normal');
   }
 }
 
@@ -259,7 +259,7 @@ export async function inGameMenuLoop(
         clearScreen();
         await showTitle();
         showStats(gameState.player);
-        await pressEnterToContinue();
+        await pressEnterToContinue('normal');
         break;
 
       case 'skills':

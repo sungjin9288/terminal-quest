@@ -19,6 +19,8 @@ Terminal Quest is an immersive text-based RPG game that runs directly in your te
 - **Endgame Modifier Rotation**: Rotating abyss modifiers with risk/reward tuning per run
 - **Seasonal Live Events**: Quarterly event rotation with encounter/quest reward modifiers
 - **Telemetry-lite (Opt-in)**: Non-PII progression funnel events stored locally
+- **Prompt Pace Mode**: Switch between streamlined auto-continue flow and classic Enter-confirm flow, with snappy/balanced/cinematic presets
+- **Context Guide Hints**: Adaptive town/dungeon recommendations for safer progression and quest flow
 - **12 Unique Locations**: From Memory Forest to Corruption Space
 
 ## Game World
@@ -174,8 +176,15 @@ terminal-quest/
 | `npm run validate:economy` | Run economy balance validation only |
 | `npm run balance:notes` | Generate dated live-balance patch notes from validators |
 | `npm run verify:save-migration` | Run legacy save migration verification tests |
+| `npm run verify:package-launch` | Launch built package entry once, auto-select Exit, and validate graceful startup/shutdown |
+| `npm run verify:runtime-smoke` | Run focused runtime smoke scenario tests and write `releases/smoke-reports/runtime-smoke-latest.json` |
+| `npm run verify:release-artifacts` | Validate packaged archive checksum (`.sha256`) and release manifest integrity |
+| `npm run release:signoff -- --status` | Show current QA/Engineering/Release Manager sign-off state (`release-signoff-latest.json`) |
+| `npm run release:signoff:all -- --by "<name>"` | Approve all sign-off roles at once for small-team release flow |
 | `npm run release:check` | Run paid-release readiness gate (build/test/data checks) |
-| `npm run release:package` | Build versioned release bundle + changelog sync |
+| `npm run release:smoke` | Run release smoke flow and generate markdown + JSON summaries under `releases/smoke-reports/` |
+| `npm run release:candidate` | Final release candidate gate: run smoke + enforce version/commit/branch-matched sign-offs for current candidate |
+| `npm run release:package` | Build versioned release bundle + changelog sync + archive checksum (`.sha256`) |
 
 ## Testing
 
@@ -211,8 +220,12 @@ npm test -- tests/combat.test.ts
 - Changelog: `CHANGELOG.md`
 - Support policy: `docs/support-policy.md`
 - Release gate: `npm run release:check`
+- Release smoke report: `npm run release:smoke`
+- Release candidate gate: `npm run release:candidate`
+- Release sign-off status: `npm run release:signoff -- --status`
 - Balance cadence: `docs/live-balance-cadence.md` (`npm run balance:notes`)
 - Seasonal events: `docs/seasonal-events.md`
+- Prompt priority policy: `docs/prompt-priority-policy.md`
 - Telemetry event log path (when enabled): `telemetry/events.ndjson`
 
 ## Tips for Players

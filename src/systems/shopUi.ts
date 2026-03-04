@@ -170,14 +170,14 @@ async function buyFromShop(
     showMessage(result.message, 'error');
   }
 
-  await pressEnterToContinue();
+  await pressEnterToContinue('important');
 }
 
 async function sellToShop(gameState: GameState): Promise<void> {
   const sellableItems = getPlayerSellableItems(gameState.player);
   if (sellableItems.length === 0) {
     showMessage('판매할 수 있는 아이템이 없습니다.', 'warning');
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
     return;
   }
 
@@ -211,5 +211,5 @@ async function sellToShop(gameState: GameState): Promise<void> {
     showMessage(result.message, 'error');
   }
 
-  await pressEnterToContinue();
+  await pressEnterToContinue('important');
 }

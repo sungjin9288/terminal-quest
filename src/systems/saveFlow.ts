@@ -68,7 +68,7 @@ export async function loadGameFlow(): Promise<GameState | null> {
         }
       }
     }
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
     return null;
   }
 
@@ -84,11 +84,11 @@ export async function loadGameFlow(): Promise<GameState | null> {
       );
       const metadata = getSaveMetadata(slotNumber);
       if (metadata) showLoadSuccess(metadata);
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
       return result.gameState;
     } else {
       showMessage(result.message, 'error');
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
       return null;
     }
   }
@@ -109,7 +109,7 @@ export async function saveGameFlow(gameState: GameState): Promise<boolean> {
 
   if (!canSave.canSave) {
     showMessage(canSave.reason, 'warning');
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
     return false;
   }
 
@@ -148,7 +148,7 @@ export async function saveGameFlow(gameState: GameState): Promise<boolean> {
   if (useToken) {
     if (!consumeSaveToken(gameState.player)) {
       showMessage('세이브 토큰이 부족합니다!', 'error');
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
       return false;
     }
   }
@@ -166,6 +166,6 @@ export async function saveGameFlow(gameState: GameState): Promise<boolean> {
     showMessage(result.message, 'error');
   }
 
-  await pressEnterToContinue();
+  await pressEnterToContinue('important');
   return result.success;
 }

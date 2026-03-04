@@ -19,7 +19,7 @@ import {
 export function showBattleScreen(player: Player, monster: MonsterInstance): void {
   console.log();
   console.log(chalk.red.bold('━'.repeat(60)));
-  console.log(chalk.red.bold('⚔️  BATTLE!'));
+  console.log(chalk.red.bold('⚔️  전투!'));
   console.log(chalk.red.bold('━'.repeat(60)));
   console.log();
 
@@ -136,12 +136,12 @@ export function showBattleResult(won: boolean, rewards?: BattleRewards): void {
   showSeparator(60);
 
   if (won && rewards) {
-    console.log(chalk.green.bold('🎉 VICTORY! 🎉'));
+    console.log(chalk.green.bold('🎉 승리! 🎉'));
     showSeparator(60);
     console.log();
 
     const rewardTable = new Table({
-      head: [chalk.yellow('Reward'), chalk.yellow('Amount')],
+      head: [chalk.yellow('보상'), chalk.yellow('수량')],
       colWidths: [30, 20],
       style: {
         head: [],
@@ -150,23 +150,23 @@ export function showBattleResult(won: boolean, rewards?: BattleRewards): void {
     });
 
     rewardTable.push(
-      [chalk.cyan('⭐ Experience'), chalk.white(`+${rewards.experience} EXP`)],
-      [chalk.yellow('💰 Gold'), chalk.white(`+${rewards.gold} Gold`)]
+      [chalk.cyan('⭐ 경험치'), chalk.white(`+${rewards.experience} EXP`)],
+      [chalk.yellow('💰 골드'), chalk.white(`+${rewards.gold} 골드`)]
     );
 
     if (rewards.items.length > 0) {
       rewardTable.push([
-        chalk.magenta('🎁 Items'),
-        chalk.white(`${rewards.items.length} item(s)`)
+        chalk.magenta('🎁 아이템'),
+        chalk.white(`${rewards.items.length}개`)
       ]);
     }
 
     console.log(rewardTable.toString());
     console.log();
   } else {
-    console.log(chalk.red.bold('💀 DEFEAT 💀'));
+    console.log(chalk.red.bold('💀 패배 💀'));
     showSeparator(60);
-    console.log(chalk.gray('You have been defeated...'));
+    console.log(chalk.gray('전투에서 쓰러졌습니다...'));
     console.log();
   }
 }
@@ -177,9 +177,9 @@ export function showBattleResult(won: boolean, rewards?: BattleRewards): void {
 export function showTurnIndicator(isPlayerTurn: boolean, turnNumber: number): void {
   console.log();
   if (isPlayerTurn) {
-    console.log(chalk.cyan.bold(`▶️  Turn ${turnNumber} - Your Turn`));
+    console.log(chalk.cyan.bold(`▶️  턴 ${turnNumber} - 플레이어 턴`));
   } else {
-    console.log(chalk.red.bold(`▶️  Turn ${turnNumber} - Enemy Turn`));
+    console.log(chalk.red.bold(`▶️  턴 ${turnNumber} - 적 턴`));
   }
   console.log();
 }
@@ -190,11 +190,11 @@ export function showTurnIndicator(isPlayerTurn: boolean, turnNumber: number): vo
 export function showLevelUpInBattle(player: Player): void {
   console.log();
   console.log(chalk.yellow.bold('═'.repeat(60)));
-  console.log(chalk.yellow.bold('        🌟 LEVEL UP! 🌟'));
+  console.log(chalk.yellow.bold('        🌟 레벨 업! 🌟'));
   console.log(chalk.yellow.bold('═'.repeat(60)));
-  console.log(chalk.green(`You are now level ${player.level}!`));
-  console.log(chalk.cyan('Your stats have increased!'));
-  console.log(chalk.green('HP and MP fully restored!'));
+  console.log(chalk.green(`현재 레벨: ${player.level}`));
+  console.log(chalk.cyan('능력치가 상승했습니다!'));
+  console.log(chalk.green('HP/MP가 모두 회복되었습니다!'));
   console.log(chalk.yellow.bold('═'.repeat(60)));
   console.log();
 }
@@ -211,7 +211,7 @@ export function showBattleSummary(
   const monsterHpBar = createHealthBar(monster.currentHp, monster.stats.maxHp);
 
   console.log();
-  console.log(chalk.gray(`--- Turn ${turnNumber} Summary ---`));
+  console.log(chalk.gray(`--- 턴 ${turnNumber} 요약 ---`));
   console.log(
     chalk.cyan(`🧑 ${player.name}: `) +
     playerHpBar +
@@ -233,14 +233,14 @@ export function showStatusEffects(player: Player, monster: MonsterInstance): voi
     const effects = player.statusEffects
       .map(e => `${e.type}(${e.duration})`)
       .join(', ');
-    console.log(chalk.magenta(`🧑 Status: ${effects}`));
+    console.log(chalk.magenta(`🧑 상태: ${effects}`));
   }
 
   if (monster.statusEffects.length > 0) {
     const effects = monster.statusEffects
       .map(e => `${e.type}(${e.duration})`)
       .join(', ');
-    console.log(chalk.magenta(`${monster.icon} Status: ${effects}`));
+    console.log(chalk.magenta(`${monster.icon} 상태: ${effects}`));
   }
 
   if (player.statusEffects.length > 0 || monster.statusEffects.length > 0) {
@@ -254,11 +254,11 @@ export function showStatusEffects(player: Player, monster: MonsterInstance): voi
 export function showEscapeAttempt(success: boolean): void {
   if (success) {
     console.log();
-    console.log(chalk.yellow('🏃 You successfully escaped from battle!'));
+    console.log(chalk.yellow('🏃 전투에서 무사히 도주했습니다!'));
     console.log();
   } else {
     console.log();
-    console.log(chalk.red('❌ Failed to escape!'));
+    console.log(chalk.red('❌ 도주에 실패했습니다!'));
     console.log();
   }
 }
@@ -267,7 +267,7 @@ export function showEscapeAttempt(success: boolean): void {
  * Display monster attack warning
  */
 export function showMonsterAttackWarning(monsterName: string): void {
-  console.log(chalk.red(`⚠️  ${monsterName} is preparing to attack!`));
+  console.log(chalk.red(`⚠️  ${monsterName}가 공격을 준비합니다!`));
 }
 
 /**

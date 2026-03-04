@@ -31,6 +31,7 @@ import {
   ensureQuestHistoryState,
   QUEST_HISTORY_LIMIT
 } from './gameStateMigration.js';
+import { getSeasonalEventNameById } from './seasonalEvents.js';
 import {
   clearScreen,
   showTitle,
@@ -116,7 +117,8 @@ function showQuestDetails(quest: Quest): void {
     console.log(chalk.cyan('  분류: 반복 퀘스트'));
   }
   if (quest.seasonalEventId) {
-    console.log(chalk.yellow(`  시즌 제한: ${quest.seasonalEventId}`));
+    const seasonalEventName = getSeasonalEventNameById(quest.seasonalEventId);
+    console.log(chalk.yellow(`  시즌 제한: ${seasonalEventName ?? quest.seasonalEventId}`));
   }
 }
 
@@ -237,7 +239,7 @@ export async function applyTalkQuestProgress(
 
   if (updates.length > 0) {
     showQuestProgressUpdates(gameState, updates);
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
   }
 }
 
@@ -304,7 +306,15 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
 
     if (answer.action === 'accept') {
       const questChoices = availableQuests.map(quest => ({
-        name: `${quest.seasonalEventId ? '🌤 ' : ''}${quest.name} (Lv ${quest.requiredLevel})`,
+        name: (() => {
+          if (!quest.seasonalEventId) {
+            return `${quest.name} (Lv ${quest.requiredLevel})`;
+          }
+
+          const seasonalEventName = getSeasonalEventNameById(quest.seasonalEventId);
+          const seasonalLabel = seasonalEventName ?? '시즌 이벤트';
+          return `🌤 ${seasonalLabel} | ${quest.name} (Lv ${quest.requiredLevel})`;
+        })(),
         value: quest.id
       }));
       questChoices.push({ name: chalk.gray('← 취소'), value: 'cancel' });
@@ -322,14 +332,14 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
         const selectedQuest = availableQuests.find(quest => quest.id === questAnswer.questId);
         if (!selectedQuest) {
           showMessage('퀘스트 정보를 불러오지 못했습니다.', 'error');
-          await pressEnterToContinue();
+          await pressEnterToContinue('important');
           continue;
         }
 
         const confirmed = await previewQuestAndConfirm(selectedQuest, 'accept');
         if (!confirmed) {
           showMessage('퀘스트 수락을 취소했습니다.', 'info');
-          await pressEnterToContinue();
+          await pressEnterToContinue('important');
           continue;
         }
 
@@ -342,7 +352,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
         }
       }
 
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
       continue;
     }
 
@@ -355,7 +365,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
         showQuestDetails(quest);
       }
 
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
       continue;
     }
 
@@ -368,7 +378,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
         showQuestDetails(quest);
       }
 
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
       continue;
     }
 
@@ -609,18 +619,18 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
               console.log(chalk.magenta.bold('\n🔎 히스토리 원본 퀘스트\n'));
               console.log(chalk.gray(`선택 로그: ${formatQuestHistoryEntryText(selectedCandidate.entry)}`));
               showQuestDetails(targetQuest);
-              await pressEnterToContinue();
+              await pressEnterToContinue('important');
               continue;
             }
           }
 
           showMessage('선택한 로그의 원본 퀘스트를 찾을 수 없습니다.', 'warning');
-          await pressEnterToContinue();
+          await pressEnterToContinue('important');
           continue;
         }
       }
 
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
       continue;
     }
 
@@ -644,14 +654,14 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
         const selectedQuest = completableQuests.find(quest => quest.id === completeAnswer.questId);
         if (!selectedQuest) {
           showMessage('퀘스트 정보를 불러오지 못했습니다.', 'error');
-          await pressEnterToContinue();
+          await pressEnterToContinue('important');
           continue;
         }
 
         const confirmed = await previewQuestAndConfirm(selectedQuest, 'complete');
         if (!confirmed) {
           showMessage('퀘스트 보상 수령을 취소했습니다.', 'info');
-          await pressEnterToContinue();
+          await pressEnterToContinue('important');
           continue;
         }
 
@@ -710,7 +720,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
         }
       }
 
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
     }
   }
 }

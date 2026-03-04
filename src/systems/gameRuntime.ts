@@ -88,7 +88,7 @@ export async function runGameRuntime(
     sessionEndReason = 'runtime-error';
     console.error(chalk.red('오류 발생:'), error);
     showMessage('예기치 않은 오류가 발생했습니다. 메인 메뉴로 돌아갑니다...', 'error');
-    await pressEnterToContinue();
+    await pressEnterToContinue('critical');
   } finally {
     trackTelemetryEvent('session_end', gameState, { reason: sessionEndReason });
   }

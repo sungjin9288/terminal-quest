@@ -152,7 +152,7 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
           );
 
           if (consumables.length === 0) {
-            showBattleLog('No items available!', 'info');
+            showBattleLog('사용 가능한 아이템이 없습니다!', 'info');
             await waitForAnimation(1000);
             // Don't consume turn if no items
             continue;
@@ -223,7 +223,7 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
         if (playerDefending && result.damage) {
           result.damage = Math.floor(result.damage * 0.5);
           player.stats.hp += Math.floor(result.damage * 0.5); // Refund the reduced damage
-          result.message += ' (Reduced by defense)';
+          result.message += ' (방어로 피해 감소)';
         }
 
         showActionResult(result);
@@ -243,7 +243,7 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
 
     // Show quick summary between turns
     if (battleState === CombatState.PlayerTurn && turnNumber > 1) {
-      await pressEnterToContinue();
+      await pressEnterToContinue('normal');
     }
   }
 
@@ -269,7 +269,7 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
     // Update statistics
     player.enemiesDefeated++;
 
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
 
     // Apply experience with new system
     const expAmount = calculateMonsterExp(
@@ -286,16 +286,16 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
     const levelUpResult = gainExp(player, expAmount);
 
     if (levelUpResult.leveledUp) {
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
       clearScreen();
       await showTitle();
 
       showLevelUp(levelUpResult);
       leveledUp = true;
 
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
     } else {
-      await pressEnterToContinue();
+      await pressEnterToContinue('important');
     }
 
     return {
@@ -306,9 +306,9 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
     };
   } else if (battleState === CombatState.Defeat) {
     showBattleResult(false);
-    showBattleLog('You were defeated...', 'info');
+    showBattleLog('패배했습니다...', 'info');
 
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
 
     return {
       won: false,
@@ -316,9 +316,9 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
       leveledUp: false
     };
   } else if (battleState === CombatState.Escaped) {
-    showBattleLog('You escaped from battle!', 'info');
+    showBattleLog('전투에서 도주했습니다!', 'info');
 
-    await pressEnterToContinue();
+    await pressEnterToContinue('important');
 
     return {
       won: false,

@@ -184,7 +184,7 @@ export async function startNewGameFlow(): Promise<GameState> {
     '프롤로그'
   );
 
-  await pressEnterToContinue();
+  await pressEnterToContinue('important');
 
   return gameState;
 }

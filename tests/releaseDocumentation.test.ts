@@ -9,6 +9,7 @@ describe('Release Documentation', () => {
       'docs/support-policy.md',
       'docs/live-balance-cadence.md',
       'docs/seasonal-events.md',
+      'docs/prompt-priority-policy.md',
       'docs/release-smoke-checklist.md',
       'docs/save-migration-verification.md'
     ];
@@ -24,5 +25,15 @@ describe('Release Documentation', () => {
 
     expect(content).toContain('## Refund Policy');
     expect(content).toContain('## Response And Patch SLA');
+  });
+
+  it('should define priority levels in prompt policy', () => {
+    const policyPath = path.join(process.cwd(), 'docs', 'prompt-priority-policy.md');
+    const content = fs.readFileSync(policyPath, 'utf-8');
+
+    expect(content).toContain('## Priority Levels');
+    expect(content).toContain('`normal`');
+    expect(content).toContain('`important`');
+    expect(content).toContain('`critical`');
   });
 });

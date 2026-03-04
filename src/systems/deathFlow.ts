@@ -29,7 +29,7 @@ export async function handlePlayerDeathFlow(gameState: GameState): Promise<boole
   const deathScreen = showDeathScreen(gameState.player, deathResult);
   console.log(deathScreen);
 
-  await pressEnterToContinue();
+  await pressEnterToContinue('critical');
 
   if (deathResult.isGameOver) {
     trackTelemetryEvent('player_death', gameState, {
@@ -41,7 +41,7 @@ export async function handlePlayerDeathFlow(gameState: GameState): Promise<boole
     clearScreen();
     const gameOverScreen = showGameOver(gameState.player, deathResult.penalty.soulEssence);
     console.log(gameOverScreen);
-    await pressEnterToContinue();
+    await pressEnterToContinue('critical');
     return false;
   }
 
@@ -59,7 +59,7 @@ export async function handlePlayerDeathFlow(gameState: GameState): Promise<boole
   });
 
   showMessage(`${getLocationDisplayName(gameState.player.currentLocation)}에서 부활했습니다.`, 'info');
-  await pressEnterToContinue();
+  await pressEnterToContinue('critical');
 
   return true;
 }

@@ -108,6 +108,11 @@ export function listSeasonalEvents(): readonly SeasonalEventDefinition[] {
   return SEASONAL_EVENTS;
 }
 
+export function getSeasonalEventNameById(eventId: string): string | null {
+  const event = SEASONAL_EVENTS.find(candidate => candidate.id === eventId);
+  return event?.name ?? null;
+}
+
 export function getCurrentSeasonalEvent(
   referenceDate: Date = new Date()
 ): SeasonalEventDefinition {

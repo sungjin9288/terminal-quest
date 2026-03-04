@@ -33,7 +33,9 @@ export async function showTravelMenu(
   currentLocationId: string,
   playerLevel: number,
   defeatedBosses: string[] = [],
-  completedActs: number[] = []
+  completedActs: number[] = [],
+  completedQuests: string[] = [],
+  manuallyUnlockedLocations: string[] = []
 ): Promise<TravelResult> {
   console.log();
   const currentName = getLocationDisplayName(currentLocationId);
@@ -52,7 +54,8 @@ export async function showTravelMenu(
   const choices: Array<{ name: string; value: string; disabled?: string }> = [];
 
   for (const location of connectedLocations) {
-    const isUnlocked = isLocationUnlocked(location.id, defeatedBosses, completedActs);
+    const isUnlocked = manuallyUnlockedLocations.includes(location.id) ||
+      isLocationUnlocked(location.id, defeatedBosses, completedActs, completedQuests);
     const isTown = isTownLocation(location.id);
 
     let displayName = location.name;
@@ -159,7 +162,8 @@ export function showLocationInfo(locationId: string): void {
 export function showMapOverview(
   currentLocationId: string,
   unlockedLocations: string[],
-  defeatedBosses: string[]
+  defeatedBosses: string[],
+  completedQuests: string[] = []
 ): void {
   console.log();
   console.log(chalk.cyan.bold('═'.repeat(50)));
@@ -170,7 +174,8 @@ export function showMapOverview(
   // Show hub
   const hub = getHubTown();
   const hubMarker = currentLocationId === hub.id ? chalk.green('► ') : '  ';
-  console.log(`${hubMarker}${chalk.yellow('🏠 ' + hub.name)}`);
+  const hubStatus = currentLocationId === hub.id ? ' [현재]' : '';
+  console.log(`${hubMarker}${chalk.yellow('🏠 ' + hub.name)}${hubStatus}`);
   console.log(chalk.gray('    └── Act 1 ──'));
 
   // Act 1 locations
@@ -180,26 +185,32 @@ export function showMapOverview(
     if (!location) continue;
 
     const isUnlocked = unlockedLocations.includes(locId) ||
-      isLocationUnlocked(locId, defeatedBosses, []);
+      isLocationUnlocked(locId, defeatedBosses, [], completedQuests);
     const isCurrent = currentLocationId === locId;
     const bossDefeated = 'boss' in location && defeatedBosses.includes((location as GameLocation).boss);
 
     let marker = '        ';
     let icon = '📍';
     let style = chalk.white;
+    let stateLabel = '[미탐험]';
 
     if (isCurrent) {
       marker = chalk.green('    ►   ');
       style = chalk.green;
+      stateLabel = '[현재]';
     } else if (!isUnlocked) {
       icon = '🔒';
       style = chalk.gray;
+      stateLabel = '[잠김]';
     } else if (bossDefeated) {
       icon = '✓';
       style = chalk.green;
+      stateLabel = '[클리어]';
+    } else {
+      stateLabel = '[이동 가능]';
     }
 
-    console.log(`${marker}${style(`${icon} ${location.name}`)}`);
+    console.log(`${marker}${style(`${icon} ${location.name} ${stateLabel}`)}`);
   }
 
   console.log();
@@ -342,26 +353,36 @@ function sleep(ms: number): Promise<void> {
 /**
  * Show town menu
  */
-export type TownMenuOption = 'shop' | 'inn' | 'save' | 'explore' | 'travel' | 'menu';
+export type TownMenuOption = 'shop' | 'inn' | 'save' | 'explore' | 'travel' | 'quest' | 'menu';
 
-export async function showTownMenu(locationName: string): Promise<TownMenuOption> {
+export async function showTownMenu(
+  locationName: string,
+  hasQuestBoard: boolean = false
+): Promise<TownMenuOption> {
   console.log();
   console.log(chalk.cyan.bold(`🏠 ${locationName}`));
   showSeparator();
+
+  const choices = [
+    { name: chalk.yellow('🏪 상점'), value: 'shop' },
+    { name: chalk.blue('🛏️  여관 (휴식)'), value: 'inn' },
+    { name: chalk.green('💾 세이브'), value: 'save' },
+    { name: chalk.magenta('🚶 주변 탐색'), value: 'explore' },
+    { name: chalk.cyan('🗺️  이동'), value: 'travel' }
+  ];
+
+  if (hasQuestBoard) {
+    choices.push({ name: chalk.magenta('📋 퀘스트 게시판'), value: 'quest' });
+  }
+
+  choices.push({ name: chalk.gray('⚙️  메뉴'), value: 'menu' });
 
   const answer = await inquirer.prompt([
     {
       type: 'list',
       name: 'choice',
       message: chalk.cyan('무엇을 하시겠습니까?'),
-      choices: [
-        { name: chalk.yellow('🏪 상점'), value: 'shop' },
-        { name: chalk.blue('🛏️  여관 (휴식)'), value: 'inn' },
-        { name: chalk.green('💾 세이브'), value: 'save' },
-        { name: chalk.magenta('🚶 주변 탐색'), value: 'explore' },
-        { name: chalk.cyan('🗺️  이동'), value: 'travel' },
-        { name: chalk.gray('⚙️  메뉴'), value: 'menu' }
-      ]
+      choices
     }
   ]);
 

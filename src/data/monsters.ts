@@ -9,12 +9,302 @@ import {
   ElementType,
   AIBehavior
 } from '../types/index.js';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+interface MonsterJsonDropItem {
+  id: string;
+  chance?: number;
+}
+
+interface MonsterJsonDrop {
+  gold?: [number, number];
+  exp?: number;
+  items?: MonsterJsonDropItem[];
+}
+
+interface MonsterJsonStats {
+  hp?: number;
+  attack?: number;
+  defense?: number;
+  speed?: number;
+  mp?: number;
+  magicPower?: number;
+  magicDefense?: number;
+  critChance?: number;
+  critDamage?: number;
+  evasion?: number;
+}
+
+interface MonsterJsonEntry {
+  id: string;
+  name?: string;
+  level?: number;
+  type?: string;
+  rank?: string;
+  stats?: MonsterJsonStats;
+  drops?: MonsterJsonDrop;
+  icon?: string;
+  attackPattern?: string;
+}
+
+interface MonsterJsonRegion {
+  monsters?: MonsterJsonEntry[];
+}
+
+interface MonsterJsonFile {
+  regions?: Record<string, MonsterJsonRegion>;
+}
+
+interface LocationDataEntry {
+  id: string;
+  recommendedLevel: [number, number];
+  monsters: string[];
+  boss: string;
+}
+
+interface LocationDataFile {
+  locations?: LocationDataEntry[];
+}
+
+let monsterCache: Record<string, Monster> | null = null;
+
+function mapMonsterType(typeText?: string): MonsterType {
+  const key = (typeText ?? '').toLowerCase();
+  if (key.includes('beast')) return MonsterType.Beast;
+  if (key.includes('undead')) return MonsterType.Undead;
+  if (key.includes('demon')) return MonsterType.Demon;
+  if (key.includes('dragon')) return MonsterType.Dragon;
+  if (key.includes('elemental')) return MonsterType.Elemental;
+  if (key.includes('humanoid')) return MonsterType.Humanoid;
+  if (key.includes('construct')) return MonsterType.Construct;
+  return MonsterType.Aberration;
+}
+
+function mapMonsterRank(rankText?: string): MonsterRank {
+  const key = (rankText ?? '').toLowerCase();
+  if (key.includes('world')) return MonsterRank.WorldBoss;
+  if (key.includes('boss')) return MonsterRank.Boss;
+  if (key.includes('elite')) return MonsterRank.Elite;
+  return MonsterRank.Normal;
+}
+
+function inferElementFromMonsterId(monsterId: string): ElementType {
+  const id = monsterId.toLowerCase();
+  if (/(fire|flame|ember|burn)/.test(id)) return ElementType.Fire;
+  if (/(ice|frost|snow|cold)/.test(id)) return ElementType.Ice;
+  if (/(lightning|thunder|storm|volt)/.test(id)) return ElementType.Lightning;
+  if (/(poison|venom|toxic)/.test(id)) return ElementType.Poison;
+  if (/(dark|shadow|corrupt|void|ghost)/.test(id)) return ElementType.Dark;
+  if (/(light|holy|bless)/.test(id)) return ElementType.Light;
+  return ElementType.Physical;
+}
+
+function buildMonsterFromJson(entry: MonsterJsonEntry): Monster {
+  const level = Math.max(1, entry.level ?? 1);
+  const rank = mapMonsterRank(entry.rank);
+  const isBoss = rank === MonsterRank.Boss || rank === MonsterRank.WorldBoss;
+  const baseHp = Math.max(20, entry.stats?.hp ?? 35 + level * 12);
+
+  const dropItems = (entry.drops?.items ?? []).map(drop => ({
+    itemId: drop.id,
+    chance: Math.min(1, Math.max(0, drop.chance ?? 0.2)),
+    minQuantity: 1,
+    maxQuantity: 1
+  }));
+
+  const minGold = entry.drops?.gold?.[0] ?? level * (isBoss ? 20 : 5);
+  const maxGold = entry.drops?.gold?.[1] ?? level * (isBoss ? 35 : 10);
+
+  return {
+    id: entry.id,
+    name: entry.name ?? entry.id,
+    description: entry.attackPattern
+      ? `${entry.name ?? entry.id} - ${entry.attackPattern}`
+      : `${entry.name ?? entry.id} roams the region.`,
+    type: mapMonsterType(entry.type),
+    rank,
+    level,
+    stats: {
+      hp: baseHp,
+      maxHp: baseHp,
+      mp: Math.max(10, entry.stats?.mp ?? 10 + level * 2),
+      maxMp: Math.max(10, entry.stats?.mp ?? 10 + level * 2),
+      attack: Math.max(3, entry.stats?.attack ?? 4 + level * 2),
+      defense: Math.max(1, entry.stats?.defense ?? 2 + level),
+      magicPower: Math.max(2, entry.stats?.magicPower ?? 3 + level),
+      magicDefense: Math.max(1, entry.stats?.magicDefense ?? 2 + level),
+      speed: Math.max(2, entry.stats?.speed ?? 3 + level),
+      critChance: Math.max(2, entry.stats?.critChance ?? (isBoss ? 15 : 8)),
+      critDamage: Math.max(1.2, entry.stats?.critDamage ?? (isBoss ? 2.0 : 1.5)),
+      evasion: Math.max(0, entry.stats?.evasion ?? (isBoss ? 8 : 5))
+    },
+    element: inferElementFromMonsterId(entry.id),
+    resistances: {},
+    skills: [],
+    aiPattern: isBoss ? AIBehavior.Tactical : AIBehavior.Balanced,
+    dropTable: {
+      guaranteed: [],
+      possible: dropItems,
+      rare: [],
+      minGold,
+      maxGold: Math.max(minGold, maxGold)
+    },
+    expReward: Math.max(1, entry.drops?.exp ?? level * (isBoss ? 90 : 16)),
+    statusEffects: [],
+    icon: entry.icon ?? (isBoss ? '👑' : '👾'),
+    canBeStunned: !isBoss,
+    canBePoisoned: mapMonsterType(entry.type) !== MonsterType.Undead && mapMonsterType(entry.type) !== MonsterType.Construct,
+    isBoss,
+    spawnWeight: isBoss ? 0 : 5
+  };
+}
+
+function loadJsonMonsters(): MonsterJsonEntry[] {
+  try {
+    const dataPath = join(process.cwd(), 'data', 'monsters.json');
+    const rawData = readFileSync(dataPath, 'utf-8');
+    const parsed = JSON.parse(rawData) as MonsterJsonFile;
+    const entries: MonsterJsonEntry[] = [];
+
+    for (const region of Object.values(parsed.regions ?? {})) {
+      for (const monster of region.monsters ?? []) {
+        if (monster.id) entries.push(monster);
+      }
+    }
+
+    return entries;
+  } catch {
+    return [];
+  }
+}
+
+function formatMonsterNameFromId(monsterId: string): string {
+  return monsterId
+    .split('-')
+    .map(token => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(' ');
+}
+
+function createGeneratedLocationMonster(monsterId: string, level: number, isBoss: boolean): Monster {
+  const clampedLevel = Math.max(1, level);
+  const hp = isBoss ? 240 + clampedLevel * 26 : 35 + clampedLevel * 12;
+  const attack = isBoss ? 16 + clampedLevel * 3 : 5 + clampedLevel * 2;
+  const defense = isBoss ? 10 + clampedLevel * 2 : 3 + clampedLevel;
+  const magicPower = isBoss ? 14 + clampedLevel * 2 : 3 + Math.floor(clampedLevel * 1.3);
+  const magicDefense = isBoss ? 9 + clampedLevel * 2 : 2 + clampedLevel;
+  const speed = isBoss ? 8 + Math.floor(clampedLevel * 1.2) : 3 + clampedLevel;
+  const rank = isBoss ? MonsterRank.Boss : MonsterRank.Normal;
+
+  return {
+    id: monsterId,
+    name: formatMonsterNameFromId(monsterId),
+    description: isBoss
+      ? '지역의 핵심 데이터를 지배하는 강력한 존재입니다.'
+      : '지역에서 관측된 미확인 엔티티입니다.',
+    type: isBoss ? MonsterType.Aberration : MonsterType.Construct,
+    rank,
+    level: clampedLevel,
+    stats: {
+      hp,
+      maxHp: hp,
+      mp: Math.max(12, Math.floor(hp * 0.2)),
+      maxMp: Math.max(12, Math.floor(hp * 0.2)),
+      attack,
+      defense,
+      magicPower,
+      magicDefense,
+      speed,
+      critChance: isBoss ? 16 : 8,
+      critDamage: isBoss ? 2.0 : 1.5,
+      evasion: isBoss ? 9 : 5
+    },
+    element: inferElementFromMonsterId(monsterId),
+    resistances: {},
+    skills: [],
+    aiPattern: isBoss ? AIBehavior.Tactical : AIBehavior.Balanced,
+    dropTable: {
+      guaranteed: [],
+      possible: [
+        {
+          itemId: 'health-potion',
+          chance: isBoss ? 0.8 : 0.35,
+          minQuantity: 1,
+          maxQuantity: isBoss ? 3 : 1
+        },
+        {
+          itemId: 'mana-potion',
+          chance: isBoss ? 0.7 : 0.25,
+          minQuantity: 1,
+          maxQuantity: isBoss ? 2 : 1
+        }
+      ],
+      rare: isBoss
+        ? [
+          {
+            itemId: 'save-token',
+            chance: 0.15,
+            minQuantity: 1,
+            maxQuantity: 1
+          }
+        ]
+        : [],
+      minGold: isBoss ? clampedLevel * 24 : clampedLevel * 6,
+      maxGold: isBoss ? clampedLevel * 42 : clampedLevel * 12
+    },
+    expReward: isBoss ? clampedLevel * 100 : clampedLevel * 16,
+    statusEffects: [],
+    icon: isBoss ? '👑' : '👾',
+    canBeStunned: !isBoss,
+    canBePoisoned: !isBoss,
+    isBoss,
+    spawnWeight: isBoss ? 0 : 5
+  };
+}
+
+function loadLocationMonsterReferences(): Array<{ id: string; level: number; isBoss: boolean }> {
+  try {
+    const dataPath = join(process.cwd(), 'data', 'locations.json');
+    const rawData = readFileSync(dataPath, 'utf-8');
+    const parsed = JSON.parse(rawData) as LocationDataFile;
+    const refs = new Map<string, { id: string; level: number; isBoss: boolean }>();
+
+    for (const location of parsed.locations ?? []) {
+      const minLevel = Math.max(1, location.recommendedLevel?.[0] ?? 1);
+      const maxLevel = Math.max(minLevel, location.recommendedLevel?.[1] ?? minLevel);
+      const normalLevel = Math.floor((minLevel + maxLevel) / 2);
+      const bossLevel = maxLevel + 2;
+
+      for (const monsterId of location.monsters ?? []) {
+        const current = refs.get(monsterId);
+        if (!current || current.level < normalLevel) {
+          refs.set(monsterId, { id: monsterId, level: normalLevel, isBoss: false });
+        }
+      }
+
+      if (location.boss) {
+        const current = refs.get(location.boss);
+        if (!current || current.level < bossLevel || !current.isBoss) {
+          refs.set(location.boss, { id: location.boss, level: bossLevel, isBoss: true });
+        }
+      }
+    }
+
+    return Array.from(refs.values());
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Get sample monsters database
  */
 export function getSampleMonsters(): Record<string, Monster> {
-  return {
+  if (monsterCache) {
+    return monsterCache;
+  }
+
+  const monsters: Record<string, Monster> = {
     'slime': {
       id: 'slime',
       name: 'Slime',
@@ -2081,6 +2371,21 @@ export function getSampleMonsters(): Record<string, Monster> {
       spawnWeight: 0
     }
   };
+
+  for (const jsonMonster of loadJsonMonsters()) {
+    if (!monsters[jsonMonster.id]) {
+      monsters[jsonMonster.id] = buildMonsterFromJson(jsonMonster);
+    }
+  }
+
+  for (const ref of loadLocationMonsterReferences()) {
+    if (!monsters[ref.id]) {
+      monsters[ref.id] = createGeneratedLocationMonster(ref.id, ref.level, ref.isBoss);
+    }
+  }
+
+  monsterCache = monsters;
+  return monsterCache;
 }
 
 /**

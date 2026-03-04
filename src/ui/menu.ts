@@ -6,16 +6,162 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { GameMode, CharacterClass } from '../types/index.js';
 import { showMessage, showSeparator } from './display.js';
+import {
+  getRuntimeSettings,
+  getSettingsSummary,
+  updateRuntimeSettings,
+  type ColorMode,
+  type TextSpeed
+} from '../runtime/settings.js';
 
 /**
  * Main menu option
  */
-export type MainMenuOption = 'new-game' | 'load-game' | 'exit';
+export type MainMenuOption = 'new-game' | 'load-game' | 'settings' | 'exit';
 
 /**
  * In-game menu option
  */
-export type InGameMenuOption = 'continue' | 'inventory' | 'stats' | 'save' | 'main-menu' | 'exit';
+export type InGameMenuOption = 'continue' | 'inventory' | 'stats' | 'skills' | 'save' | 'main-menu' | 'exit';
+
+function showListNavigationHint(): void {
+  if (!getRuntimeSettings().showKeyHints) {
+    return;
+  }
+  console.log(chalk.gray('Tip: Use arrow keys to move, Enter to confirm.'));
+}
+
+function showInputHint(): void {
+  if (!getRuntimeSettings().showKeyHints) {
+    return;
+  }
+  console.log(chalk.gray('Tip: Type your input and press Enter.'));
+}
+
+function getTextSpeedLabel(value: TextSpeed): string {
+  if (value === 'slow') return 'Slow';
+  if (value === 'fast') return 'Fast';
+  return 'Normal';
+}
+
+function getColorModeLabel(value: ColorMode): string {
+  return value === 'mono' ? 'Mono' : 'Full';
+}
+
+type SettingsMenuOption = 'text-speed' | 'color-mode' | 'key-hints' | 'back';
+type ExtendedSettingsMenuOption = SettingsMenuOption | 'telemetry';
+
+export async function showSettingsMenu(): Promise<void> {
+  let editing = true;
+
+  while (editing) {
+    const settings = getRuntimeSettings();
+
+    console.log();
+    showMessage('Game Settings', 'info');
+    showSeparator();
+    console.log(chalk.gray(getSettingsSummary(settings)));
+    console.log();
+    showListNavigationHint();
+
+    const answer = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: chalk.cyan('Adjust settings:'),
+        choices: [
+          {
+            name: `⏱️  Text Speed: ${getTextSpeedLabel(settings.textSpeed)}`,
+            value: 'text-speed'
+          },
+          {
+            name: `🎨 Color Mode: ${getColorModeLabel(settings.colorMode)}`,
+            value: 'color-mode'
+          },
+          {
+            name: `⌨️  Key Hints: ${settings.showKeyHints ? 'On' : 'Off'}`,
+            value: 'key-hints'
+          },
+          {
+            name: `📊 Anonymous Telemetry: ${settings.telemetryOptIn ? 'On' : 'Off'}`,
+            value: 'telemetry'
+          },
+          {
+            name: '← Back',
+            value: 'back'
+          }
+        ]
+      }
+    ]);
+
+    switch (answer.action as ExtendedSettingsMenuOption) {
+      case 'text-speed': {
+        showListNavigationHint();
+        const speedAnswer = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'textSpeed',
+            message: chalk.cyan('Select text speed:'),
+            choices: [
+              { name: 'Slow', value: 'slow' },
+              { name: 'Normal', value: 'normal' },
+              { name: 'Fast', value: 'fast' }
+            ],
+            default: settings.textSpeed
+          }
+        ]);
+        const updated = updateRuntimeSettings({
+          textSpeed: speedAnswer.textSpeed as TextSpeed
+        });
+        showMessage(`Text speed set to ${getTextSpeedLabel(updated.textSpeed)}.`, 'success');
+        break;
+      }
+      case 'color-mode': {
+        showListNavigationHint();
+        const colorAnswer = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'colorMode',
+            message: chalk.cyan('Select color mode:'),
+            choices: [
+              { name: 'Full Color', value: 'full' },
+              { name: 'Monochrome', value: 'mono' }
+            ],
+            default: settings.colorMode
+          }
+        ]);
+        const updated = updateRuntimeSettings({
+          colorMode: colorAnswer.colorMode as ColorMode
+        });
+        showMessage(`Color mode set to ${getColorModeLabel(updated.colorMode)}.`, 'success');
+        break;
+      }
+      case 'key-hints': {
+        const updated = updateRuntimeSettings({
+          showKeyHints: !settings.showKeyHints
+        });
+        showMessage(
+          `Key hints ${updated.showKeyHints ? 'enabled' : 'disabled'}.`,
+          'success'
+        );
+        break;
+      }
+      case 'telemetry': {
+        const updated = updateRuntimeSettings({
+          telemetryOptIn: !settings.telemetryOptIn
+        });
+        showMessage(
+          `Anonymous telemetry ${updated.telemetryOptIn ? 'enabled' : 'disabled'}.`,
+          'success'
+        );
+        break;
+      }
+      case 'back':
+        editing = false;
+        break;
+    }
+  }
+}
 
 /**
  * Display and handle main menu
@@ -23,6 +169,7 @@ export type InGameMenuOption = 'continue' | 'inventory' | 'stats' | 'save' | 'ma
 export async function showMainMenu(): Promise<MainMenuOption> {
   console.log();
   showSeparator();
+  showListNavigationHint();
 
   const answer = await inquirer.prompt([
     {
@@ -37,6 +184,10 @@ export async function showMainMenu(): Promise<MainMenuOption> {
         {
           name: chalk.blue('📂 Load Game'),
           value: 'load-game'
+        },
+        {
+          name: chalk.yellow('⚙️  Settings'),
+          value: 'settings'
         },
         {
           name: chalk.red('🚪 Exit'),
@@ -56,6 +207,7 @@ export async function showGameModeSelect(): Promise<GameMode> {
   console.log();
   showMessage('Select your difficulty:', 'info');
   showSeparator();
+  showListNavigationHint();
 
   const answer = await inquirer.prompt([
     {
@@ -101,6 +253,7 @@ export async function showCharacterCreation(): Promise<CharacterCreationData> {
   console.log();
   showMessage('Character Creation', 'success');
   showSeparator();
+  showInputHint();
 
   const nameAnswer = await inquirer.prompt([
     {
@@ -128,6 +281,7 @@ export async function showCharacterCreation(): Promise<CharacterCreationData> {
   console.log(chalk.cyan('✨ Cleric') + chalk.gray(' - Healing and support abilities'));
   console.log(chalk.blue('🏹 Ranger') + chalk.gray(' - Ranged attacks, balanced stats'));
   console.log();
+  showListNavigationHint();
 
   const classAnswer = await inquirer.prompt([
     {
@@ -171,6 +325,7 @@ export async function showCharacterCreation(): Promise<CharacterCreationData> {
 export async function showInGameMenu(): Promise<InGameMenuOption> {
   console.log();
   showSeparator();
+  showListNavigationHint();
 
   const answer = await inquirer.prompt([
     {
@@ -189,6 +344,10 @@ export async function showInGameMenu(): Promise<InGameMenuOption> {
         {
           name: chalk.yellow('📊 Character Stats'),
           value: 'stats'
+        },
+        {
+          name: chalk.magenta('✨ Skills'),
+          value: 'skills'
         },
         {
           name: chalk.cyan('💾 Save Game'),
@@ -218,6 +377,7 @@ export async function showExplorationMenu(locationName: string): Promise<Explora
   console.log();
   console.log(chalk.cyan.bold(`📍 Current Location: ${locationName}`));
   showSeparator();
+  showListNavigationHint();
 
   const answer = await inquirer.prompt([
     {
@@ -260,6 +420,7 @@ export type CombatOption = 'attack' | 'skill' | 'item' | 'defend' | 'escape';
 export async function showCombatMenu(): Promise<CombatOption> {
   console.log();
   showSeparator();
+  showListNavigationHint();
 
   const answer = await inquirer.prompt([
     {
@@ -298,6 +459,7 @@ export async function showCombatMenu(): Promise<CombatOption> {
  * Confirm action
  */
 export async function confirmAction(message: string): Promise<boolean> {
+  showListNavigationHint();
   const answer = await inquirer.prompt([
     {
       type: 'confirm',
@@ -329,6 +491,8 @@ export async function showSaveFileList(saveFiles: string[]): Promise<SaveFileCho
     value: '__new__'
   });
 
+  showListNavigationHint();
+
   const answer = await inquirer.prompt([
     {
       type: 'list',
@@ -339,6 +503,7 @@ export async function showSaveFileList(saveFiles: string[]): Promise<SaveFileCho
   ]);
 
   if (answer.file === '__new__') {
+    showInputHint();
     const newFileAnswer = await inquirer.prompt([
       {
         type: 'input',

@@ -6,6 +6,8 @@
 import { Player } from '../types/character.js';
 import { AnyItem, ItemRarity, ItemType, Weapon, Armor, Consumable } from '../types/item.js';
 import { getSampleItems } from '../data/items.js';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 /**
  * Shop type enumeration
@@ -104,6 +106,7 @@ interface ShopDataStore {
   shopConfig: {
     baseSellMultiplier: number;
     levelUnlockThresholds: number[];
+    [key: string]: unknown;
   };
 }
 
@@ -137,28 +140,42 @@ interface ShopData {
 let shopData: ShopDataStore | null = null;
 
 /**
- * Load shop data
+ * Default shop data fallback
  */
-export async function loadShopData(): Promise<ShopDataStore> {
+function getDefaultShopData(): ShopDataStore {
+  return {
+    shops: {},
+    shopConfig: {
+      baseSellMultiplier: 0.5,
+      levelUnlockThresholds: [1, 5, 10, 15, 20, 25]
+    }
+  };
+}
+
+/**
+ * Ensure shop data is loaded from local JSON file
+ */
+function ensureShopDataLoaded(): ShopDataStore {
   if (shopData) {
     return shopData;
   }
 
   try {
-    const response = await fetch('../data/shops.json');
-    shopData = await response.json() as ShopDataStore;
+    const dataPath = join(process.cwd(), 'data', 'shops.json');
+    const rawData = readFileSync(dataPath, 'utf-8');
+    shopData = JSON.parse(rawData) as ShopDataStore;
     return shopData;
   } catch {
-    // Return default data if loading fails
-    shopData = {
-      shops: {},
-      shopConfig: {
-        baseSellMultiplier: 0.5,
-        levelUnlockThresholds: [1, 5, 10, 15, 20, 25]
-      }
-    };
+    shopData = getDefaultShopData();
     return shopData;
   }
+}
+
+/**
+ * Load shop data
+ */
+export async function loadShopData(): Promise<ShopDataStore> {
+  return ensureShopDataLoaded();
 }
 
 /**
@@ -172,14 +189,14 @@ export function setShopData(data: ShopDataStore): void {
  * Get all available shops
  */
 export function getShops(): Record<string, ShopData> {
-  return shopData?.shops ?? {};
+  return ensureShopDataLoaded().shops;
 }
 
 /**
  * Get a specific shop by ID
  */
 export function getShop(shopId: string): ShopData | null {
-  return shopData?.shops[shopId] ?? null;
+  return ensureShopDataLoaded().shops[shopId] ?? null;
 }
 
 /**

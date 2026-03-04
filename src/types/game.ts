@@ -122,10 +122,31 @@ export interface Quest {
   isMainQuest: boolean;
   /** Is repeatable */
   repeatable: boolean;
+  /** Seasonal event requirement (optional) */
+  seasonalEventId?: string;
   /** Time limit in seconds (if any) */
   timeLimit?: number;
   /** Failure conditions */
   failureConditions?: string[];
+}
+
+/**
+ * Quest history event type
+ */
+export type QuestHistoryType = 'accepted' | 'progress' | 'ready' | 'completed' | 'reward' | 'system';
+
+/**
+ * Quest history entry
+ */
+export interface QuestHistoryEntry {
+  /** Event timestamp (epoch ms) */
+  timestamp: number;
+  /** Event kind */
+  type: QuestHistoryType;
+  /** Human-readable message */
+  message: string;
+  /** Related quest ID (if any) */
+  questId?: string;
 }
 
 /**
@@ -208,6 +229,16 @@ export interface GameStatistics {
   highestLevel: number;
   /** Fastest boss kill (in turns) */
   fastestBossKill?: number;
+  /** Endgame challenge unlocked */
+  endgameChallengeUnlocked?: boolean;
+  /** Endgame challenge clears */
+  endgameChallengeClears?: number;
+  /** Endgame challenge current tier */
+  endgameChallengeTier?: number;
+  /** Endgame challenge current streak */
+  endgameChallengeCurrentStreak?: number;
+  /** Endgame challenge best streak */
+  endgameChallengeBestStreak?: number;
 }
 
 /**
@@ -238,6 +269,8 @@ export interface GameState {
   fastTravelPoints: FastTravelPoint[];
   /** Game statistics */
   statistics: GameStatistics;
+  /** Recent quest history */
+  questHistory: QuestHistoryEntry[];
   /** Game flags (for events/triggers) */
   flags: Record<string, boolean>;
   /** Save file name */

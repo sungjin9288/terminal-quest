@@ -10,60 +10,28 @@ import {
   sortInventory,
   getOrganizedInventory
 } from '../src/systems/inventory';
-import { Player, CharacterClass, EquipmentSlot } from '../src/types/character';
+import { EquipmentSlot } from '../src/types/character';
+import { createTestPlayer as createPlayerFixture } from './helpers/gameStateFactory';
 
 describe('Inventory System', () => {
   // Create a fresh player for each test
-  function createTestPlayer(): Player {
-    return {
+  function createTestPlayer() {
+    const player = createPlayerFixture({
       name: 'TestPlayer',
-      class: CharacterClass.Warrior,
       level: 5,
-      experience: 250,
-      experienceToNextLevel: 700,
-      stats: {
-        hp: 100,
-        maxHp: 100,
-        mp: 30,
-        maxMp: 30,
-        attack: 15,
-        defense: 10,
-        magicPower: 5,
-        magicDefense: 5,
-        speed: 10,
-        critChance: 10,
-        critDamage: 1.5,
-        evasion: 5
-      },
-      baseStats: {
-        hp: 100,
-        maxHp: 100,
-        mp: 30,
-        maxMp: 30,
-        attack: 15,
-        defense: 10,
-        magicPower: 5,
-        magicDefense: 5,
-        speed: 10,
-        critChance: 10,
-        critDamage: 1.5,
-        evasion: 5
-      },
       gold: 500,
-      equipment: {},
-      inventory: [],
-      maxInventorySize: 20,
-      statusEffects: [],
       currentLocation: 'bit-town',
-      completedQuests: [],
-      activeQuests: [],
-      unlockedLocations: ['bit-town'],
-      playTime: 0,
-      enemiesDefeated: 0,
-      deaths: 0,
-      skillPoints: 0,
-      skills: []
-    };
+      unlockedLocations: ['bit-town']
+    });
+    player.experience = 250;
+    player.experienceToNextLevel = 700;
+    player.stats.attack = 15;
+    player.stats.defense = 10;
+    player.stats.magicPower = 5;
+    player.stats.magicDefense = 5;
+    player.stats.speed = 10;
+    player.baseStats = { ...player.stats };
+    return player;
   }
 
   describe('addItem', () => {

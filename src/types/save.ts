@@ -10,6 +10,8 @@ import { GameState } from './game.js';
 export interface SaveSlot {
   /** Slot number (1-3) */
   slotNumber: number;
+  /** Save schema version */
+  schemaVersion?: string;
   /** Game state */
   gameState: GameState;
   /** Save timestamp */
@@ -41,6 +43,7 @@ export enum SaveType {
 export interface SaveSlotMetadata {
   slotNumber: number;
   exists: boolean;
+  schemaVersion?: string;
   savedAt?: number;
   locationName?: string;
   playerName?: string;
@@ -65,4 +68,5 @@ export interface LoadResult {
   success: boolean;
   message: string;
   gameState?: GameState;
+  saveSchemaVersion?: string;
 }

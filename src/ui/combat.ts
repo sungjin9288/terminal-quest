@@ -7,6 +7,11 @@ import Table from 'cli-table3';
 import { Player, MonsterInstance } from '../types/index.js';
 import { BattleRewards, CombatActionResult } from '../systems/combat.js';
 import { showSeparator } from './display.js';
+import {
+  getHealthFillCharacter,
+  getHealthStateLabel,
+  withSignalLabel
+} from './accessibility.js';
 
 /**
  * Display battle screen with player and monster stats
@@ -51,7 +56,7 @@ function createHealthBar(current: number, max: number): string {
   const filledLength = Math.floor(percentage * barLength);
   const emptyLength = barLength - filledLength;
 
-  const filled = '█'.repeat(filledLength);
+  const filled = getHealthFillCharacter(percentage).repeat(filledLength);
   const empty = '░'.repeat(emptyLength);
 
   let color = chalk.green;
@@ -61,7 +66,7 @@ function createHealthBar(current: number, max: number): string {
     color = chalk.yellow;
   }
 
-  return `[${color(filled)}${chalk.gray(empty)}]`;
+  return `[${color(filled)}${chalk.gray(empty)}] ${getHealthStateLabel(percentage)}`;
 }
 
 /**
@@ -83,23 +88,24 @@ function createManaBar(current: number, max: number): string {
  * Display combat log message
  */
 export function showBattleLog(message: string, type: 'info' | 'damage' | 'heal' | 'critical' | 'miss' = 'info'): void {
+  const taggedMessage = withSignalLabel(message, type);
   let coloredMessage = message;
 
   switch (type) {
     case 'damage':
-      coloredMessage = chalk.red(`💥 ${message}`);
+      coloredMessage = chalk.red(`💥 ${taggedMessage}`);
       break;
     case 'heal':
-      coloredMessage = chalk.green(`💚 ${message}`);
+      coloredMessage = chalk.green(`💚 ${taggedMessage}`);
       break;
     case 'critical':
-      coloredMessage = chalk.yellow.bold(`⚡ ${message}`);
+      coloredMessage = chalk.yellow.bold(`⚡ ${taggedMessage}`);
       break;
     case 'miss':
-      coloredMessage = chalk.gray(`💨 ${message}`);
+      coloredMessage = chalk.gray(`💨 ${taggedMessage}`);
       break;
     default:
-      coloredMessage = chalk.white(`ℹ️  ${message}`);
+      coloredMessage = chalk.white(`ℹ️  ${taggedMessage}`);
   }
 
   console.log(coloredMessage);

@@ -55,7 +55,9 @@ export function getExpForNextLevel(level: number): number {
  */
 export interface LevelUpResult {
   leveledUp: boolean;
+  oldLevel: number;
   newLevel: number;
+  levelsGained: number;
   oldStats: Stats;
   newStats: Stats;
   statIncreases: Partial<Stats>;
@@ -168,15 +170,18 @@ function applyStatIncreases(stats: Stats, increases: Partial<Stats>): void {
  */
 export function gainExp(player: Player, amount: number): LevelUpResult {
   const oldStats = { ...player.baseStats };
+  const oldLevel = player.level;
 
   player.experience += amount;
 
   let leveledUp = false;
+  let levelsGained = 0;
   let totalStatIncreases: Partial<Stats> = {};
 
   // Check for multiple level ups
   while (player.experience >= player.experienceToNextLevel && player.level < 30) {
     leveledUp = true;
+    levelsGained += 1;
     player.experience -= player.experienceToNextLevel;
     player.level += 1;
 
@@ -213,7 +218,9 @@ export function gainExp(player: Player, amount: number): LevelUpResult {
 
   return {
     leveledUp,
+    oldLevel,
     newLevel: player.level,
+    levelsGained,
     oldStats,
     newStats: { ...player.baseStats },
     statIncreases: totalStatIncreases,

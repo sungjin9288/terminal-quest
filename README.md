@@ -16,6 +16,9 @@ Terminal Quest is an immersive text-based RPG game that runs directly in your te
 - **Shop System**: Buy weapons, armor, and potions from 3 different shops
 - **Death Penalty System**: Mode-specific penalties on death
 - **Save/Load System**: Manual saves at save points, emergency saves with tokens
+- **Endgame Modifier Rotation**: Rotating abyss modifiers with risk/reward tuning per run
+- **Seasonal Live Events**: Quarterly event rotation with encounter/quest reward modifiers
+- **Telemetry-lite (Opt-in)**: Non-PII progression funnel events stored locally
 - **12 Unique Locations**: From Memory Forest to Corruption Space
 
 ## Game World
@@ -48,20 +51,22 @@ Terminal Quest is an immersive text-based RPG game that runs directly in your te
 git clone <repository-url>
 cd terminal-quest
 
-# Install dependencies
+# One-command install + build + start
+npm run play
+```
+
+Manual flow is still available:
+
+```bash
 npm install
-
-# Build the project
 npm run build
-
-# Start the game
 npm start
 ```
 
 ## How to Play
 
 ### Starting the Game
-1. Run `npm start`
+1. Run `npm run play` (or `npm start` if already built)
 2. Select **New Game** or **Load Game**
 3. Choose difficulty mode
 4. Create your character (name + class)
@@ -160,10 +165,17 @@ terminal-quest/
 |--------|-------------|
 | `npm run build` | Compile TypeScript |
 | `npm start` | Run the game |
+| `npm run play` | One-command install/build/start launcher |
 | `npm run dev` | Build and run |
 | `npm run watch` | Watch mode |
 | `npm test` | Run tests |
 | `npm run clean` | Remove dist folder |
+| `npm run validate:data` | Run data/quest/economy balance validations |
+| `npm run validate:economy` | Run economy balance validation only |
+| `npm run balance:notes` | Generate dated live-balance patch notes from validators |
+| `npm run verify:save-migration` | Run legacy save migration verification tests |
+| `npm run release:check` | Run paid-release readiness gate (build/test/data checks) |
+| `npm run release:package` | Build versioned release bundle + changelog sync |
 
 ## Testing
 
@@ -192,6 +204,16 @@ npm test -- tests/combat.test.ts
 - TypeScript strict mode enabled
 - ES2022 modules with `.js` import extensions
 - Unused variables prefixed with `_`
+
+## Paid Release Track
+
+- Roadmap: `docs/paid-release-roadmap.md`
+- Changelog: `CHANGELOG.md`
+- Support policy: `docs/support-policy.md`
+- Release gate: `npm run release:check`
+- Balance cadence: `docs/live-balance-cadence.md` (`npm run balance:notes`)
+- Seasonal events: `docs/seasonal-events.md`
+- Telemetry event log path (when enabled): `telemetry/events.ndjson`
 
 ## Tips for Players
 

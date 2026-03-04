@@ -3,6 +3,7 @@
  */
 
 import { Player, Monster, CombatState } from '../types/index.js';
+import inquirer from 'inquirer';
 import {
   createMonsterInstance,
   playerAttack,
@@ -29,6 +30,7 @@ import { useItem as useInventoryItem, getOrganizedInventory } from '../systems/i
 import { ItemType } from '../types/item.js';
 import { gainExp, calculateMonsterExp } from './leveling.js';
 import { showLevelUp, showExpGain } from '../ui/levelup.js';
+import { getAvailableSkills, useSkill } from './skills.js';
 
 /**
  * Battle result
@@ -38,6 +40,35 @@ export interface BattleResult {
   escaped: boolean;
   rewards?: BattleRewards;
   leveledUp: boolean;
+}
+
+async function selectBattleSkill(player: Player): Promise<string | null> {
+  const skills = getAvailableSkills(player);
+
+  if (skills.length === 0) {
+    return null;
+  }
+
+  const choices = skills.map(skill => ({
+    name: player.stats.mp >= skill.manaCost
+      ? `${skill.name} (MP ${skill.manaCost}) - ${skill.description}`
+      : `${skill.name} (MP ${skill.manaCost}) - MP 부족`,
+    value: skill.id,
+    disabled: player.stats.mp >= skill.manaCost ? false : 'MP 부족'
+  }));
+
+  choices.push({ name: '← 취소', value: 'cancel', disabled: false });
+
+  const answer = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'skillId',
+      message: '사용할 스킬을 선택하세요:',
+      choices
+    }
+  ]);
+
+  return answer.skillId === 'cancel' ? null : answer.skillId;
 }
 
 /**
@@ -86,12 +117,25 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
         }
 
         case 'skill': {
-          showBattleLog('Skills system coming soon!', 'info');
-          showBattleLog('Using basic attack instead...', 'info');
-          await waitForAnimation(800);
+          const availableSkills = getAvailableSkills(player);
+          if (availableSkills.length === 0) {
+            showBattleLog('사용 가능한 스킬이 없습니다!', 'info');
+            await waitForAnimation(1000);
+            continue;
+          }
 
-          const result = playerAttack(player, monsterInstance, true);
+          const selectedSkillId = await selectBattleSkill(player);
+          if (!selectedSkillId) {
+            continue;
+          }
+
+          const result = useSkill(player, monsterInstance, selectedSkillId);
           showActionResult(result);
+
+          if (!result.success) {
+            await waitForAnimation(1000);
+            continue;
+          }
 
           if (result.targetDefeated) {
             battleState = CombatState.Victory;
@@ -262,17 +306,7 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
     };
   } else if (battleState === CombatState.Defeat) {
     showBattleResult(false);
-
-    player.deaths++;
-
-    // Respawn with half HP
-    player.stats.hp = Math.floor(player.stats.maxHp * 0.5);
-
-    // Lose some gold
-    const goldLost = Math.floor(player.gold * 0.1);
-    player.gold -= goldLost;
-
-    showBattleLog(`You lost ${goldLost} gold...`, 'info');
+    showBattleLog('You were defeated...', 'info');
 
     await pressEnterToContinue();
 

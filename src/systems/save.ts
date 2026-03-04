@@ -13,6 +13,7 @@ import {
   LoadResult
 } from '../types/save.js';
 import { getLocationDisplayName } from './savePoint.js';
+import { CURRENT_SAVE_SCHEMA_VERSION } from './gameStateMigration.js';
 
 // Save directory
 const SAVE_DIR = './saves';
@@ -57,6 +58,7 @@ export function saveGame(
     // Create save slot
     const saveSlot: SaveSlot = {
       slotNumber,
+      schemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       gameState,
       savedAt: Date.now(),
       locationName: getLocationDisplayName(gameState.player.currentLocation),
@@ -119,7 +121,8 @@ export function loadGame(slotNumber: number): LoadResult {
     return {
       success: true,
       message: `슬롯 ${slotNumber}에서 불러오기 완료!`,
-      gameState: saveSlot.gameState
+      gameState: saveSlot.gameState,
+      saveSchemaVersion: saveSlot.schemaVersion
     };
   } catch (error) {
     return {
@@ -187,6 +190,7 @@ export function listSaves(): SaveSlotMetadata[] {
         slots.push({
           slotNumber: i,
           exists: true,
+          schemaVersion: saveSlot.schemaVersion,
           savedAt: saveSlot.savedAt,
           locationName: saveSlot.locationName,
           playerName: saveSlot.playerName,
@@ -244,6 +248,7 @@ export function getSaveMetadata(slotNumber: number): SaveSlotMetadata | null {
     return {
       slotNumber,
       exists: true,
+      schemaVersion: saveSlot.schemaVersion,
       savedAt: saveSlot.savedAt,
       locationName: saveSlot.locationName,
       playerName: saveSlot.playerName,

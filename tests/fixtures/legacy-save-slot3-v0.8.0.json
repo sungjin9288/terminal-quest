@@ -1,0 +1,126 @@
+{
+  "slotNumber": 3,
+  "gameState": {
+    "stateType": "exploration",
+    "gameMode": "adventure",
+    "player": {
+      "name": "LegacyRunner",
+      "class": "Warrior",
+      "level": 2,
+      "experience": 40,
+      "experienceToNextLevel": 160,
+      "stats": {
+        "hp": 96,
+        "maxHp": 120,
+        "mp": 24,
+        "maxMp": 30,
+        "attack": 15,
+        "defense": 12,
+        "magicPower": 5,
+        "magicDefense": 8,
+        "speed": 8,
+        "critChance": 10,
+        "critDamage": 1.5,
+        "evasion": 5
+      },
+      "baseStats": {
+        "hp": 120,
+        "maxHp": 120,
+        "mp": 30,
+        "maxMp": 30,
+        "attack": 15,
+        "defense": 12,
+        "magicPower": 5,
+        "magicDefense": 8,
+        "speed": 8,
+        "critChance": 10,
+        "critDamage": 1.5,
+        "evasion": 5
+      },
+      "gold": 210,
+      "equipment": {},
+      "inventory": [
+        "health-potion",
+        "save-token"
+      ],
+      "maxInventorySize": 20,
+      "statusEffects": [],
+      "currentLocation": "bit-town",
+      "completedQuests": [
+        "slime-cleanup"
+      ],
+      "activeQuests": [
+        "forest-survey",
+        "legacy-custom-quest"
+      ],
+      "unlockedLocations": [
+        "bit-town",
+        "memory-forest"
+      ],
+      "playTime": 900,
+      "enemiesDefeated": 7,
+      "deaths": 0,
+      "skillPoints": 1,
+      "skills": []
+    },
+    "position": {
+      "locationId": "bit-town",
+      "stepsTaken": 32
+    },
+    "items": {},
+    "monsters": {},
+    "locations": {},
+    "savePoints": {},
+    "quests": {
+      "legacy-custom-quest": {
+        "id": "legacy-custom-quest",
+        "name": "레거시 퀘스트",
+        "description": "이전 버전에서 추가된 사용자 퀘스트",
+        "questGiver": "레거시 게시판",
+        "requiredLevel": 1,
+        "prerequisites": [],
+        "objectives": [
+          {
+            "description": "메모리 숲 방문",
+            "type": "explore",
+            "targetId": "memory-forest",
+            "requiredAmount": 1,
+            "currentAmount": 0,
+            "completed": false
+          }
+        ],
+        "rewards": {
+          "exp": 30,
+          "gold": 20,
+          "items": []
+        },
+        "status": "active",
+        "isMainQuest": false,
+        "repeatable": false
+      }
+    },
+    "fastTravelPoints": [],
+    "statistics": {
+      "totalPlayTime": 900,
+      "enemiesDefeated": {},
+      "totalDamageDealt": 280,
+      "totalDamageTaken": 140,
+      "bossesDefeated": [],
+      "questsCompleted": 1,
+      "itemsCollected": 3,
+      "locationsDiscovered": 2,
+      "goldEarned": 220,
+      "goldSpent": 10,
+      "deaths": 0,
+      "highestLevel": 2
+    },
+    "flags": {},
+    "gameVersion": "0.8.0"
+  },
+  "savedAt": 1730390400000,
+  "locationName": "비트 타운",
+  "playerName": "LegacyRunner",
+  "playerLevel": 2,
+  "playTime": 900,
+  "saveType": "manual"
+}

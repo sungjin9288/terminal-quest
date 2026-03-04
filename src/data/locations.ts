@@ -4,11 +4,7 @@
  */
 
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { join } from 'path';
 
 /**
  * Location save point data
@@ -116,7 +112,7 @@ function loadLocationData(): LocationDatabase {
   }
 
   try {
-    const dataPath = join(__dirname, '../../data/locations.json');
+    const dataPath = join(process.cwd(), 'data', 'locations.json');
     const rawData = readFileSync(dataPath, 'utf-8');
     const data = JSON.parse(rawData);
 
@@ -255,7 +251,8 @@ export function getConnectedLocations(locationId: string): (GameLocation | HubTo
 export function isLocationUnlocked(
   locationId: string,
   defeatedBosses: string[],
-  completedActs: number[]
+  completedActs: number[],
+  completedQuests: string[] = []
 ): boolean {
   const data = loadLocationData();
 
@@ -280,8 +277,7 @@ export function isLocationUnlocked(
     case 'act-complete':
       return completedActs.includes(condition.target as number);
     case 'quest-complete':
-      // TODO: Implement quest check
-      return false;
+      return completedQuests.includes(condition.target as string);
     default:
       return false;
   }

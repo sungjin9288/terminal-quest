@@ -15,6 +15,8 @@ export default {
     ],
   },
   testMatch: ['**/tests/**/*.test.ts'],
+  modulePathIgnorePatterns: ['<rootDir>/releases/'],
+  testPathIgnorePatterns: ['<rootDir>/releases/'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/index.ts',

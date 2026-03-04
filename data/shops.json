@@ -42,6 +42,11 @@
         ],
         "level20": [
           "flaming-parser-sword"
+        ],
+        "level25": [
+          "quantum-edge",
+          "nullspace-reaver",
+          "singularity-bow"
         ]
       },
       "specialStock": {
@@ -91,6 +96,12 @@
         ],
         "level20": [
           "gold-ring"
+        ],
+        "level25": [
+          "checksum-aegis",
+          "kernel-guard-boots",
+          "entropy-ring",
+          "root-crown"
         ]
       },
       "specialStock": {
@@ -138,7 +149,13 @@
         "level15": [
           "mega-mana-potion"
         ],
-        "level20": []
+        "level20": [],
+        "level25": [
+          "ultra-health-potion",
+          "ultra-mana-potion",
+          "quantum-tonic",
+          "stability-draught"
+        ]
       },
       "bulkDiscounts": {
         "enabled": true,

@@ -9,6 +9,7 @@ import {
   ElementType,
   Consumable
 } from '../types/index.js';
+import { getItemById } from '../data/items.js';
 
 /**
  * Combat action types
@@ -43,6 +44,17 @@ export interface BattleRewards {
 export function createMonsterInstance(monster: Monster): MonsterInstance {
   return {
     ...monster,
+    stats: { ...monster.stats },
+    resistances: { ...monster.resistances },
+    skills: [...monster.skills],
+    statusEffects: [...monster.statusEffects],
+    dropTable: {
+      guaranteed: monster.dropTable.guaranteed.map(drop => ({ ...drop })),
+      possible: monster.dropTable.possible.map(drop => ({ ...drop })),
+      rare: monster.dropTable.rare.map(drop => ({ ...drop })),
+      minGold: monster.dropTable.minGold,
+      maxGold: monster.dropTable.maxGold
+    },
     instanceId: `${monster.id}-${Date.now()}-${Math.random()}`,
     currentHp: monster.stats.hp,
     currentMp: monster.stats.mp,
@@ -302,6 +314,11 @@ export function calculateRewards(
 
   // Item drops
   const items: string[] = [];
+  const pushDropItem = (itemId: string): void => {
+    if (getItemById(itemId)) {
+      items.push(itemId);
+    }
+  };
 
   // Guaranteed drops
   monster.dropTable.guaranteed.forEach(drop => {
@@ -310,7 +327,7 @@ export function calculateRewards(
         drop.minQuantity + Math.random() * (drop.maxQuantity - drop.minQuantity + 1)
       );
       for (let i = 0; i < quantity; i++) {
-        items.push(drop.itemId);
+        pushDropItem(drop.itemId);
       }
     }
   });
@@ -322,7 +339,7 @@ export function calculateRewards(
         drop.minQuantity + Math.random() * (drop.maxQuantity - drop.minQuantity + 1)
       );
       for (let i = 0; i < quantity; i++) {
-        items.push(drop.itemId);
+        pushDropItem(drop.itemId);
       }
     }
   });
@@ -334,61 +351,12 @@ export function calculateRewards(
         drop.minQuantity + Math.random() * (drop.maxQuantity - drop.minQuantity + 1)
       );
       for (let i = 0; i < quantity; i++) {
-        items.push(drop.itemId);
+        pushDropItem(drop.itemId);
       }
     }
   });
 
   return { experience, gold, items };
-}
-
-/**
- * Apply experience and check for level up
- */
-export function applyExperience(player: Player, experience: number): boolean {
-  player.experience += experience;
-
-  if (player.experience >= player.experienceToNextLevel) {
-    return true; // Level up!
-  }
-
-  return false;
-}
-
-/**
- * Level up player
- */
-export function levelUpPlayer(player: Player): void {
-  player.level += 1;
-  player.experience -= player.experienceToNextLevel;
-  player.experienceToNextLevel = Math.floor(player.experienceToNextLevel * 1.5);
-
-  // Stat increases based on class
-  const hpIncrease = 10;
-  const mpIncrease = 5;
-  const attackIncrease = 2;
-  const defenseIncrease = 1;
-  const magicPowerIncrease = 2;
-  const magicDefenseIncrease = 1;
-  const speedIncrease = 1;
-
-  player.baseStats.maxHp += hpIncrease;
-  player.baseStats.maxMp += mpIncrease;
-  player.baseStats.attack += attackIncrease;
-  player.baseStats.defense += defenseIncrease;
-  player.baseStats.magicPower += magicPowerIncrease;
-  player.baseStats.magicDefense += magicDefenseIncrease;
-  player.baseStats.speed += speedIncrease;
-
-  // Update current stats
-  player.stats = { ...player.baseStats };
-
-  // Restore HP and MP on level up
-  player.stats.hp = player.stats.maxHp;
-  player.stats.mp = player.stats.maxMp;
-
-  // Grant skill point
-  player.skillPoints += 1;
 }
 
 /**

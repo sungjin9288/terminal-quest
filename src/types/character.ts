@@ -170,4 +170,6 @@ export interface Skill {
   requiredLevel: number;
   /** Required class (if any) */
   requiredClass?: CharacterClass;
+  /** Skill point cost to learn (default: 1) */
+  skillPointCost?: number;
 }

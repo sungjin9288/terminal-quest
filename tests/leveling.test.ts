@@ -10,49 +10,30 @@ import {
   getLevelProgress,
   calculateMonsterExp
 } from '../src/systems/leveling';
-import { Player, CharacterClass, Stats } from '../src/types/character';
+import { CharacterClass } from '../src/types/character';
+import { createTestPlayer as createPlayerFixture } from './helpers/gameStateFactory';
 
 describe('Leveling System', () => {
   // Create a fresh player for testing
-  function createTestPlayer(level: number = 1): Player {
-    const baseStats: Stats = {
-      hp: 100,
-      maxHp: 100,
-      mp: 30,
-      maxMp: 30,
-      attack: 15,
-      defense: 10,
-      magicPower: 5,
-      magicDefense: 5,
-      speed: 10,
-      critChance: 10,
-      critDamage: 1.5,
-      evasion: 5
-    };
-
-    return {
+  function createTestPlayer(level: number = 1) {
+    const player = createPlayerFixture({
       name: 'TestPlayer',
-      class: CharacterClass.Warrior,
-      level: level,
-      experience: 0,
-      experienceToNextLevel: getExpForNextLevel(level),
-      stats: { ...baseStats },
-      baseStats: { ...baseStats },
+      characterClass: CharacterClass.Warrior,
+      level,
       gold: 100,
-      equipment: {},
-      inventory: [],
-      maxInventorySize: 20,
-      statusEffects: [],
       currentLocation: 'bit-town',
-      completedQuests: [],
-      activeQuests: [],
-      unlockedLocations: ['bit-town'],
-      playTime: 0,
-      enemiesDefeated: 0,
-      deaths: 0,
-      skillPoints: 0,
-      skills: []
-    };
+      unlockedLocations: ['bit-town']
+    });
+    player.experienceToNextLevel = getExpForNextLevel(level);
+    player.stats.mp = 30;
+    player.stats.maxMp = 30;
+    player.stats.attack = 15;
+    player.stats.defense = 10;
+    player.stats.magicPower = 5;
+    player.stats.magicDefense = 5;
+    player.stats.speed = 10;
+    player.baseStats = { ...player.stats };
+    return player;
   }
 
   describe('getExpForNextLevel', () => {
@@ -152,7 +133,9 @@ describe('Leveling System', () => {
       const result = gainExp(player, 150);
 
       expect(result.leveledUp).toBe(true);
+      expect(result.oldLevel).toBe(1);
       expect(result.newLevel).toBe(2);
+      expect(result.levelsGained).toBe(1);
     });
 
     it('should not level up when exp is insufficient', () => {
@@ -161,7 +144,9 @@ describe('Leveling System', () => {
       const result = gainExp(player, 50);
 
       expect(result.leveledUp).toBe(false);
+      expect(result.oldLevel).toBe(1);
       expect(result.newLevel).toBe(1);
+      expect(result.levelsGained).toBe(0);
     });
 
     it('should increase stats on level up', () => {
@@ -171,6 +156,27 @@ describe('Leveling System', () => {
       gainExp(player, 150);
 
       expect(player.stats.maxHp).toBeGreaterThan(initialMaxHp);
+    });
+
+    it('should grant one skill point per level up', () => {
+      const player = createTestPlayer(1);
+      player.skillPoints = 0;
+
+      gainExp(player, 150);
+
+      expect(player.level).toBe(2);
+      expect(player.skillPoints).toBe(1);
+    });
+
+    it('should grant multiple skill points on multiple level ups', () => {
+      const player = createTestPlayer(1);
+      player.skillPoints = 0;
+
+      const result = gainExp(player, 400);
+
+      expect(player.level).toBeGreaterThanOrEqual(3);
+      expect(player.skillPoints).toBe(player.level - 1);
+      expect(result.levelsGained).toBe(player.level - result.oldLevel);
     });
   });
 

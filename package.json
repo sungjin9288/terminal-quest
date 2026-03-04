@@ -7,10 +7,21 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "play": "node scripts/start-game.js",
     "dev": "tsc && node dist/index.js",
     "watch": "tsc --watch",
     "test": "jest",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "validate:quests": "npm run build && node scripts/validate-quest-balance.js",
+    "validate:economy": "npm run build && node scripts/validate-economy-balance.js",
+    "validate:playtime": "npm run build && node scripts/validate-playtime-balance.js",
+    "validate:data": "npm run build && node scripts/validate-data-integrity.js && node scripts/validate-quest-balance.js && node scripts/validate-economy-balance.js && node scripts/validate-playtime-balance.js",
+    "balance:notes": "npm run build && node scripts/generate-balance-patch-notes.js",
+    "balance:notes:dry": "npm run build && node scripts/generate-balance-patch-notes.js --dry-run",
+    "verify:save-migration": "node scripts/verify-save-migration.js",
+    "release:check": "node scripts/release-readiness-check.js",
+    "release:package": "npm run build && node scripts/release-package.js",
+    "release:package:dry": "npm run build && node scripts/release-package.js --dry-run"
   },
   "keywords": [
     "rpg",

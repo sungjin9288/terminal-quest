@@ -106,10 +106,10 @@ export function canSaveAtLocation(
   }
 
   // Check if at save point
-  if (hasSavePoint(locationId)) {
+  if (hasSavePoint(locationId) || isAutoSaveLocation(locationId)) {
     return {
       canSave: true,
-      reason: '세이브 포인트에서 저장 가능합니다.',
+      reason: '현재 위치에서 저장 가능합니다.',
       requiresToken: false
     };
   }

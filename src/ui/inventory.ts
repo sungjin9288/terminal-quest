@@ -361,7 +361,7 @@ export async function selectItemAction(item: AnyItem, equipped: boolean = false)
     });
   }
 
-  // Drop (not implemented yet)
+  // Drop
   actions.push({
     name: '🗑️  버리기',
     value: 'drop'

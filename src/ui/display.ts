@@ -7,6 +7,8 @@ import figlet from 'figlet';
 import Table from 'cli-table3';
 import { Player } from '../types/index.js';
 import { getLevelProgress } from '../systems/leveling.js';
+import { getLoadingProfile } from '../runtime/settings.js';
+import { withSignalLabel } from './accessibility.js';
 
 /**
  * Clear the terminal screen
@@ -47,23 +49,24 @@ export async function showTitle(): Promise<void> {
  * Display a message with optional color
  */
 export function showMessage(message: string, color?: 'info' | 'success' | 'warning' | 'error'): void {
+  const displayMessage = color ? withSignalLabel(message, color) : message;
   let coloredMessage = message;
 
   switch (color) {
     case 'info':
-      coloredMessage = chalk.cyan(message);
+      coloredMessage = chalk.cyan(displayMessage);
       break;
     case 'success':
-      coloredMessage = chalk.green(message);
+      coloredMessage = chalk.green(displayMessage);
       break;
     case 'warning':
-      coloredMessage = chalk.yellow(message);
+      coloredMessage = chalk.yellow(displayMessage);
       break;
     case 'error':
-      coloredMessage = chalk.red(message);
+      coloredMessage = chalk.red(displayMessage);
       break;
     default:
-      coloredMessage = chalk.white(message);
+      coloredMessage = chalk.white(displayMessage);
   }
 
   console.log(coloredMessage);
@@ -173,6 +176,11 @@ export function showStatBar(current: number, max: number, label: string, color: 
  * Display loading animation
  */
 export async function showLoading(message: string, duration: number = 1000): Promise<void> {
+  const loadingProfile = getLoadingProfile();
+  const effectiveDuration = Math.max(
+    120,
+    Math.floor(duration * loadingProfile.durationMultiplier)
+  );
   const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
   let frameIndex = 0;
 
@@ -180,13 +188,13 @@ export async function showLoading(message: string, duration: number = 1000): Pro
     const interval = setInterval(() => {
       process.stdout.write(`\r${chalk.cyan(frames[frameIndex])} ${message}...`);
       frameIndex = (frameIndex + 1) % frames.length;
-    }, 80);
+    }, loadingProfile.frameIntervalMs);
 
     setTimeout(() => {
       clearInterval(interval);
       process.stdout.write('\r' + ' '.repeat(message.length + 10) + '\r');
       resolve();
-    }, duration);
+    }, effectiveDuration);
   });
 }
 

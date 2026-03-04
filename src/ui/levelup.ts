@@ -123,10 +123,10 @@ export function showRestoration(): void {
  * Show complete level up screen
  */
 export function showLevelUp(result: LevelUpResult): void {
-  const levelsGained = result.newLevel - (result.newLevel - 1);
+  const levelsGained = result.levelsGained;
 
   // Show animation
-  showLevelUpAnimation(result.newLevel - levelsGained, result.newLevel);
+  showLevelUpAnimation(result.oldLevel, result.newLevel);
 
   // Show stat increases
   showStatIncrease(result.oldStats, result.newStats, result.statIncreases);

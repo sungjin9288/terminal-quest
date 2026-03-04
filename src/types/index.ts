@@ -70,6 +70,8 @@ export {
   QuestObjective,
   QuestStatus,
   Quest,
+  QuestHistoryType,
+  QuestHistoryEntry,
   CombatState,
   CombatEncounter,
   GameStateType,
@@ -88,3 +90,29 @@ export {
   SaveResult,
   LoadResult
 } from './save.js';
+
+// Runtime flow types
+export {
+  MainMenuChoice,
+  EncounterResult,
+  TravelResult,
+  ShopMenuHandler,
+  SaveGameHandler,
+  TravelHandler,
+  InGameMenuHandler,
+  RunEncounterHandler,
+  HandlePlayerDeathHandler,
+  InGameMenuDependencies,
+  TownLoopDependencies,
+  DungeonLoopDependencies,
+  TownLoopHandler,
+  DungeonLoopHandler,
+  InGameMenuLoopHandler,
+  GameRuntimeDependencies,
+  ShowMainMenuHandler,
+  StartNewGameHandler,
+  LoadGameHandler,
+  OpenSettingsHandler,
+  GameLoopHandler,
+  MainMenuRuntimeDependencies
+} from './runtime.js';

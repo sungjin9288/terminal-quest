@@ -14,12 +14,140 @@ import {
   ElementType,
   AnyItem
 } from '../types/item.js';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { getSampleMonsters } from './monsters.js';
+
+interface MonsterDropItemRef {
+  id: string;
+}
+
+interface MonsterDropData {
+  items?: MonsterDropItemRef[];
+}
+
+interface MonsterDataEntry {
+  drops?: MonsterDropData;
+}
+
+interface MonsterRegionData {
+  monsters?: MonsterDataEntry[];
+}
+
+interface MonsterDataFile {
+  regions?: Record<string, MonsterRegionData>;
+}
+
+interface ShopEntry {
+  inventory?: Record<string, string[]>;
+}
+
+interface ShopDataFile {
+  shops?: Record<string, ShopEntry>;
+}
+
+let itemCache: Record<string, AnyItem> | null = null;
+
+function formatNameFromId(itemId: string): string {
+  return itemId
+    .split('-')
+    .map(token => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(' ');
+}
+
+function pickGeneratedRarity(itemId: string): ItemRarity {
+  if (/(crown|blade|sword|shield|ring|core|dragon|tyrant|guardian)/.test(itemId)) {
+    return ItemRarity.Rare;
+  }
+  if (/(gem|crystal|essence|logic|algorithm|cache|memory)/.test(itemId)) {
+    return ItemRarity.Uncommon;
+  }
+  return ItemRarity.Common;
+}
+
+function pickGeneratedIcon(itemId: string): string {
+  if (itemId.includes('ring')) return '💍';
+  if (itemId.includes('core')) return '🔋';
+  if (itemId.includes('crystal') || itemId.includes('gem')) return '💎';
+  if (itemId.includes('blade') || itemId.includes('sword')) return '⚔️';
+  if (itemId.includes('shield')) return '🛡️';
+  return '📦';
+}
+
+function collectReferencedItemIds(): string[] {
+  const ids = new Set<string>();
+
+  for (const monster of Object.values(getSampleMonsters())) {
+    for (const group of ['guaranteed', 'possible', 'rare'] as const) {
+      for (const drop of monster.dropTable[group]) {
+        ids.add(drop.itemId);
+      }
+    }
+  }
+
+  try {
+    const monsterDataPath = join(process.cwd(), 'data', 'monsters.json');
+    const monsterRaw = readFileSync(monsterDataPath, 'utf-8');
+    const monsterData = JSON.parse(monsterRaw) as MonsterDataFile;
+
+    for (const region of Object.values(monsterData.regions ?? {})) {
+      for (const monster of region.monsters ?? []) {
+        for (const item of monster.drops?.items ?? []) {
+          if (item.id) ids.add(item.id);
+        }
+      }
+    }
+  } catch {
+    // Ignore fallback failures and use static data only
+  }
+
+  try {
+    const shopDataPath = join(process.cwd(), 'data', 'shops.json');
+    const shopRaw = readFileSync(shopDataPath, 'utf-8');
+    const shopData = JSON.parse(shopRaw) as ShopDataFile;
+
+    for (const shop of Object.values(shopData.shops ?? {})) {
+      for (const tierIds of Object.values(shop.inventory ?? {})) {
+        for (const itemId of tierIds) {
+          ids.add(itemId);
+        }
+      }
+    }
+  } catch {
+    // Ignore fallback failures and use static data only
+  }
+
+  return Array.from(ids);
+}
+
+function createGeneratedDropItem(itemId: string): Material {
+  const rarity = pickGeneratedRarity(itemId);
+
+  return {
+    id: itemId,
+    name: formatNameFromId(itemId),
+    description: `Recovered material from fallen enemies: ${formatNameFromId(itemId)}.`,
+    type: ItemType.Material,
+    rarity,
+    value: rarity === ItemRarity.Rare ? 120 : rarity === ItemRarity.Uncommon ? 60 : 25,
+    sellable: true,
+    stackable: true,
+    maxStack: 99,
+    requiredLevel: 1,
+    category: 'misc',
+    icon: pickGeneratedIcon(itemId)
+  };
+}
 
 /**
  * Get sample items database
  */
 export function getSampleItems(): Record<string, AnyItem> {
-  return {
+  if (itemCache) {
+    return itemCache;
+  }
+
+  const items: Record<string, AnyItem> = {
     // Weapons
     'rusty-sword': {
       id: 'rusty-sword',
@@ -416,6 +544,75 @@ export function getSampleItems(): Record<string, AnyItem> {
       icon: '🪄'
     } as Weapon,
 
+    'quantum-edge': {
+      id: 'quantum-edge',
+      name: '퀀텀 엣지 (Quantum Edge)',
+      description: 'Slices through timelines with deterministic precision',
+      type: ItemType.Weapon,
+      weaponType: WeaponType.Sword,
+      rarity: ItemRarity.Epic,
+      value: 2600,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 22,
+      attackPower: 88,
+      element: ElementType.Lightning,
+      elementalDamage: 28,
+      critChanceBonus: 20,
+      critDamageBonus: 1.0,
+      statBonuses: { attack: 14, speed: 8, critChance: 6 },
+      range: 1,
+      twoHanded: false,
+      icon: '⚡'
+    } as Weapon,
+
+    'nullspace-reaver': {
+      id: 'nullspace-reaver',
+      name: '널스페이스 리버 (Nullspace Reaver)',
+      description: 'Collapses enemy defenses into nothingness',
+      type: ItemType.Weapon,
+      weaponType: WeaponType.Mace,
+      rarity: ItemRarity.Epic,
+      value: 3200,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 26,
+      attackPower: 106,
+      element: ElementType.Dark,
+      elementalDamage: 30,
+      critChanceBonus: 14,
+      critDamageBonus: 1.1,
+      statBonuses: { attack: 18, defense: 10, maxHp: 70 },
+      range: 1,
+      twoHanded: true,
+      icon: '🔨'
+    } as Weapon,
+
+    'singularity-bow': {
+      id: 'singularity-bow',
+      name: '싱귤래리티 보우 (Singularity Bow)',
+      description: 'Compresses all trajectories into one lethal point',
+      type: ItemType.Weapon,
+      weaponType: WeaponType.Bow,
+      rarity: ItemRarity.Legendary,
+      value: 4300,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 29,
+      attackPower: 124,
+      element: ElementType.Light,
+      elementalDamage: 36,
+      critChanceBonus: 24,
+      critDamageBonus: 1.4,
+      statBonuses: { attack: 20, speed: 12, critChance: 10, evasion: 8 },
+      range: 6,
+      twoHanded: true,
+      icon: '🏹'
+    } as Weapon,
+
     // Armor
     'leather-armor': {
       id: 'leather-armor',
@@ -639,7 +836,45 @@ export function getSampleItems(): Record<string, AnyItem> {
       icon: '🧤'
     } as Armor,
 
+    'cloth-gloves': {
+      id: 'cloth-gloves',
+      name: '천 장갑 (Cloth Gloves)',
+      description: 'Light gloves that slightly improve casting stability',
+      type: ItemType.Armor,
+      armorType: ArmorType.Gloves,
+      rarity: ItemRarity.Common,
+      value: 70,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 1,
+      defense: 2,
+      magicDefense: 3,
+      resistances: {},
+      statBonuses: { magicPower: 1 },
+      icon: '🧤'
+    } as Armor,
+
     // Additional Boots
+    'leather-boots': {
+      id: 'leather-boots',
+      name: '가죽 부츠 (Leather Boots)',
+      description: 'Basic boots made from treated leather',
+      type: ItemType.Armor,
+      armorType: ArmorType.Boots,
+      rarity: ItemRarity.Common,
+      value: 75,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 1,
+      defense: 2,
+      magicDefense: 1,
+      resistances: {},
+      statBonuses: { speed: 1 },
+      icon: '👢'
+    } as Armor,
+
     'speedrun-boots': {
       id: 'speedrun-boots',
       name: '스피드런 부츠 (Speedrun Boots)',
@@ -676,6 +911,101 @@ export function getSampleItems(): Record<string, AnyItem> {
       resistances: {},
       statBonuses: {},
       icon: '💍'
+    } as Armor,
+
+    'checksum-aegis': {
+      id: 'checksum-aegis',
+      name: '체크섬 이지스 (Checksum Aegis)',
+      description: 'Validates and nullifies incoming corruption damage',
+      type: ItemType.Armor,
+      armorType: ArmorType.Chest,
+      rarity: ItemRarity.Epic,
+      value: 2800,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 23,
+      defense: 48,
+      magicDefense: 40,
+      resistances: {
+        [ElementType.Fire]: 0.18,
+        [ElementType.Ice]: 0.18,
+        [ElementType.Lightning]: 0.18,
+        [ElementType.Dark]: 0.18
+      },
+      statBonuses: { maxHp: 110, defense: 14, magicDefense: 12 },
+      icon: '🛡️'
+    } as Armor,
+
+    'kernel-guard-boots': {
+      id: 'kernel-guard-boots',
+      name: '커널 가드 부츠 (Kernel Guard Boots)',
+      description: 'Kernel-level safeguards with unmatched mobility',
+      type: ItemType.Armor,
+      armorType: ArmorType.Boots,
+      rarity: ItemRarity.Epic,
+      value: 3400,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 28,
+      defense: 22,
+      magicDefense: 18,
+      resistances: {},
+      statBonuses: { speed: 16, evasion: 14, maxHp: 40 },
+      icon: '🥾'
+    } as Armor,
+
+    'entropy-ring': {
+      id: 'entropy-ring',
+      name: '엔트로피 링 (Entropy Ring)',
+      description: 'A chaotic ring that amplifies both offense and resilience',
+      type: ItemType.Armor,
+      armorType: ArmorType.Accessory,
+      rarity: ItemRarity.Legendary,
+      value: 3900,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 29,
+      defense: 10,
+      magicDefense: 16,
+      resistances: {
+        [ElementType.Dark]: 0.25,
+        [ElementType.Poison]: 0.25
+      },
+      statBonuses: {
+        attack: 14,
+        magicPower: 14,
+        critChance: 9,
+        critDamage: 0.6,
+        maxHp: 45
+      },
+      icon: '💍'
+    } as Armor,
+
+    'root-crown': {
+      id: 'root-crown',
+      name: '루트 크라운 (Root Crown)',
+      description: 'Authority-grade helm that stabilizes all combat systems',
+      type: ItemType.Armor,
+      armorType: ArmorType.Helmet,
+      rarity: ItemRarity.Legendary,
+      value: 4200,
+      sellable: true,
+      stackable: false,
+      maxStack: 1,
+      requiredLevel: 30,
+      defense: 30,
+      magicDefense: 30,
+      resistances: {
+        [ElementType.Light]: 0.2,
+        [ElementType.Dark]: 0.2,
+        [ElementType.Fire]: 0.15,
+        [ElementType.Ice]: 0.15
+      },
+      statBonuses: { maxHp: 90, maxMp: 80, defense: 10, magicDefense: 10 },
+      icon: '👑'
     } as Armor,
 
     // Consumables
@@ -817,6 +1147,29 @@ export function getSampleItems(): Record<string, AnyItem> {
       icon: '💊'
     } as Consumable,
 
+    'mega-mana-potion': {
+      id: 'mega-mana-potion',
+      name: 'Mega Mana Potion',
+      description: 'Restores 120 MP',
+      type: ItemType.Consumable,
+      rarity: ItemRarity.Uncommon,
+      value: 140,
+      sellable: true,
+      stackable: true,
+      maxStack: 99,
+      requiredLevel: 5,
+      effects: [
+        {
+          type: 'restore-mp',
+          power: 120
+        }
+      ],
+      usableInCombat: true,
+      usableOutOfCombat: true,
+      consumeOnUse: true,
+      icon: '🔷'
+    } as Consumable,
+
     'antidote': {
       id: 'antidote',
       name: '해독제 (Antidote)',
@@ -888,6 +1241,108 @@ export function getSampleItems(): Record<string, AnyItem> {
       usableOutOfCombat: false,
       consumeOnUse: true,
       icon: '🛡️'
+    } as Consumable,
+
+    'ultra-health-potion': {
+      id: 'ultra-health-potion',
+      name: 'Ultra Health Potion',
+      description: 'Restores 320 HP',
+      type: ItemType.Consumable,
+      rarity: ItemRarity.Epic,
+      value: 340,
+      sellable: true,
+      stackable: true,
+      maxStack: 99,
+      requiredLevel: 22,
+      effects: [
+        {
+          type: 'heal',
+          power: 320
+        }
+      ],
+      usableInCombat: true,
+      usableOutOfCombat: true,
+      consumeOnUse: true,
+      icon: '🧪'
+    } as Consumable,
+
+    'ultra-mana-potion': {
+      id: 'ultra-mana-potion',
+      name: 'Ultra Mana Potion',
+      description: 'Restores 260 MP',
+      type: ItemType.Consumable,
+      rarity: ItemRarity.Epic,
+      value: 320,
+      sellable: true,
+      stackable: true,
+      maxStack: 99,
+      requiredLevel: 24,
+      effects: [
+        {
+          type: 'restore-mp',
+          power: 260
+        }
+      ],
+      usableInCombat: true,
+      usableOutOfCombat: true,
+      consumeOnUse: true,
+      icon: '🔮'
+    } as Consumable,
+
+    'quantum-tonic': {
+      id: 'quantum-tonic',
+      name: '퀀텀 토닉 (Quantum Tonic)',
+      description: 'Boosts attack and magic power by 35 for 6 turns',
+      type: ItemType.Consumable,
+      rarity: ItemRarity.Legendary,
+      value: 720,
+      sellable: true,
+      stackable: true,
+      maxStack: 99,
+      requiredLevel: 28,
+      effects: [
+        {
+          type: 'buff',
+          power: 35,
+          duration: 6,
+          statModifier: { attack: 35, magicPower: 35 }
+        }
+      ],
+      usableInCombat: true,
+      usableOutOfCombat: false,
+      consumeOnUse: true,
+      icon: '⚛️'
+    } as Consumable,
+
+    'stability-draught': {
+      id: 'stability-draught',
+      name: '스테빌리티 드래프트 (Stability Draught)',
+      description: 'Restores 220 HP/MP and cures status effects',
+      type: ItemType.Consumable,
+      rarity: ItemRarity.Legendary,
+      value: 880,
+      sellable: true,
+      stackable: true,
+      maxStack: 99,
+      requiredLevel: 30,
+      effects: [
+        {
+          type: 'heal',
+          power: 220
+        },
+        {
+          type: 'restore-mp',
+          power: 220
+        },
+        {
+          type: 'cure',
+          power: 0
+        }
+      ],
+      usableInCombat: true,
+      usableOutOfCombat: true,
+      consumeOnUse: true,
+      icon: '✨'
     } as Consumable,
 
     // Materials
@@ -1027,6 +1482,15 @@ export function getSampleItems(): Record<string, AnyItem> {
       icon: '🎫'
     } as Material
   };
+
+  for (const itemId of collectReferencedItemIds()) {
+    if (!items[itemId]) {
+      items[itemId] = createGeneratedDropItem(itemId);
+    }
+  }
+
+  itemCache = items;
+  return itemCache;
 }
 
 /**

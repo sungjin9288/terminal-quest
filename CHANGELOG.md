@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.2] - 2026-03-05
+### Highlights
+- 72f44e8 feat: extend playtime target and guided menu UX
+
 ## [v1.0.1] - 2026-03-04
 ### Highlights
 - 222504a feat: finalize release automation and prompt-priority UX polish

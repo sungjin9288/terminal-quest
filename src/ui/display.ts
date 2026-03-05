@@ -10,6 +10,62 @@ import { getLevelProgress } from '../systems/leveling.js';
 import { getLoadingProfile, getRuntimeSettings } from '../runtime/settings.js';
 import { withSignalLabel } from './accessibility.js';
 
+function getTerminalColumns(): number {
+  if (typeof process.stdout.columns === 'number' && process.stdout.columns > 0) {
+    return process.stdout.columns;
+  }
+  return 80;
+}
+
+function getSafeLineWidth(preferred: number, min: number = 24): number {
+  const columns = getTerminalColumns();
+  const maxAllowed = Math.max(min, columns - 2);
+  return Math.max(min, Math.min(preferred, maxAllowed));
+}
+
+function wrapLineByWidth(line: string, maxWidth: number): string[] {
+  if (line.length <= maxWidth) {
+    return [line];
+  }
+
+  const words = line.split(' ');
+  const wrapped: string[] = [];
+  let current = '';
+
+  for (const word of words) {
+    if (word.length > maxWidth) {
+      if (current.length > 0) {
+        wrapped.push(current);
+        current = '';
+      }
+      for (let index = 0; index < word.length; index += maxWidth) {
+        wrapped.push(word.slice(index, index + maxWidth));
+      }
+      continue;
+    }
+
+    if (current.length === 0) {
+      current = word;
+      continue;
+    }
+
+    const candidate = `${current} ${word}`;
+    if (candidate.length <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    wrapped.push(current);
+    current = word;
+  }
+
+  if (current.length > 0) {
+    wrapped.push(current);
+  }
+
+  return wrapped.length > 0 ? wrapped : [''];
+}
+
 /**
  * Clear the terminal screen
  */
@@ -21,6 +77,16 @@ export function clearScreen(): void {
  * Display the game title using ASCII art
  */
 export async function showTitle(): Promise<void> {
+  if (getTerminalColumns() < 72) {
+    const lineWidth = getSafeLineWidth(48, 28);
+    console.log(chalk.cyan.bold('Terminal Quest'));
+    console.log(chalk.gray('═'.repeat(lineWidth)));
+    console.log(chalk.yellow('터미널 기반 RPG 어드벤처'));
+    console.log(chalk.gray('═'.repeat(lineWidth)));
+    console.log();
+    return;
+  }
+
   return new Promise((resolve, reject) => {
     figlet.text(
       'Terminal Quest',
@@ -34,10 +100,11 @@ export async function showTitle(): Promise<void> {
           reject(err);
           return;
         }
+        const lineWidth = getSafeLineWidth(60, 36);
         console.log(chalk.cyan(data));
-        console.log(chalk.gray('═'.repeat(60)));
+        console.log(chalk.gray('═'.repeat(lineWidth)));
         console.log(chalk.yellow('      터미널 기반 RPG 어드벤처'));
-        console.log(chalk.gray('═'.repeat(60)));
+        console.log(chalk.gray('═'.repeat(lineWidth)));
         console.log();
         resolve();
       }
@@ -76,16 +143,36 @@ export function showMessage(message: string, color?: 'info' | 'success' | 'warni
  * Display a separator line
  */
 export function showSeparator(length: number = 60): void {
-  console.log(chalk.gray('─'.repeat(length)));
+  const lineLength = getSafeLineWidth(length);
+  console.log(chalk.gray('─'.repeat(lineLength)));
 }
 
 /**
  * Display player stats in a formatted table
  */
 export function showStats(player: Player): void {
+  const terminalColumns = getTerminalColumns();
+
   console.log();
   console.log(chalk.cyan.bold(`⚔️  ${player.name} - Level ${player.level} ${player.class}`));
-  showSeparator();
+  showSeparator(terminalColumns < 72 ? 40 : 60);
+
+  if (terminalColumns < 72) {
+    const expProgress = getLevelProgress(player);
+    const expBar = createExpBar(
+      player.experience,
+      player.experienceToNextLevel,
+      terminalColumns < 52 ? 8 : 10
+    );
+
+    console.log(chalk.white(`HP ${player.stats.hp}/${player.stats.maxHp} | MP ${player.stats.mp}/${player.stats.maxMp}`));
+    console.log(chalk.white(`ATK ${player.stats.attack} | DEF ${player.stats.defense} | SPD ${player.stats.speed}`));
+    console.log(chalk.white(`GOLD ${player.gold} | INV ${player.inventory.length}/${player.maxInventorySize}`));
+    console.log(chalk.white(`EXP ${player.experience}/${player.experienceToNextLevel} ${expBar} ${expProgress}%`));
+    console.log(chalk.white(`KILL ${player.enemiesDefeated} | DEATH ${player.deaths}`));
+    console.log();
+    return;
+  }
 
   const statsTable = new Table({
     head: [chalk.yellow('능력치'), chalk.yellow('수치')],
@@ -138,8 +225,7 @@ export function showStats(player: Player): void {
 /**
  * Create experience progress bar
  */
-function createExpBar(current: number, max: number): string {
-  const barLength = 10;
+function createExpBar(current: number, max: number, barLength: number = 10): string {
   const percentage = current / max;
   const filledLength = Math.floor(percentage * barLength);
   const emptyLength = barLength - filledLength;
@@ -202,9 +288,15 @@ export async function showLoading(message: string, duration: number = 1000): Pro
  * Display a box with text
  */
 export function showBox(text: string, title?: string): void {
-  const lines = text.split('\n');
-  const maxLength = Math.max(...lines.map(line => line.length), title ? title.length : 0);
-  const width = maxLength + 4;
+  const maxContentWidth = getSafeLineWidth(76, 28) - 4;
+  const lines = text
+    .split('\n')
+    .flatMap(line => wrapLineByWidth(line, maxContentWidth));
+  const contentWidth = Math.max(
+    ...(lines.map(line => line.length)),
+    title ? title.length : 0
+  );
+  const width = contentWidth + 4;
 
   console.log();
   console.log(chalk.gray('┌' + '─'.repeat(width - 2) + '┐'));

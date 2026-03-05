@@ -17,6 +17,7 @@ import {
   getHubTown
 } from '../data/locations.js';
 import { showSeparator, showMessage } from './display.js';
+import { getRuntimeSettings } from '../runtime/settings.js';
 
 /**
  * Travel menu result
@@ -355,13 +356,44 @@ function sleep(ms: number): Promise<void> {
  */
 export type TownMenuOption = 'shop' | 'inn' | 'save' | 'explore' | 'travel' | 'quest' | 'menu';
 
+function getTownActionLabel(action: TownMenuOption): string {
+  const labels: Record<TownMenuOption, string> = {
+    shop: '상점',
+    inn: '여관',
+    save: '세이브',
+    explore: '주변 탐색',
+    travel: '이동',
+    quest: '퀘스트 게시판',
+    menu: '메뉴'
+  };
+  return labels[action];
+}
+
+function getDungeonActionLabel(action: DungeonMenuOption): string {
+  const labels: Record<DungeonMenuOption, string> = {
+    explore: '탐색',
+    rest: '휴식',
+    travel: '이동',
+    menu: '메뉴'
+  };
+  return labels[action];
+}
+
 export async function showTownMenu(
   locationName: string,
-  hasQuestBoard: boolean = false
+  hasQuestBoard: boolean = false,
+  preferredChoice: TownMenuOption | null = null
 ): Promise<TownMenuOption> {
   console.log();
   console.log(chalk.cyan.bold(`🏠 ${locationName}`));
   showSeparator();
+
+  if (getRuntimeSettings().showKeyHints) {
+    if (preferredChoice) {
+      console.log(chalk.gray(`안내: Enter를 누르면 추천 행동(${getTownActionLabel(preferredChoice)})을 바로 실행합니다.`));
+    }
+    console.log(chalk.gray('안내: 방향키로 이동하고 Enter로 선택하세요.'));
+  }
 
   const choices = [
     { name: chalk.yellow('🏪 상점'), value: 'shop' },
@@ -377,12 +409,18 @@ export async function showTownMenu(
 
   choices.push({ name: chalk.gray('⚙️  메뉴'), value: 'menu' });
 
+  const isPreferredAvailable = Boolean(
+    preferredChoice &&
+    choices.some(choice => choice.value === preferredChoice)
+  );
+
   const answer = await inquirer.prompt([
     {
       type: 'list',
       name: 'choice',
       message: chalk.cyan('무엇을 하시겠습니까?'),
-      choices
+      choices,
+      default: isPreferredAvailable ? preferredChoice : undefined
     }
   ]);
 
@@ -396,11 +434,19 @@ export type DungeonMenuOption = 'explore' | 'rest' | 'travel' | 'menu';
 
 export async function showDungeonMenu(
   locationName: string,
-  canRest: boolean = true
+  canRest: boolean = true,
+  preferredChoice: DungeonMenuOption | null = null
 ): Promise<DungeonMenuOption> {
   console.log();
   console.log(chalk.cyan.bold(`📍 ${locationName}`));
   showSeparator();
+
+  if (getRuntimeSettings().showKeyHints) {
+    if (preferredChoice) {
+      console.log(chalk.gray(`안내: Enter를 누르면 추천 행동(${getDungeonActionLabel(preferredChoice)})을 바로 실행합니다.`));
+    }
+    console.log(chalk.gray('안내: 방향키로 이동하고 Enter로 선택하세요.'));
+  }
 
   const choices = [
     { name: chalk.red('⚔️  탐색 (전투)'), value: 'explore' }
@@ -415,12 +461,18 @@ export async function showDungeonMenu(
     { name: chalk.gray('⚙️  메뉴'), value: 'menu' }
   );
 
+  const isPreferredAvailable = Boolean(
+    preferredChoice &&
+    choices.some(choice => choice.value === preferredChoice)
+  );
+
   const answer = await inquirer.prompt([
     {
       type: 'list',
       name: 'choice',
       message: chalk.cyan('무엇을 하시겠습니까?'),
-      choices
+      choices,
+      default: isPreferredAvailable ? preferredChoice : undefined
     }
   ]);
 

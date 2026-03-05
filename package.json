@@ -15,6 +15,7 @@
     "validate:quests": "npm run build && node scripts/validate-quest-balance.js",
     "validate:economy": "npm run build && node scripts/validate-economy-balance.js",
     "validate:playtime": "npm run build && node scripts/validate-playtime-balance.js",
+    "validate:playtime:extended": "npm run build && node scripts/validate-playtime-balance.js --profile extended",
     "validate:prompt-priority": "node scripts/validate-prompt-priority.js",
     "validate:data": "npm run build && node scripts/validate-data-integrity.js && node scripts/validate-quest-balance.js && node scripts/validate-economy-balance.js && node scripts/validate-playtime-balance.js",
     "balance:notes": "npm run build && node scripts/generate-balance-patch-notes.js",

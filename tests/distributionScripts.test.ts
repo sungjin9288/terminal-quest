@@ -35,6 +35,9 @@ describe('Distribution Scripts', () => {
     expect(packageJson.scripts?.['verify:release-artifacts']).toBe(
       'node scripts/verify-release-artifacts.js'
     );
+    expect(packageJson.scripts?.['validate:playtime:extended']).toBe(
+      'npm run build && node scripts/validate-playtime-balance.js --profile extended'
+    );
     expect(packageJson.scripts?.['release:signoff']).toBe(
       'node scripts/release-signoff.js'
     );

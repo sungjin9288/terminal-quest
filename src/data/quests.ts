@@ -306,6 +306,42 @@ export function getDefaultQuests(): Record<string, Quest> {
       }
     }),
     createQuest({
+      id: 'plains-signal-triangulation',
+      name: '보조 작전: 평원 신호 삼각측량',
+      description: '비트 평원 전초 신호를 복구하고 교란 지점을 삼각측량해 지도 정확도를 높이세요.',
+      questGiver: '비트 타운 게시판',
+      requiredLevel: 10,
+      prerequisites: ['plains-recon'],
+      objectives: [
+        exploreObjective('비트 평원 재진입', 'bit-plains'),
+        killObjective('Bit Wolf 5마리 처치', 'bit-wolf', 5),
+        collectObjective('Health Potion 2개 확보', 'health-potion', 2)
+      ],
+      rewards: {
+        exp: 460,
+        gold: 390,
+        items: ['mana-potion']
+      }
+    }),
+    createQuest({
+      id: 'plains-logistics-sweep',
+      name: '보조 작전: 평원 보급선 스윕',
+      description: '평원 보급선을 교란하는 개체를 정리하고 상인에게 복구 보고를 전달하세요.',
+      questGiver: '비트 타운 게시판',
+      requiredLevel: 11,
+      prerequisites: ['plains-recon'],
+      objectives: [
+        killObjective('Algorithm Wyvern 3마리 처치', 'algorithm-wyvern', 3),
+        killObjective('Bit Wolf 4마리 처치', 'bit-wolf', 4),
+        talkObjective('상인에게 보급선 복구 보고', 'merchant')
+      ],
+      rewards: {
+        exp: 500,
+        gold: 420,
+        items: ['overclock-drink']
+      }
+    }),
+    createQuest({
       id: 'registry-briefing',
       name: '작전 개시: 레지스트리 던전 브리핑',
       description: '레지스트리 던전 진입 전 작전 브리핑을 수령하고 현장을 확인하세요.',
@@ -378,6 +414,24 @@ export function getDefaultQuests(): Record<string, Quest> {
       isMainQuest: true
     }),
     createQuest({
+      id: 'registry-anomaly-catalog',
+      name: '보조 작전: 레지스트리 이상군 카탈로그',
+      description: '레지스트리 던전의 이상 개체 분포를 수집해 다음 공략 루트를 보강하세요.',
+      questGiver: '비트 타운 게시판',
+      requiredLevel: 14,
+      prerequisites: ['registry-briefing'],
+      objectives: [
+        exploreObjective('레지스트리 던전 심층 진입', 'registry-dungeon'),
+        killObjective('Key Phantom 4마리 처치', 'key-phantom', 4),
+        collectObjective('Save Token 1개 확보', 'save-token', 1)
+      ],
+      rewards: {
+        exp: 620,
+        gold: 480,
+        items: ['defense-shell']
+      }
+    }),
+    createQuest({
       id: 'swap-swamp-expedition',
       name: '분기 A-2: 스왑 늪지 원정',
       description: '보안 경로를 따라 스왑 늪지의 핵심 위협을 제거하세요.',
@@ -413,6 +467,24 @@ export function getDefaultQuests(): Record<string, Quest> {
         items: ['defense-shell']
       },
       isMainQuest: true
+    }),
+    createQuest({
+      id: 'thread-rescue-protocol',
+      name: '보조 작전: 스레드 구조 프로토콜',
+      description: '스레드 숲의 교착 지점에 고립된 지원 신호를 회수하고 구조 라인을 복구하세요.',
+      questGiver: '비트 타운 게시판',
+      requiredLevel: 17,
+      prerequisites: ['thread-forest-sync'],
+      objectives: [
+        exploreObjective('스레드 숲 구조 라인 진입', 'thread-forest'),
+        killObjective('Async Phantom 5마리 처치', 'async-phantom', 5),
+        killObjective('Deadlock Tree 2마리 처치', 'deadlock-tree', 2)
+      ],
+      rewards: {
+        exp: 760,
+        gold: 610,
+        items: ['save-token']
+      }
     }),
     createQuest({
       id: 'stack-mountain-watch',
@@ -489,6 +561,24 @@ export function getDefaultQuests(): Record<string, Quest> {
       isMainQuest: true
     }),
     createQuest({
+      id: 'heap-fragment-quarantine',
+      name: '보조 작전: 힙 파편 격리',
+      description: '오염된 힙 파편을 분리 수거해 대규모 메모리 붕괴를 예방하세요.',
+      questGiver: '비트 타운 게시판',
+      requiredLevel: 22,
+      prerequisites: ['pointer-sanitization'],
+      objectives: [
+        killObjective('Dangling Pointer 4마리 처치', 'dangling-pointer', 4),
+        killObjective('Wild Pointer 4마리 처치', 'wild-pointer', 4),
+        collectObjective('Large Memory Fragment 2개 확보', 'memory-fragment-large', 2)
+      ],
+      rewards: {
+        exp: 1020,
+        gold: 780,
+        items: ['quantum-tonic']
+      }
+    }),
+    createQuest({
       id: 'network-layer-mapping',
       name: '네트워크 작전: 계층 매핑',
       description: '네트워크 계층의 구조를 매핑하고 데이터 패킷 흐름을 재정렬하세요.',
@@ -545,6 +635,24 @@ export function getDefaultQuests(): Record<string, Quest> {
       isMainQuest: true
     }),
     createQuest({
+      id: 'network-fallback-lab',
+      name: '보조 작전: 네트워크 우회 실험',
+      description: '우회 라우팅 실험을 수행해 전면전 실패 시의 백업 통신 경로를 확보하세요.',
+      questGiver: '비트 타운 게시판',
+      requiredLevel: 24,
+      prerequisites: ['network-layer-mapping'],
+      objectives: [
+        exploreObjective('네트워크 계층 우회 구간 진입', 'network-layer'),
+        killObjective('Packet Drone 5마리 처치', 'packet-drone', 5),
+        killObjective('Proxy Phantom 3마리 처치', 'proxy-phantom', 3)
+      ],
+      rewards: {
+        exp: 1160,
+        gold: 880,
+        items: ['checksum-aegis']
+      }
+    }),
+    createQuest({
       id: 'kernel-fortress-scout',
       name: '분기 합류: 커널 요새 정찰',
       description: '방화벽/프로토콜 분기 결과를 통합해 커널 요새 진입로를 확보하세요.',
@@ -562,6 +670,24 @@ export function getDefaultQuests(): Record<string, Quest> {
         items: ['quantum-edge']
       },
       isMainQuest: true
+    }),
+    createQuest({
+      id: 'kernel-audit-drill',
+      name: '보조 작전: 커널 감사 드릴',
+      description: '커널 요새의 비상 복구 절차를 사전 점검해 최종 침투 리스크를 낮추세요.',
+      questGiver: '비트 타운 게시판',
+      requiredLevel: 27,
+      prerequisites: ['kernel-fortress-scout'],
+      objectives: [
+        exploreObjective('커널 요새 감사 구역 진입', 'kernel-fortress'),
+        killObjective('Kernel Guard 3마리 처치', 'kernel-guard', 3),
+        collectObjective('Stability Draught 2개 확보', 'stability-draught', 2)
+      ],
+      rewards: {
+        exp: 1320,
+        gold: 930,
+        items: ['entropy-ring']
+      }
     }),
     createQuest({
       id: 'root-directory-breach',
@@ -657,6 +783,24 @@ export function getDefaultQuests(): Record<string, Quest> {
         items: ['save-token', 'save-token']
       },
       isMainQuest: true
+    }),
+    createQuest({
+      id: 'postcore-stability-route',
+      name: '엔드게임 보조: 포스트코어 안정화 경로',
+      description: '코어 정화 이후 잔류 오염 루트를 추적해 안정화 체인을 완성하세요.',
+      questGiver: '비트 타운 게시판',
+      requiredLevel: 30,
+      prerequisites: ['final-purge'],
+      objectives: [
+        killObjective('Crash Demon 3마리 처치', 'crash-demon', 3),
+        killObjective('Corruption Spawn 6마리 처치', 'corruption-spawn', 6),
+        collectObjective('Quantum Tonic 2개 확보', 'quantum-tonic', 2)
+      ],
+      rewards: {
+        exp: 1480,
+        gold: 980,
+        items: ['save-token']
+      }
     }),
     createQuest({
       id: 'spring-memory-festival-sweep',

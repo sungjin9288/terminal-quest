@@ -21,6 +21,8 @@ Terminal Quest is an immersive text-based RPG game that runs directly in your te
 - **Telemetry-lite (Opt-in)**: Non-PII progression funnel events stored locally
 - **Prompt Pace Mode**: Switch between streamlined auto-continue flow and classic Enter-confirm flow, with snappy/balanced/cinematic presets
 - **Context Guide Hints**: Adaptive town/dungeon recommendations for safer progression and quest flow
+- **Smart Action Focus**: Town/dungeon menus preselect recommended next action so Enter can fast-track common loops
+- **First-Run Onboarding**: One-time quick-start guidance on first town entry for smoother early progression
 - **12 Unique Locations**: From Memory Forest to Corruption Space
 
 ## Game World
@@ -174,6 +176,7 @@ terminal-quest/
 | `npm run clean` | Remove dist folder |
 | `npm run validate:data` | Run data/quest/economy balance validations |
 | `npm run validate:economy` | Run economy balance validation only |
+| `npm run validate:playtime:extended` | Measure 25-30h full-completion target progress with anti-loose guardrails |
 | `npm run balance:notes` | Generate dated live-balance patch notes from validators |
 | `npm run verify:save-migration` | Run legacy save migration verification tests |
 | `npm run verify:package-launch` | Launch built package entry once, auto-select Exit, and validate graceful startup/shutdown |

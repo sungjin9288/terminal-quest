@@ -11,6 +11,7 @@ export interface MinutesRange {
 
 export interface FirstClearPlaytimeEstimate {
   targetMinutes: number;
+  fullCompletionTargetRange: MinutesRange;
   locationRange: MinutesRange;
   mainQuestRange: MinutesRange;
   sideQuestRange: MinutesRange;
@@ -21,29 +22,70 @@ export interface FirstClearPlaytimeEstimate {
   totalRange: MinutesRange;
   averageMinutes: number;
   averageHours: number;
+  postClearEndgameRange: MinutesRange;
+  postClearBuildExperimentRange: MinutesRange;
+  postClearChallengeRouteRange: MinutesRange;
+  fullCompletionRange: MinutesRange;
+  fullCompletionAverageMinutes: number;
+  fullCompletionAverageHours: number;
+  sideQuestShare: number;
+  repeatableShare: number;
   branchRootCount: number;
   warnings: string[];
+  guardrailViolations: string[];
   meetsTarget: boolean;
+  meetsFullCompletionTarget: boolean;
+  meetsGuardrails: boolean;
 }
 
 export interface PlaytimeBalanceConfig {
   targetMinutes: number;
+  fullCompletionTargetRange: MinutesRange;
   sideQuestCompletionMinRatio: number;
   sideQuestCompletionMaxRatio: number;
   staticTravelOverheadRange: MinutesRange;
   perLocationRetryRange: MinutesRange;
   perBossRetryRange: MinutesRange;
   perBranchRootRange: MinutesRange;
+  postClearEndgameRunCountRange: MinutesRange;
+  postClearEndgamePerRunRange: MinutesRange;
+  postClearBuildExperimentRange: MinutesRange;
+  postClearChallengeRouteRange: MinutesRange;
+  minBranchRoots: number;
+  minSideQuestShare: number;
+  maxRepeatableShare: number;
 }
 
 export const DEFAULT_PLAYTIME_BALANCE_CONFIG: PlaytimeBalanceConfig = {
   targetMinutes: 12 * 60,
+  fullCompletionTargetRange: { min: 20 * 60, max: 24 * 60 },
   sideQuestCompletionMinRatio: 0.6,
   sideQuestCompletionMaxRatio: 0.75,
   staticTravelOverheadRange: { min: 40, max: 70 },
   perLocationRetryRange: { min: 2, max: 4 },
   perBossRetryRange: { min: 4, max: 7 },
-  perBranchRootRange: { min: 5, max: 9 }
+  perBranchRootRange: { min: 5, max: 9 },
+  postClearEndgameRunCountRange: { min: 8, max: 12 },
+  postClearEndgamePerRunRange: { min: 10, max: 14 },
+  postClearBuildExperimentRange: { min: 90, max: 150 },
+  postClearChallengeRouteRange: { min: 80, max: 140 },
+  minBranchRoots: 4,
+  minSideQuestShare: 0.12,
+  maxRepeatableShare: 0.55
+};
+
+export const EXTENDED_PLAYTIME_BALANCE_CONFIG: PlaytimeBalanceConfig = {
+  ...DEFAULT_PLAYTIME_BALANCE_CONFIG,
+  fullCompletionTargetRange: { min: 25 * 60, max: 30 * 60 },
+  sideQuestCompletionMinRatio: 0.75,
+  sideQuestCompletionMaxRatio: 0.9,
+  postClearEndgameRunCountRange: { min: 10, max: 14 },
+  postClearEndgamePerRunRange: { min: 11, max: 16 },
+  postClearBuildExperimentRange: { min: 120, max: 220 },
+  postClearChallengeRouteRange: { min: 130, max: 250 },
+  minBranchRoots: 6,
+  minSideQuestShare: 0.2,
+  maxRepeatableShare: 0.45
 };
 
 function clampMinMax(min: number, max: number): MinutesRange {
@@ -73,6 +115,10 @@ function scaleRangeWithDifferentRatios(
     range.min * minRatio,
     range.max * maxRatio
   );
+}
+
+function midpoint(range: MinutesRange): number {
+  return (range.min + range.max) / 2;
 }
 
 function getObjectiveMinuteWeight(objectiveType: QuestObjectiveType): MinutesRange {
@@ -143,6 +189,7 @@ export function estimateFirstClearPlaytime(
   config: PlaytimeBalanceConfig = DEFAULT_PLAYTIME_BALANCE_CONFIG
 ): FirstClearPlaytimeEstimate {
   const warnings: string[] = [];
+  const guardrailViolations: string[] = [];
 
   let locationRange: MinutesRange = { min: 0, max: 0 };
   const missingLocationTargets: string[] = [];
@@ -216,10 +263,66 @@ export function estimateFirstClearPlaytime(
     config.staticTravelOverheadRange
   );
 
-  const averageMinutes = (totalRange.min + totalRange.max) / 2;
+  const averageMinutes = midpoint(totalRange);
+
+  const postClearEndgameRange: MinutesRange = {
+    min:
+      config.postClearEndgameRunCountRange.min *
+      config.postClearEndgamePerRunRange.min,
+    max:
+      config.postClearEndgameRunCountRange.max *
+      config.postClearEndgamePerRunRange.max
+  };
+
+  const fullCompletionRange = addRanges(
+    totalRange,
+    postClearEndgameRange,
+    config.postClearBuildExperimentRange,
+    config.postClearChallengeRouteRange
+  );
+  const fullCompletionAverageMinutes = midpoint(fullCompletionRange);
+
+  const sideQuestShare = averageMinutes > 0
+    ? midpoint(recommendedSideQuestRange) / averageMinutes
+    : 0;
+  const repeatableShare = fullCompletionAverageMinutes > 0
+    ? midpoint(postClearEndgameRange) / fullCompletionAverageMinutes
+    : 0;
+
+  if (branchRootCount < config.minBranchRoots) {
+    guardrailViolations.push(
+      `branch roots below guardrail (${branchRootCount} < ${config.minBranchRoots})`
+    );
+  }
+
+  if (sideQuestShare < config.minSideQuestShare) {
+    guardrailViolations.push(
+      `side quest share below guardrail (${(sideQuestShare * 100).toFixed(1)}% < ${(config.minSideQuestShare * 100).toFixed(1)}%)`
+    );
+  }
+
+  if (repeatableShare > config.maxRepeatableShare) {
+    guardrailViolations.push(
+      `repeatable share above guardrail (${(repeatableShare * 100).toFixed(1)}% > ${(config.maxRepeatableShare * 100).toFixed(1)}%)`
+    );
+  }
+
+  const meetsFullCompletionTarget =
+    fullCompletionAverageMinutes >= config.fullCompletionTargetRange.min &&
+    fullCompletionAverageMinutes <= config.fullCompletionTargetRange.max;
+
+  if (!meetsFullCompletionTarget) {
+    const direction = fullCompletionAverageMinutes < config.fullCompletionTargetRange.min
+      ? 'below'
+      : 'above';
+    warnings.push(
+      `full completion average is ${direction} target range (${Math.round(fullCompletionAverageMinutes)}분, target ${config.fullCompletionTargetRange.min}-${config.fullCompletionTargetRange.max}분)`
+    );
+  }
 
   return {
     targetMinutes: config.targetMinutes,
+    fullCompletionTargetRange: config.fullCompletionTargetRange,
     locationRange,
     mainQuestRange,
     sideQuestRange,
@@ -230,8 +333,19 @@ export function estimateFirstClearPlaytime(
     totalRange,
     averageMinutes,
     averageHours: averageMinutes / 60,
+    postClearEndgameRange,
+    postClearBuildExperimentRange: config.postClearBuildExperimentRange,
+    postClearChallengeRouteRange: config.postClearChallengeRouteRange,
+    fullCompletionRange,
+    fullCompletionAverageMinutes,
+    fullCompletionAverageHours: fullCompletionAverageMinutes / 60,
+    sideQuestShare,
+    repeatableShare,
     branchRootCount,
     warnings,
-    meetsTarget: averageMinutes >= config.targetMinutes
+    guardrailViolations,
+    meetsTarget: averageMinutes >= config.targetMinutes,
+    meetsFullCompletionTarget,
+    meetsGuardrails: guardrailViolations.length === 0
   };
 }

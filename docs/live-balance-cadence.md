@@ -11,6 +11,7 @@ Operate a predictable balancing loop with traceable patch notes after each conte
 ## Command
 ```bash
 npm run balance:notes
+npm run validate:playtime:extended
 ```
 
 This command:
@@ -23,5 +24,6 @@ This command:
 ## Review Checklist
 - Confirm quest count, branch roots, and multi-objective count stay above targets.
 - Confirm first clear average remains above the 12-hour target.
+- Confirm extended full-completion target (25-30h) remains within range via `validate:playtime:extended`.
 - Confirm per-act economy snapshots preserve expected progression.
 - If warning count increases, add mitigation in the same patch note entry.

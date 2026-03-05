@@ -1,6 +1,7 @@
 import './helpers/moduleMocks';
 import {
   estimateFirstClearPlaytime,
+  EXTENDED_PLAYTIME_BALANCE_CONFIG,
   estimateQuestPlaytimeRange,
   parseTargetPlaytimeRange
 } from '../src/systems/playtimeBalance';
@@ -68,5 +69,25 @@ describe('Playtime Balance', () => {
     expect(estimate.meetsTarget).toBe(true);
     expect(estimate.averageMinutes).toBeGreaterThanOrEqual(estimate.targetMinutes);
     expect(estimate.branchRootCount).toBeGreaterThanOrEqual(4);
+  });
+
+  it('should satisfy 25-30 hour extended profile target and guardrails', () => {
+    const estimate = estimateFirstClearPlaytime(
+      getAllLocations(),
+      Object.values(getDefaultQuests()),
+      EXTENDED_PLAYTIME_BALANCE_CONFIG
+    );
+
+    expect(estimate.fullCompletionTargetRange.min).toBe(25 * 60);
+    expect(estimate.fullCompletionTargetRange.max).toBe(30 * 60);
+    expect(estimate.guardrailViolations).toEqual([]);
+    expect(estimate.meetsGuardrails).toBe(true);
+    expect(estimate.meetsFullCompletionTarget).toBe(true);
+    expect(estimate.fullCompletionAverageMinutes).toBeGreaterThanOrEqual(
+      estimate.fullCompletionTargetRange.min
+    );
+    expect(estimate.fullCompletionAverageMinutes).toBeLessThanOrEqual(
+      estimate.fullCompletionTargetRange.max
+    );
   });
 });

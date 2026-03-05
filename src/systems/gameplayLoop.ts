@@ -20,7 +20,9 @@ import {
 } from '../ui/display.js';
 import {
   showTownMenu,
-  showDungeonMenu
+  showDungeonMenu,
+  type TownMenuOption,
+  type DungeonMenuOption
 } from '../ui/travel.js';
 import {
   applyTalkQuestProgress,
@@ -63,17 +65,37 @@ function showSeasonalEventSummary(gameState: GameState): void {
 }
 
 type GuidanceContext = 'town' | 'dungeon';
+const ONBOARDING_FLAG = 'ux-onboarding-v2-complete';
+
+interface GuidanceResult {
+  recommendedAction: TownMenuOption | DungeonMenuOption | null;
+}
+
+function getRecommendedActionLabel(action: TownMenuOption | DungeonMenuOption): string {
+  const labelMap: Record<TownMenuOption | DungeonMenuOption, string> = {
+    shop: '상점',
+    inn: '여관',
+    save: '세이브',
+    explore: '탐색',
+    travel: '이동',
+    quest: '퀘스트 게시판',
+    menu: '메뉴',
+    rest: '휴식'
+  };
+  return labelMap[action];
+}
 
 function showContextGuidance(
   gameState: GameState,
   context: GuidanceContext,
   hasQuestBoard: boolean = false
-): void {
+): GuidanceResult {
   if (!getRuntimeSettings().showContextHints) {
-    return;
+    return { recommendedAction: null };
   }
 
   const hints: string[] = [];
+  let recommendedAction: TownMenuOption | DungeonMenuOption | null = null;
   const hpRatio = gameState.player.stats.maxHp > 0
     ? gameState.player.stats.hp / gameState.player.stats.maxHp
     : 1;
@@ -90,15 +112,21 @@ function showContextGuidance(
 
     if (questSummary?.status === 'ready') {
       hints.push('완료 가능한 퀘스트가 있습니다. 게시판에서 보상을 수령하세요.');
+      if (hasQuestBoard) {
+        recommendedAction = 'quest';
+      }
     } else if (!questSummary && hasQuestBoard) {
       hints.push('활성 퀘스트가 없습니다. 게시판에서 다음 목표를 수락해 보세요.');
+      recommendedAction = 'quest';
     }
 
     if (hpRatio <= 0.45) {
       if (canAffordCost(gameState.player.gold, restCost)) {
         hints.push(`HP가 낮습니다. 여관 휴식(${restCost} 골드)으로 안전하게 회복하세요.`);
+        recommendedAction = 'inn';
       } else {
         hints.push('HP가 낮고 골드가 부족합니다. 주변 탐색으로 골드를 모아 회복을 준비하세요.');
+        recommendedAction = 'explore';
       }
     }
   } else {
@@ -108,14 +136,21 @@ function showContextGuidance(
     );
     if (levelFit === 'under') {
       hints.push('현재 지역 난이도가 높습니다. 위험하면 마을로 돌아가 장비를 정비하세요.');
+      recommendedAction = 'travel';
     }
     if (hpRatio <= 0.4 || mpRatio <= 0.3) {
       hints.push('전투 자원이 부족합니다. 휴식 후 탐험하거나 이동으로 전환하세요.');
+      if (recommendedAction !== 'travel') {
+        recommendedAction = 'rest';
+      }
     }
   }
 
   if (inventoryRatio >= 0.9) {
     hints.push('인벤토리가 거의 가득 찼습니다. 상점에서 정리해 드랍 손실을 막으세요.');
+    if (context === 'town') {
+      recommendedAction = 'shop';
+    }
   }
 
   if (hints.length === 0) {
@@ -124,13 +159,45 @@ function showContextGuidance(
         ? '퀘스트 확인 → 상점 정비 → 저장 순서로 다음 구간을 준비해 보세요.'
         : '탐험 2~3회마다 상태를 점검하고, 위험하면 즉시 이동해 손실을 줄이세요.'
     );
+    if (context === 'town') {
+      recommendedAction = hasQuestBoard ? 'quest' : 'explore';
+    } else {
+      recommendedAction = 'explore';
+    }
   }
 
   const displayed = hints.slice(0, 2);
   console.log(chalk.cyan.bold('🧭 추천 행동'));
+  if (recommendedAction) {
+    console.log(chalk.gray(`   기본 선택: ${getRecommendedActionLabel(recommendedAction)}`));
+  }
   displayed.forEach((hint) => {
     console.log(chalk.gray(`   • ${hint}`));
   });
+
+  return { recommendedAction };
+}
+
+async function maybeShowFirstRunOnboarding(
+  gameState: GameState,
+  hasQuestBoard: boolean
+): Promise<void> {
+  if (gameState.flags[ONBOARDING_FLAG]) {
+    return;
+  }
+
+  const questLine = hasQuestBoard
+    ? '3) 퀘스트 게시판으로 목표를 수락하고 보상을 챙기세요.'
+    : '3) 주변 탐색으로 골드를 확보한 뒤 이동으로 전투를 시작하세요.';
+
+  showMessage('처음 플레이를 위한 빠른 안내를 표시합니다.', 'info');
+  console.log(chalk.cyan.bold('🧭 빠른 시작 가이드'));
+  console.log(chalk.gray('  1) 추천 행동 기본 선택이 자동으로 맞춰집니다. Enter로 바로 진행하세요.'));
+  console.log(chalk.gray('  2) HP가 낮으면 여관/휴식을 먼저 선택해 손실을 줄이세요.'));
+  console.log(chalk.gray(`  ${questLine}`));
+  console.log(chalk.gray('  4) 마을에서 저장 후 전투 지역으로 이동하면 안정적입니다.'));
+  await pressEnterToContinue('important');
+  gameState.flags[ONBOARDING_FLAG] = true;
 }
 
 export async function townLoop(
@@ -154,9 +221,14 @@ export async function townLoop(
       'facilities' in currentLocation &&
       currentLocation.facilities.includes('quest-board')
     );
-    showContextGuidance(gameState, 'town', hasQuestBoard);
+    await maybeShowFirstRunOnboarding(gameState, hasQuestBoard);
+    const guidance = showContextGuidance(gameState, 'town', hasQuestBoard);
 
-    const choice = await showTownMenu(locationName, hasQuestBoard);
+    const choice = await showTownMenu(
+      locationName,
+      hasQuestBoard,
+      guidance.recommendedAction as TownMenuOption | null
+    );
 
     switch (choice) {
       case 'shop':
@@ -248,9 +320,13 @@ export async function dungeonLoop(
     showStats(gameState.player);
     showSeasonalEventSummary(gameState);
     showTrackedQuestSummary(gameState);
-    showContextGuidance(gameState, 'dungeon');
+    const guidance = showContextGuidance(gameState, 'dungeon');
 
-    const choice = await showDungeonMenu(locationName, true);
+    const choice = await showDungeonMenu(
+      locationName,
+      true,
+      guidance.recommendedAction as DungeonMenuOption | null
+    );
 
     switch (choice) {
       case 'explore':

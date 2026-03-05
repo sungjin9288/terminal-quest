@@ -3,6 +3,7 @@ import { townLoop, dungeonLoop } from '../src/systems/gameplayLoop';
 import * as travelUi from '../src/ui/travel';
 import * as locations from '../src/data/locations';
 import * as questUi from '../src/systems/questUi';
+import * as display from '../src/ui/display';
 import { createTestGameState } from './helpers/gameStateFactory';
 import { createTestHubTown } from './helpers/dataFixtureFactory';
 import { mockDisplayPreset } from './helpers/uiMocks';
@@ -269,6 +270,7 @@ describe('Gameplay Loop', () => {
       }
     });
     updateRuntimeSettings({ showContextHints: false }, { storage: false });
+    gameState.flags['ux-onboarding-v2-complete'] = true;
     mockDisplayPreset('townLoop');
 
     jest.spyOn(travelUi, 'showTownMenu')
@@ -283,5 +285,81 @@ describe('Gameplay Loop', () => {
 
     const logs = (console.log as jest.Mock).mock.calls.map(args => String(args[0] ?? ''));
     expect(logs.some(line => line.includes('추천 행동'))).toBe(false);
+  });
+
+  it('should show onboarding once for first town entry and set completion flag', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'OnboardingTester',
+        level: 3,
+        currentLocation: 'bit-town'
+      }
+    });
+    mockDisplayPreset('townLoop');
+
+    jest.spyOn(travelUi, 'showTownMenu').mockResolvedValueOnce('menu');
+
+    const result = await townLoop(gameState, {
+      shopMenu: jest.fn(async () => undefined),
+      saveGame: jest.fn(async () => true),
+      handleTravel: jest.fn(async () => ({ locationChanged: false })),
+      inGameMenuLoop: jest.fn(async () => false)
+    });
+
+    expect(result).toBe(false);
+    expect(gameState.flags['ux-onboarding-v2-complete']).toBe(true);
+    expect(display.pressEnterToContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it('should pass inn as preferred town action when HP is low', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'RecommendTester',
+        level: 3,
+        currentLocation: 'bit-town',
+        gold: 200
+      }
+    });
+    gameState.flags['ux-onboarding-v2-complete'] = true;
+    gameState.player.stats.hp = Math.floor(gameState.player.stats.maxHp * 0.3);
+    mockDisplayPreset('townLoop');
+
+    const showTownMenuMock = jest.spyOn(travelUi, 'showTownMenu')
+      .mockResolvedValueOnce('menu');
+
+    await townLoop(gameState, {
+      shopMenu: jest.fn(async () => undefined),
+      saveGame: jest.fn(async () => true),
+      handleTravel: jest.fn(async () => ({ locationChanged: false })),
+      inGameMenuLoop: jest.fn(async () => false)
+    });
+
+    expect(showTownMenuMock.mock.calls[0]?.[2]).toBe('inn');
+  });
+
+  it('should pass rest as preferred dungeon action when combat resources are low', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'DungeonRecommendTester',
+        level: 3,
+        currentLocation: 'memory-forest'
+      }
+    });
+    gameState.player.stats.hp = Math.floor(gameState.player.stats.maxHp * 0.3);
+    gameState.player.stats.mp = Math.floor(gameState.player.stats.maxMp * 0.2);
+    mockDisplayPreset('townLoop');
+
+    const showDungeonMenuMock = jest.spyOn(travelUi, 'showDungeonMenu')
+      .mockResolvedValueOnce('menu');
+
+    await dungeonLoop(gameState, {
+      runEncounter: jest.fn(async () => 'victory'),
+      handlePlayerDeath: jest.fn(async () => true),
+      handleTravel: jest.fn(async () => ({ locationChanged: false })),
+      inGameMenuLoop: jest.fn(async () => false),
+      random: jest.fn(() => 0.9)
+    });
+
+    expect(showDungeonMenuMock.mock.calls[0]?.[2]).toBe('rest');
   });
 });

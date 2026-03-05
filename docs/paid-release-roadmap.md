@@ -62,3 +62,20 @@ Exit criteria:
 
 Exit criteria:
 - Stable update cadence with measurable retention improvement.
+
+## Phase 5: Playtime Depth Expansion (Completed)
+- [x] Full completion target: 25-30h without pacing fatigue
+- [x] Extended playtime profile and guardrails (`npm run validate:playtime:extended`)
+- [x] Branch density expansion (branch roots 6+)
+- [x] Side-quest share expansion (20%+ within first clear estimate)
+- [x] Post-clear curated route content to reduce repeatable grind share
+
+Latest snapshot (2026-03-05):
+- Extended full completion average: 25.72h (`1543.4분`)
+- Branch roots: `9`
+- Side-quest share: `29%`
+- Repeatable share: `10.8%`
+
+Exit criteria:
+- `validate:playtime:extended` passes.
+- Internal runbooks confirm no single loop dominates playtime (>45% repeatable share).

@@ -646,6 +646,34 @@ describe('Frontend achievement workspace actions', () => {
     expect(html).toContain('카드 선택 시 핀 고정');
   });
 
+  it('should surface active perk summaries in the achievement deck', async () => {
+    const snapshot = createSnapshot({
+      achievementPerks: {
+        summary: ['가방 +6칸', '상점 할인 8%', '특수 진열 2개'],
+        inventorySizeBonus: 6,
+        shopDiscountPercent: 8,
+        unlockedShopTiers: [
+          {
+            shopId: 'binary-weapons',
+            tierKey: 'level25',
+            label: 'binary-weapons:level25'
+          },
+          {
+            shopId: 'armor-code',
+            tierKey: 'level20',
+            label: 'armor-code:level20'
+          }
+        ]
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    const html = frontend.renderAchievements(snapshot);
+
+    expect(html).toContain('활성 특전');
+    expect(html).toContain('가방 +6칸 / 상점 할인 8% / 특수 진열 2개');
+  });
+
   it('should focus the quest workspace and completable lane for turn-in achievements', async () => {
     const snapshot = createSnapshot({
       achievements: {
@@ -1618,6 +1646,54 @@ describe('Frontend smart resume routing', () => {
     expect(appHtml).toContain('data-item-id="iron-sword"');
   });
 
+  it('should surface perk discount and unlocked stock summaries in the market workspace', async () => {
+    const snapshot = createSnapshot({
+      achievementPerks: {
+        summary: ['상점 할인 8%', '특수 진열 1개'],
+        inventorySizeBonus: 0,
+        shopDiscountPercent: 8,
+        unlockedShopTiers: [
+          {
+            shopId: 'binary-weapons',
+            tierKey: 'level25',
+            label: 'binary-weapons:level25'
+          }
+        ]
+      },
+      shops: [
+        {
+          id: 'binary-weapons',
+          name: '바이너리 무기상',
+          icon: '⚔️',
+          ownerName: '캐시',
+          greeting: '무기 정비를 시작할 시간입니다.',
+          inventory: [
+            {
+              id: 'iron-sword',
+              name: '강철 검',
+              icon: '🗡️',
+              description: '표준형 전투 검',
+              rarity: '일반',
+              level: 2,
+              price: 120,
+              canAfford: true,
+              meetsLevelReq: true
+            }
+          ]
+        }
+      ]
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    frontend.uiState.activeWorkspace = 'market';
+    const html = frontend.getAppHtml();
+
+    expect(html).toContain('상점 할인');
+    expect(html).toContain('8%');
+    expect(html).toContain('해금 진열');
+    expect(html).toContain('1개');
+  });
+
   it('should prioritize an approaching achievement in the smart resume brief', async () => {
     const landingSnapshot = createSnapshot({
       scene: 'landing',
@@ -2212,6 +2288,37 @@ describe('Frontend smart resume routing', () => {
     expect(html).toContain('업적 추적 슬롯 이어하기');
     expect(html).toContain('업적 추적 이어하기');
     expect(html).toContain('업적 추적');
+  });
+
+  it('should surface active perks in landing continue cards and save slots', async () => {
+    const landingSnapshot = createSnapshot({
+      scene: 'landing',
+      hasGame: false,
+      saves: [
+        {
+          slotNumber: 1,
+          exists: true,
+          savedAt: 1730390400000,
+          playerName: 'Archivist',
+          playerLevel: 5,
+          locationName: '비트 타운',
+          achievementCount: 4,
+          achievementTotal: 10,
+          achievementPerkSummary: ['가방 +6칸', '상점 할인 8%'],
+          nextAchievementTitle: '현장 조달',
+          nextAchievementProgress: '120/250',
+          nextAchievementHint: '상점과 여관에 누적 250골드를 사용합니다.'
+        }
+      ] as unknown[]
+    });
+    const frontend = await createFrontendHarness(landingSnapshot);
+
+    const html = frontend.getAppHtml();
+
+    expect(html).toContain('Active Perks');
+    expect(html).toContain('가방 +6칸 / 상점 할인 8%');
+    expect(html).toContain('현재 세이브에 누적된 업적 특전입니다.');
+    expect(html).toContain('누적 업적 특전이 이 세이브에 적용되어 있습니다.');
   });
 
   it('should clear the resume brief after the next non-load action', async () => {

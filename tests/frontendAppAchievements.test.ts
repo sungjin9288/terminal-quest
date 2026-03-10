@@ -157,6 +157,16 @@ type FrontendSnapshot = {
       cause?: string;
     }>;
   };
+  achievementPerks?: {
+    summary: string[];
+    inventorySizeBonus: number;
+    shopDiscountPercent: number;
+    unlockedShopTiers: Array<{
+      shopId: string;
+      tierKey: string;
+      label: string;
+    }>;
+  };
 };
 
 type FrontendExports = {
@@ -388,6 +398,12 @@ function createSnapshot(
       mode: 'auto',
       current: null,
       history: []
+    },
+    achievementPerks: {
+      summary: [],
+      inventorySizeBonus: 0,
+      shopDiscountPercent: 0,
+      unlockedShopTiers: []
     },
     ...overrides
   };

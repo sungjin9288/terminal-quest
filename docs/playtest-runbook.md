@@ -1,10 +1,10 @@
-# Playtest Runbook
+# 플레이테스트 런북 Playtest Runbook
 
-Use the isolated playtest profile when validating onboarding, quest readability, fatigue, and first-hour retention.
+온보딩, quest readability, fatigue, first-hour retention을 검증할 때는 isolated playtest profile을 사용합니다.
 
-Frontend-specific scenarios and observation prompts are in `docs/frontend-playtest-checklist.md`.
+Frontend 전용 시나리오와 observation prompt는 `docs/frontend-playtest-checklist.md`에 정리돼 있습니다.
 
-## Commands
+## 명령어 Commands
 
 ```bash
 npm run playtest:setup
@@ -13,33 +13,33 @@ npm run playtest:report
 npm run playtest:reset
 ```
 
-## What Each Command Does
+## 명령별 역할 What Each Command Does
 
 - `npm run playtest:setup`
-  - Creates `playtest-data/active/`
-  - Seeds recommended runtime settings
-  - Keeps normal `saves/`, `telemetry/`, and `logs/` untouched
+  - `playtest-data/active/` 생성
+  - 권장 runtime setting seed 적용
+  - 일반 `saves/`, `telemetry/`, `logs/`는 그대로 보존
 - `npm run playtest:start`
-  - Builds the current project
-  - Launches the browser frontend server with isolated save/settings/telemetry/log directories
-  - Serves the dashboard at `http://localhost:4310`
-  - Creates a timestamped note template in `playtest-data/active/notes/`
+  - 현재 프로젝트 build 수행
+  - isolated save/settings/telemetry/log 디렉터리로 browser frontend server 실행
+  - `http://localhost:4310`에서 dashboard 제공
+  - `playtest-data/active/notes/`에 timestamped note template 생성
 - `npm run playtest:start:terminal`
-  - Builds the current project
-  - Launches the legacy terminal client with the same isolated playtest profile
+  - 현재 프로젝트 build 수행
+  - 같은 isolated playtest profile로 legacy terminal client 실행
 - `npm run frontend:playtest`
-  - Builds the current project
-  - Launches the browser frontend server with the same isolated playtest profile
-  - Serves the dashboard at `http://localhost:4310`
-  - Creates a timestamped note template in `playtest-data/active/notes/`
+  - 현재 프로젝트 build 수행
+  - 같은 isolated playtest profile로 browser frontend server 실행
+  - `http://localhost:4310`에서 dashboard 제공
+  - `playtest-data/active/notes/`에 timestamped note template 생성
 - `npm run playtest:report`
-  - Summarizes captured telemetry and current save slots from the active playtest workspace
+  - active playtest workspace 기준 telemetry와 save slot 요약 출력
 - `npm run playtest:reset`
-  - Removes all isolated playtest data
+  - isolated playtest data 전체 제거
 
-## Active Directories
+## 활성 디렉터리 Active Directories
 
-The playtest profile writes only to:
+Playtest profile은 아래 경로에만 기록합니다:
 
 - `playtest-data/active/saves/`
 - `playtest-data/active/settings/`
@@ -47,26 +47,26 @@ The playtest profile writes only to:
 - `playtest-data/active/logs/`
 - `playtest-data/active/notes/`
 
-## Default Playtest Profile
+## 기본 프로필 Default Playtest Profile
 
-The seeded runtime settings are:
+초기 seed runtime setting은 다음과 같습니다:
 
 - Text speed: `normal`
 - Continue prompt mode: `streamlined`
 - Auto pace: `balanced`
 - Key hints: `on`
 - Context hints: `on`
-- Telemetry: `on` (local only, non-PII)
+- Telemetry: `on` (`local only`, `non-PII`)
 
-## Recommended Session Flow
+## 권장 세션 흐름 Recommended Session Flow
 
-1. Run `npm run playtest:setup` once before the first tester.
-2. Run `npm run playtest:start` for the standard browser session.
-3. Use `npm run playtest:start:terminal` only when you explicitly want to compare against the legacy CLI flow.
-4. Follow the scenario order in `docs/frontend-playtest-checklist.md`:
-   - Blind first run
-   - Resume and preview
-   - Short session stop and return
-5. Record observations in the generated note file under `playtest-data/active/notes/`.
-6. After the session, run `npm run playtest:report`.
-7. Run `npm run playtest:reset` only when you want a fully clean environment.
+1. 첫 tester batch 시작 전에 `npm run playtest:setup`을 1회 실행합니다.
+2. 표준 browser session은 `npm run playtest:start`로 시작합니다.
+3. legacy CLI flow 비교가 필요할 때만 `npm run playtest:start:terminal`을 사용합니다.
+4. `docs/frontend-playtest-checklist.md`의 scenario 순서를 따릅니다.
+   Blind first run
+   Resume and preview
+   Short session stop and return
+5. 관찰 내용은 `playtest-data/active/notes/` 아래 생성된 note file에 기록합니다.
+6. 세션 종료 후 `npm run playtest:report`를 실행합니다.
+7. 완전히 새 환경이 필요할 때만 `npm run playtest:reset`을 실행합니다.

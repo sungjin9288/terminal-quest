@@ -289,6 +289,45 @@ describe('Frontend runtime', () => {
     expect(savedSlot?.trackedAchievementHint).toContain('상점과 여관에 누적 250골드를 사용합니다.');
   });
 
+  it('should expose active achievement perks in runtime snapshots and save metadata', () => {
+    const session = createFrontendSession();
+
+    performFrontendAction(session, {
+      type: 'new-game',
+      name: 'PerkPilot',
+      characterClass: CharacterClass.Warrior,
+      gameMode: GameMode.Adventure
+    });
+
+    if (!session.gameState) {
+      throw new Error('game state missing');
+    }
+
+    session.gameState.statistics.goldSpent = 250;
+    session.gameState.statistics.locationsDiscovered = 4;
+    session.gameState.statistics.itemsCollected = 20;
+
+    const snapshot = performFrontendAction(session, {
+      type: 'save-game',
+      slotNumber: 1
+    });
+
+    expect(snapshot.achievementPerks).toMatchObject({
+      inventorySizeBonus: 6,
+      shopDiscountPercent: 8
+    });
+    expect(snapshot.achievementPerks?.summary).toEqual([
+      '가방 +6칸',
+      '상점 할인 8%'
+    ]);
+
+    const savedSlot = snapshot.saves.find(slot => slot.slotNumber === 1);
+    expect(savedSlot?.achievementPerkSummary).toEqual([
+      '가방 +6칸',
+      '상점 할인 8%'
+    ]);
+  });
+
   it('should expose shared tracking mode and history in runtime snapshots and save metadata', () => {
     const session = createFrontendSession();
 

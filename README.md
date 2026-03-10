@@ -121,6 +121,7 @@ Vercel용 static build flow:
 ```bash
 npm install
 npm run vercel:build
+npm run verify:vercel-static
 ```
 
 출력은 `vercel-dist/`에 생성됩니다. 이 build는 server process 없이 browser에서 직접 game runtime을 돌리고, save/load는 각 브라우저의 `localStorage`를 사용합니다.

@@ -30,6 +30,7 @@
     "balance:notes": "npm run build && node scripts/generate-balance-patch-notes.js",
     "balance:notes:dry": "npm run build && node scripts/generate-balance-patch-notes.js --dry-run",
     "verify:save-migration": "node scripts/verify-save-migration.js",
+    "verify:vercel-static": "npm run vercel:build && node scripts/verify-vercel-static.js",
     "verify:package-launch": "node scripts/verify-package-launch.js",
     "verify:runtime-smoke": "node scripts/verify-runtime-smoke.js",
     "verify:release-artifacts": "node scripts/verify-release-artifacts.js",

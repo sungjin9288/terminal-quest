@@ -23,6 +23,7 @@
 ```bash
 npm install
 npm run vercel:build
+npm run verify:vercel-static
 ```
 
 원하면 static output을 직접 띄워 볼 수 있습니다:

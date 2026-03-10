@@ -45,6 +45,9 @@ describe('Distribution Scripts', () => {
     expect(packageJson.scripts?.['verify:save-migration']).toBe(
       'node scripts/verify-save-migration.js'
     );
+    expect(packageJson.scripts?.['verify:vercel-static']).toBe(
+      'npm run vercel:build && node scripts/verify-vercel-static.js'
+    );
     expect(packageJson.scripts?.['verify:package-launch']).toBe(
       'node scripts/verify-package-launch.js'
     );
@@ -123,6 +126,11 @@ describe('Distribution Scripts', () => {
     expect(fs.existsSync(runtimeSmokeScriptPath)).toBe(true);
   });
 
+  it('should include vercel static verification script on disk', () => {
+    const vercelStaticScriptPath = path.join(process.cwd(), 'scripts', 'verify-vercel-static.js');
+    expect(fs.existsSync(vercelStaticScriptPath)).toBe(true);
+  });
+
   it('should include release artifact verification script on disk', () => {
     const artifactScriptPath = path.join(process.cwd(), 'scripts', 'verify-release-artifacts.js');
     expect(fs.existsSync(artifactScriptPath)).toBe(true);
@@ -164,6 +172,7 @@ describe('Distribution Scripts', () => {
 
     expect(content).toContain("['run', 'validate:data']");
     expect(content).toContain("['run', 'validate:playtime:extended']");
+    expect(content).toContain("['run', 'verify:vercel-static']");
   });
 
   it('should copy browser frontend assets into release packages', () => {

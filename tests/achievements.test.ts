@@ -3,6 +3,7 @@ import {
   ensureAchievementTrackingState,
   ensureRunSummary,
   evaluateAchievements,
+  formatAchievementRewardMessage,
   getAchievementSummary,
   recordRunBossDefeat,
   resetRunSummary,
@@ -55,6 +56,31 @@ describe('Achievement system', () => {
       unlockedCount: 1,
       totalCount: 6
     });
+    expect(evaluation.rewardGrants[0]).toMatchObject({
+      achievementId: 'flawless_clear',
+      skillPointsGranted: 1
+    });
+  });
+
+  it('should persist multiple unlocks that resolve in a single evaluation', () => {
+    const gameState = createTestGameState();
+
+    resetRunSummary(gameState, 'memory-forest', 1000);
+    gameState.statistics.bossesDefeated.push('memory-leak-titan');
+    recordRunBossDefeat(gameState, 'memory-leak-titan', 1010);
+
+    const evaluation = evaluateAchievements(gameState, 1020);
+    const summary = getAchievementSummary(gameState);
+
+    expect(evaluation.newlyUnlocked.map(achievement => achievement.id).sort()).toEqual([
+      'boss_shutdown',
+      'flawless_clear'
+    ]);
+    expect(summary.unlockedCount).toBe(2);
+    expect(summary.entries.filter(entry => entry.unlocked).map(entry => entry.id).sort()).toEqual([
+      'boss_shutdown',
+      'flawless_clear'
+    ]);
   });
 
   it('should seed a pinned tracking target when pin mode is enabled', () => {
@@ -106,5 +132,29 @@ describe('Achievement system', () => {
       '상점 구매 후 추적 완료: 현장 조달 250/250',
       '상점 구매 후 자동 전환: 전선 개척 3/4'
     ]);
+  });
+
+  it('should grant achievement rewards exactly once on unlock', () => {
+    const gameState = createTestGameState();
+    gameState.statistics.questsCompleted = 1;
+
+    const evaluation = evaluateAchievements(gameState, 1000);
+    const secondEvaluation = evaluateAchievements(gameState, 1100);
+
+    expect(evaluation.rewardGrants).toHaveLength(1);
+    expect(evaluation.rewardGrants[0]).toMatchObject({
+      achievementId: 'first_turn_in',
+      goldGranted: 40,
+      itemsAdded: [
+        {
+          itemId: 'save-token',
+          quantity: 1
+        }
+      ]
+    });
+    expect(gameState.player.gold).toBe(140);
+    expect(gameState.player.inventory.filter(itemId => itemId === 'save-token')).toHaveLength(1);
+    expect(secondEvaluation.rewardGrants).toHaveLength(0);
+    expect(formatAchievementRewardMessage(evaluation.rewardGrants[0])).toContain('골드 +40');
   });
 });

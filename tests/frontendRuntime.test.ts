@@ -342,6 +342,37 @@ describe('Frontend runtime', () => {
     expect(savedSlot?.achievementTrackingHistory).toContain('현장 조달');
   });
 
+  it('should clear explicit tracked achievement state on demand', () => {
+    const session = createFrontendSession();
+
+    performFrontendAction(session, {
+      type: 'new-game',
+      name: 'ClearTracker',
+      characterClass: CharacterClass.Warrior,
+      gameMode: GameMode.Adventure
+    });
+
+    performFrontendAction(session, {
+      type: 'set-achievement-tracking-mode',
+      mode: 'pinned'
+    });
+
+    performFrontendAction(session, {
+      type: 'track-achievement',
+      achievementId: 'field_buyer'
+    });
+
+    const snapshot = performFrontendAction(session, {
+      type: 'clear-achievement-tracking'
+    });
+
+    expect(snapshot.achievementTracking).toMatchObject({
+      mode: 'pinned',
+      current: null
+    });
+    expect(snapshot.feed[0]?.text).toContain('추적 해제');
+  });
+
   it('should save and load a browser run through the shared save system', () => {
     const session = createFrontendSession();
 

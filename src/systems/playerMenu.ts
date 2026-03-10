@@ -14,6 +14,13 @@ import {
   pressEnterToContinue
 } from '../ui/display.js';
 import {
+  promptAchievementMenuAction,
+  promptAchievementTrackTarget,
+  promptAchievementTrackingMode,
+  showAchievementPanel,
+  showAchievementTrackingHistory
+} from '../ui/achievements.js';
+import {
   showInGameMenu,
   confirmAction
 } from '../ui/menu.js';
@@ -32,6 +39,15 @@ import {
   removeItem
 } from './inventory.js';
 import {
+  AchievementTrackingChangeResult,
+  clearAchievementTracking,
+  ensureAchievementTrackingState,
+  formatAchievementTrackingMessage,
+  getNextAchievement,
+  setAchievementTrackingMode,
+  trackAchievement
+} from './achievements.js';
+import {
   getClassSkills,
   getSkillPointCost,
   getLearnableSkills,
@@ -39,6 +55,18 @@ import {
 } from './skills.js';
 
 export type { InGameMenuDependencies } from '../types/runtime.js';
+
+function showTrackingMessages(result: AchievementTrackingChangeResult): void {
+  for (const entry of result.history) {
+    const tone =
+      entry.type === 'completed'
+        ? 'success'
+        : entry.type === 'cleared'
+          ? 'warning'
+          : 'info';
+    showMessage(formatAchievementTrackingMessage(entry), tone);
+  }
+}
 
 async function inventoryMenuLoop(player: Player): Promise<void> {
   while (true) {
@@ -237,6 +265,83 @@ async function skillMenuLoop(player: Player): Promise<void> {
   }
 }
 
+async function achievementMenuLoop(gameState: GameState): Promise<void> {
+  while (true) {
+    clearScreen();
+    await showTitle();
+    showAchievementPanel(gameState);
+
+    const choice = await promptAchievementMenuAction(gameState);
+
+    switch (choice) {
+      case 'track': {
+        const achievementId = await promptAchievementTrackTarget(gameState);
+        if (!achievementId) {
+          break;
+        }
+
+        const result = trackAchievement(gameState, achievementId, {
+          mode: 'pinned',
+          recordHistory: true,
+          cause: '터미널 업적 메뉴'
+        });
+        showTrackingMessages(result);
+        await pressEnterToContinue('normal');
+        break;
+      }
+      case 'mode': {
+        const trackingState = ensureAchievementTrackingState(gameState);
+        const mode = await promptAchievementTrackingMode(trackingState.mode);
+        if (!mode) {
+          break;
+        }
+
+        const result = setAchievementTrackingMode(gameState, mode, {
+          recordHistory: true,
+          cause: '터미널 업적 메뉴'
+        });
+        showTrackingMessages(result);
+        await pressEnterToContinue('normal');
+        break;
+      }
+      case 'next': {
+        const nextAchievement = getNextAchievement(gameState);
+        if (!nextAchievement) {
+          showMessage('전환할 다음 업적이 없습니다.', 'warning');
+          await pressEnterToContinue('normal');
+          break;
+        }
+
+        const result = trackAchievement(gameState, nextAchievement.id, {
+          mode: 'pinned',
+          recordHistory: true,
+          cause: '다음 후보 전환'
+        });
+        showTrackingMessages(result);
+        await pressEnterToContinue('normal');
+        break;
+      }
+      case 'clear': {
+        const result = clearAchievementTracking(gameState, {
+          recordHistory: true,
+          cause: '터미널 업적 메뉴'
+        });
+        showTrackingMessages(result);
+        await pressEnterToContinue('normal');
+        break;
+      }
+      case 'history':
+        clearScreen();
+        await showTitle();
+        showAchievementTrackingHistory(ensureAchievementTrackingState(gameState).history);
+        await pressEnterToContinue('normal');
+        break;
+      case 'back':
+        return;
+    }
+  }
+}
+
 export async function inGameMenuLoop(
   gameState: GameState,
   dependencies: InGameMenuDependencies
@@ -264,6 +369,10 @@ export async function inGameMenuLoop(
 
       case 'skills':
         await skillMenuLoop(gameState.player);
+        break;
+
+      case 'achievements':
+        await achievementMenuLoop(gameState);
         break;
 
       case 'save':

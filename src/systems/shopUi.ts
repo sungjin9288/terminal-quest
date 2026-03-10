@@ -12,8 +12,11 @@ import {
   updateQuestProgressOnCollect
 } from './quest.js';
 import {
-  evaluateAchievements,
+  formatAchievementRewardMessage,
+  formatAchievementTrackingMessage,
   formatAchievementUnlockMessage,
+  getAchievementTrackingTone,
+  progressAchievements,
   recordRunGoldSpent,
   recordRunItemsCollected
 } from './achievements.js';
@@ -54,9 +57,18 @@ const SHOP_NPCS: Record<string, { name: string; icon: string; owner: string; gre
 };
 
 function showAchievementUnlocks(gameState: GameState): void {
-  const achievementResult = evaluateAchievements(gameState);
+  const achievementResult = progressAchievements(gameState, {
+    recordHistory: true,
+    cause: '상점 구매'
+  });
   for (const achievement of achievementResult.newlyUnlocked) {
     showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+  for (const rewardGrant of achievementResult.rewardGrants) {
+    showMessage(formatAchievementRewardMessage(rewardGrant), 'success');
+  }
+  for (const entry of achievementResult.trackingHistory) {
+    showMessage(formatAchievementTrackingMessage(entry), getAchievementTrackingTone(entry));
   }
 }
 

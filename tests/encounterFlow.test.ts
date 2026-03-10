@@ -116,7 +116,7 @@ describe('Encounter Flow', () => {
     expect(gameState.statistics.bossesDefeated).toContain('test-boss');
     expect(gameState.flags['location-clear-reward-memory-forest']).toBe(true);
     expect(gameState.flags['act-complete-1']).toBe(true);
-    expect(gameState.statistics.goldEarned).toBe(130);
+    expect(gameState.statistics.goldEarned).toBe(310);
   });
 
   it('should return escape when battle result is escaped', async () => {

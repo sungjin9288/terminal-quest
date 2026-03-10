@@ -1651,7 +1651,8 @@ async function performAction(action) {
       : null;
     const isTrackingControlAction =
       action.type === 'track-achievement' ||
-      action.type === 'set-achievement-tracking-mode';
+      action.type === 'set-achievement-tracking-mode' ||
+      action.type === 'clear-achievement-tracking';
     const previewContext = getPreviewCommitContext(previousSnapshot, action);
     const requestAction = { ...action };
     delete requestAction.previewAction;
@@ -1680,6 +1681,9 @@ async function performAction(action) {
       uiState.resumeRoute = null;
     } else if (action.type === 'new-game') {
       uiState.resumeRoute = null;
+    } else if (action.type === 'clear-achievement-tracking') {
+      uiState.resumeBrief = null;
+      uiState.resumeRoute = null;
     } else if (isTrackingControlAction) {
       // Tracking controls should not advance the current resume route phase.
     } else if (action.type !== 'load-game') {
@@ -1700,6 +1704,9 @@ async function performAction(action) {
     if (action.type === 'track-achievement' && uiState.snapshot?.hasGame) {
       uiState.achievementFocusId = action.achievementId;
       focusAchievementTarget(action.achievementId, uiState.snapshot);
+    }
+    if (action.type === 'clear-achievement-tracking') {
+      uiState.achievementFocusId = null;
     }
     if (action.type === 'load-game' || action.type === 'new-game') {
       uiState.achievementFocusId = null;
@@ -5241,7 +5248,7 @@ function getAchievementDeckState(snapshot) {
   };
 }
 
-function renderAchievementTrackingControls(snapshot, trackedAchievement) {
+function renderAchievementTrackingControls(snapshot, trackedAchievement, nextTarget = null) {
   const mode = getAchievementTrackingMode(snapshot);
   const history = getAchievementTrackingHistory(snapshot).slice(0, 3);
   const modeLabel = getAchievementTrackingModeLabel(mode);
@@ -5291,6 +5298,27 @@ function renderAchievementTrackingControls(snapshot, trackedAchievement) {
               ariaLabel: '업적 추적 모드'
             }
           )}
+        </div>
+        <div class="slot-actions">
+          ${nextTarget && !nextTarget.unlocked ? `
+            <button
+              class="ghost-button"
+              type="button"
+              data-action="track-achievement"
+              data-achievement-id="${escapeHtml(nextTarget.id)}"
+              data-tracking-mode="pinned"
+            >
+              다음 후보 핀 고정
+            </button>
+          ` : ''}
+          <button
+            class="ghost-button"
+            type="button"
+            data-action="clear-achievement-tracking"
+            ${trackedAchievement ? '' : 'disabled'}
+          >
+            추적 해제
+          </button>
         </div>
         <div class="achievement-history-list">
           ${history.length
@@ -5342,6 +5370,7 @@ function renderAchievementCard(entry, snapshot) {
       </div>
       <strong class="achievement-title">${escapeHtml(entry.title)}</strong>
       <p class="achievement-copy">${escapeHtml(entry.description)}</p>
+      ${entry.rewardPreview ? `<p class="achievement-reward-copy">보상 · ${escapeHtml(entry.rewardPreview)}</p>` : ''}
       <div class="badge-row">
         ${isTracked ? renderBadge('업적 추적', 'recommended') : ''}
         ${!entry.unlocked && trackingMode === 'pinned' && !isTracked ? renderBadge('카드 선택 시 핀 고정', 'warning') : ''}
@@ -5427,7 +5456,7 @@ function renderAchievements(snapshot) {
           <p class="panel-subtitle">최근 해금 기록과 남은 도전의 진행률을 한 화면에서 확인합니다.</p>
         </div>
       </div>
-      ${renderAchievementTrackingControls(snapshot, trackedAchievement)}
+      ${renderAchievementTrackingControls(snapshot, trackedAchievement, nextTarget)}
       <div class="deck-filter-stack">
         <div class="deck-filter-group">
           <span class="filter-label">카테고리</span>
@@ -7200,6 +7229,8 @@ function buildActionFromElement(element) {
         achievementId,
         ...(trackingMode ? { mode: trackingMode } : {})
       });
+    case 'clear-achievement-tracking':
+      return withPreviewAction({ type: action });
     case 'travel':
       return withPreviewAction({ type: action, destinationId });
     case 'accept-quest':

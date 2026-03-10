@@ -24,7 +24,15 @@ export type MainMenuOption = 'new-game' | 'load-game' | 'settings' | 'exit';
 /**
  * In-game menu option
  */
-export type InGameMenuOption = 'continue' | 'inventory' | 'stats' | 'skills' | 'save' | 'main-menu' | 'exit';
+export type InGameMenuOption =
+  | 'continue'
+  | 'inventory'
+  | 'stats'
+  | 'skills'
+  | 'achievements'
+  | 'save'
+  | 'main-menu'
+  | 'exit';
 
 function showListNavigationHint(): void {
   if (!getRuntimeSettings().showKeyHints) {
@@ -440,6 +448,10 @@ export async function showInGameMenu(): Promise<InGameMenuOption> {
         {
           name: chalk.magenta('✨ 스킬'),
           value: 'skills'
+        },
+        {
+          name: chalk.yellow('🏆 업적'),
+          value: 'achievements'
         },
         {
           name: chalk.cyan('💾 저장'),

@@ -8,14 +8,13 @@ import {
   AchievementTrackingState,
   AchievementView,
   RunSummary,
-  type AchievementAccent,
-  type AchievementCategory,
   type AchievementProgress,
   type AchievementUnlockState
 } from '../types/achievement.js';
 import { GameState } from '../types/game.js';
 import { ACHIEVEMENT_CATALOG } from '../data/achievements.js';
 import { addItem } from './inventory.js';
+import { getItemById } from '../data/items.js';
 
 export interface AchievementSummary {
   unlockedCount: number;
@@ -62,10 +61,6 @@ function createBooleanProgress(value: boolean): AchievementProgress {
 
 function getBossDefeatCount(gameState: GameState): number {
   return gameState.statistics.bossesDefeated.length;
-}
-
-function hasActClearFlag(gameState: GameState, act: number): boolean {
-  return gameState.flags[`act-complete-${act}`] === true;
 }
 
 function isFlawlessCurrentRun(gameState: GameState): boolean {
@@ -263,8 +258,10 @@ export function ensureAchievementState(gameState: GameState): AchievementState {
     }
   }
 
-  gameState.achievements = { unlocked };
-  return gameState.achievements;
+  const normalizedState = legacyGameState.achievements as AchievementState & Record<string, unknown>;
+  normalizedState.unlocked = unlocked;
+  gameState.achievements = normalizedState;
+  return normalizedState;
 }
 
 export function ensureAchievementTrackingState(gameState: GameState): AchievementTrackingState {
@@ -420,6 +417,7 @@ function buildAchievementView(
     accent: definition.accent,
     unlocked: Boolean(unlockedState),
     unlockedAt: unlockedState?.unlockedAt,
+    rewardPreview: formatAchievementRewardPreview(definition),
     progress: getRuleProgress(definition, gameState)
   };
 }
@@ -779,7 +777,8 @@ export function clearAchievementTracking(
 function applyAchievementReward(
   gameState: GameState,
   definition: AchievementDefinition,
-  unlockedAt: number
+  unlockedAt: number,
+  unlockState?: AchievementUnlockState
 ): AchievementRewardGrant {
   const reward = definition.reward ?? {};
   const itemsAdded: AchievementRewardGrant['itemsAdded'] = [];
@@ -828,9 +827,13 @@ function applyAchievementReward(
     }
   }
 
-  const unlockState = ensureAchievementState(gameState).unlocked[definition.id];
   if (unlockState) {
     unlockState.rewardGrantedAt = unlockedAt;
+  } else {
+    const currentUnlockState = ensureAchievementState(gameState).unlocked[definition.id];
+    if (currentUnlockState) {
+      currentUnlockState.rewardGrantedAt = unlockedAt;
+    }
   }
 
   return {
@@ -856,7 +859,7 @@ export function grantPendingAchievementRewards(
       continue;
     }
 
-    rewardGrants.push(applyAchievementReward(gameState, definition, now));
+    rewardGrants.push(applyAchievementReward(gameState, definition, now, unlockState));
   }
 
   return rewardGrants;
@@ -904,11 +907,11 @@ export function evaluateAchievements(
       continue;
     }
 
-    achievementState.unlocked[definition.id] = {
+    const unlockState = achievementState.unlocked[definition.id] = {
       unlockedAt: now
     };
-    rewardGrants.push(applyAchievementReward(gameState, definition, now));
-    newlyUnlocked.push(buildAchievementView(definition, achievementState.unlocked[definition.id], gameState));
+    rewardGrants.push(applyAchievementReward(gameState, definition, now, unlockState));
+    newlyUnlocked.push(buildAchievementView(definition, unlockState, gameState));
   }
 
   return {
@@ -946,6 +949,49 @@ export function formatAchievementUnlockMessage(
   return `업적 해금: ${achievement.title}`;
 }
 
+export function formatAchievementTrackingMessage(
+  entry: AchievementTrackingHistoryEntry
+): string {
+  return `[업적 추적] ${entry.message}`;
+}
+
+export function getAchievementTrackingTone(
+  entry: AchievementTrackingHistoryEntry
+): 'info' | 'success' | 'warning' {
+  if (entry.type === 'completed') {
+    return 'success';
+  }
+
+  if (entry.type === 'cleared') {
+    return 'warning';
+  }
+
+  return 'info';
+}
+
+export function formatAchievementRewardPreview(
+  achievement: Pick<AchievementDefinition, 'reward'>
+): string | undefined {
+  const reward = achievement.reward;
+  if (!reward) {
+    return undefined;
+  }
+
+  const parts: string[] = [];
+  if (reward.gold && reward.gold > 0) {
+    parts.push(`골드 +${reward.gold}`);
+  }
+  if (reward.skillPoints && reward.skillPoints > 0) {
+    parts.push(`SP +${reward.skillPoints}`);
+  }
+  for (const item of reward.items ?? []) {
+    const itemName = getItemById(item.itemId)?.name ?? item.itemId;
+    parts.push(`${itemName} x${item.quantity}`);
+  }
+
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
 export function formatAchievementRewardMessage(
   rewardGrant: AchievementRewardGrant
 ): string {
@@ -960,7 +1006,8 @@ export function formatAchievementRewardMessage(
   }
 
   for (const item of rewardGrant.itemsAdded) {
-    parts.push(`${item.itemId} x${item.quantity}`);
+    const itemName = getItemById(item.itemId)?.name ?? item.itemId;
+    parts.push(`${itemName} x${item.quantity}`);
   }
 
   if (parts.length === 0) {

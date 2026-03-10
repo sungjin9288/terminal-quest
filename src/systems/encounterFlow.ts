@@ -18,8 +18,11 @@ import {
 import { getItemById } from '../data/items.js';
 import { runBattle } from './battle.js';
 import {
-  evaluateAchievements,
+  formatAchievementRewardMessage,
+  formatAchievementTrackingMessage,
   formatAchievementUnlockMessage,
+  getAchievementTrackingTone,
+  progressAchievements,
   recordRunBossDefeat,
   recordRunDamageTaken,
   recordRunGoldEarned,
@@ -73,12 +76,21 @@ function formatMonsterName(monsterId: string): string {
 }
 
 function showAchievementUnlocks(gameState: GameState): boolean {
-  const achievementResult = evaluateAchievements(gameState);
+  const achievementResult = progressAchievements(gameState, {
+    recordHistory: true,
+    cause: '전투 정산'
+  });
   for (const achievement of achievementResult.newlyUnlocked) {
     showMessage(formatAchievementUnlockMessage(achievement), 'success');
   }
+  for (const rewardGrant of achievementResult.rewardGrants) {
+    showMessage(formatAchievementRewardMessage(rewardGrant), 'success');
+  }
+  for (const entry of achievementResult.trackingHistory) {
+    showMessage(formatAchievementTrackingMessage(entry), getAchievementTrackingTone(entry));
+  }
 
-  return achievementResult.newlyUnlocked.length > 0;
+  return achievementResult.newlyUnlocked.length > 0 || achievementResult.trackingHistory.length > 0;
 }
 
 function getCompletedActs(gameState: GameState): number[] {

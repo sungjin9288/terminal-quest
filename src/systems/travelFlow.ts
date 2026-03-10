@@ -11,8 +11,11 @@ import {
 } from '../ui/display.js';
 import {
   closeRunSummary,
-  evaluateAchievements,
+  formatAchievementRewardMessage,
+  formatAchievementTrackingMessage,
   formatAchievementUnlockMessage,
+  getAchievementTrackingTone,
+  progressAchievements,
   resetRunSummary
 } from './achievements.js';
 import {
@@ -27,9 +30,18 @@ export interface TravelFlowResult {
 }
 
 function showAchievementUnlocks(gameState: GameState): void {
-  const achievementResult = evaluateAchievements(gameState);
+  const achievementResult = progressAchievements(gameState, {
+    recordHistory: true,
+    cause: '이동'
+  });
   for (const achievement of achievementResult.newlyUnlocked) {
     showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+  for (const rewardGrant of achievementResult.rewardGrants) {
+    showMessage(formatAchievementRewardMessage(rewardGrant), 'success');
+  }
+  for (const entry of achievementResult.trackingHistory) {
+    showMessage(formatAchievementTrackingMessage(entry), getAchievementTrackingTone(entry));
   }
 }
 

@@ -40,8 +40,11 @@ import {
 } from '../ui/display.js';
 import { confirmAction } from '../ui/menu.js';
 import {
-  evaluateAchievements,
+  formatAchievementRewardMessage,
+  formatAchievementTrackingMessage,
   formatAchievementUnlockMessage,
+  getAchievementTrackingTone,
+  progressAchievements,
   recordRunGoldEarned,
   recordRunItemsCollected,
   recordRunQuestCompleted
@@ -211,9 +214,18 @@ function buildQuestSelectionChoices(
 }
 
 function showAchievementUnlocks(gameState: GameState): void {
-  const achievementResult = evaluateAchievements(gameState);
+  const achievementResult = progressAchievements(gameState, {
+    recordHistory: true,
+    cause: '퀘스트 정산'
+  });
   for (const achievement of achievementResult.newlyUnlocked) {
     showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+  for (const rewardGrant of achievementResult.rewardGrants) {
+    showMessage(formatAchievementRewardMessage(rewardGrant), 'success');
+  }
+  for (const entry of achievementResult.trackingHistory) {
+    showMessage(formatAchievementTrackingMessage(entry), getAchievementTrackingTone(entry));
   }
 }
 

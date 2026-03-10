@@ -2,7 +2,7 @@ import './helpers/moduleMocks';
 import { inGameMenuLoop } from '../src/systems/playerMenu';
 import * as menu from '../src/ui/menu';
 import { createTestGameState } from './helpers/gameStateFactory';
-import { mockDisplayPreset } from './helpers/uiMocks';
+import { mockDisplayPreset, mockPromptSequence } from './helpers/uiMocks';
 
 describe('Player Menu', () => {
   afterEach(() => {
@@ -70,5 +70,39 @@ describe('Player Menu', () => {
     });
 
     expect(result).toBe(false);
+  });
+
+  it('should open the terminal achievement menu and pin a selected achievement', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'MenuTester',
+        level: 3,
+        currentLocation: 'bit-town'
+      }
+    });
+    gameState.statistics.locationsDiscovered = 3;
+    mockDisplayPreset('playerMenu');
+
+    const showInGameMenuMock = jest.spyOn(menu, 'showInGameMenu');
+    showInGameMenuMock
+      .mockResolvedValueOnce('achievements')
+      .mockResolvedValueOnce('continue');
+
+    mockPromptSequence([
+      { choice: 'track' },
+      { achievementId: 'frontier_scout' },
+      { choice: 'back' }
+    ]);
+
+    const result = await inGameMenuLoop(gameState, {
+      saveGame: jest.fn(async () => true)
+    });
+
+    expect(result).toBe(true);
+    expect(gameState.achievementTracking).toMatchObject({
+      mode: 'pinned',
+      achievementId: 'frontier_scout'
+    });
+    expect(gameState.achievementTracking?.history[0]?.message).toContain('전선 개척');
   });
 });

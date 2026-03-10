@@ -123,5 +123,6 @@ export interface AchievementView {
   accent: AchievementAccent;
   unlocked: boolean;
   unlockedAt?: number;
+  rewardPreview?: string;
   progress: AchievementProgress;
 }

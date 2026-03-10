@@ -10,9 +10,12 @@ import { SaveType, type SaveSlotMetadata } from '../types/save.js';
 import { type AchievementTrackingMode } from '../types/achievement.js';
 import { createNewGameState } from '../systems/newGameState.js';
 import {
+  clearAchievementTracking,
   closeRunSummary,
   ensureAchievementTrackingState,
   evaluateAchievements,
+  formatAchievementRewardMessage,
+  formatAchievementTrackingMessage,
   formatAchievementUnlockMessage,
   getAchievementById,
   getAchievementSummary,
@@ -195,6 +198,9 @@ export type FrontendAction =
       type: 'track-achievement';
       achievementId: string;
       mode?: AchievementTrackingMode;
+    }
+  | {
+      type: 'clear-achievement-tracking';
     }
   | {
       type: 'visit-board';
@@ -429,6 +435,7 @@ export interface FrontendSnapshot {
       id: string;
       title: string;
       description: string;
+      rewardPreview?: string;
       category: string;
       accent: string;
       unlocked: boolean;
@@ -535,6 +542,9 @@ function applyAchievementUnlocks(session: FrontendSession): void {
   for (const achievement of achievementResult.newlyUnlocked) {
     appendFeed(session, 'success', formatAchievementUnlockMessage(achievement), undefined, 'reward');
   }
+  for (const rewardGrant of achievementResult.rewardGrants) {
+    appendFeed(session, 'success', formatAchievementRewardMessage(rewardGrant), undefined, 'reward');
+  }
 }
 
 function getAchievementTrackingCause(
@@ -545,6 +555,8 @@ function getAchievementTrackingCause(
       return '추적 설정';
     case 'track-achievement':
       return '업적 선택';
+    case 'clear-achievement-tracking':
+      return '추적 해제';
     case 'complete-quest':
       return '퀘스트 정산';
     case 'buy-item':
@@ -592,6 +604,12 @@ function appendAchievementTrackingFeed(
           recordHistory: true,
           cause
         });
+      case 'clear-achievement-tracking':
+        return clearAchievementTracking(session.gameState, {
+          now,
+          recordHistory: true,
+          cause
+        });
       case 'load-game':
         return syncAchievementTrackingState(session.gameState, {
           now,
@@ -622,7 +640,7 @@ function appendAchievementTrackingFeed(
       ? 'reward'
       : 'system';
 
-    appendFeed(session, tone, `[업적 추적] ${entry.message}`, undefined, category);
+    appendFeed(session, tone, formatAchievementTrackingMessage(entry), undefined, category);
   }
 }
 
@@ -736,6 +754,7 @@ function getActionFeedCategory(actionType: FrontendAction['type']): FeedCategory
     case 'load-game':
     case 'set-achievement-tracking-mode':
     case 'track-achievement':
+    case 'clear-achievement-tracking':
     default:
       return 'system';
   }
@@ -1520,6 +1539,11 @@ export function performFrontendAction(
         actionSucceeded = true;
         break;
 
+      case 'clear-achievement-tracking':
+        requireGameState(session);
+        actionSucceeded = true;
+        break;
+
       case 'visit-board':
         visitBoard(session);
         actionSucceeded = true;
@@ -1765,6 +1789,7 @@ function buildAchievementSnapshot(
       id: entry.id,
       title: entry.title,
       description: entry.description,
+      rewardPreview: entry.rewardPreview,
       category: entry.category,
       accent: entry.accent,
       unlocked: entry.unlocked,

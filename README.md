@@ -12,6 +12,7 @@ As of `2026-03-10`, the project is in a `release-candidate / frontend playtest-r
 
 - The browser frontend is now the primary playtest surface, with a one-screen workspace shell for quests, travel, market, combat, saves, logs, and achievement-driven routing.
 - Smart resume, resume preview, preview commit feedback, blocked-action recovery, session planning, reward horizon, momentum tracking, and stop-and-return UX are all implemented in the frontend flow.
+- Achievement tracking now spans both browser and terminal flows, including reward previews, guided resume targets, tracking history, and a dedicated terminal achievement menu.
 - Narrative presentation has been refactored around episode quest grouping, direct NPC lines, voiced feed reactions, and localized presentation text for browser-facing content.
 - Isolated browser playtest tooling is available under `playtest-data/active/`, with a frontend-specific checklist and auto-generated session note templates.
 - Versioned release packaging, artifact checksums, runtime smoke checks, sign-off plumbing, and release smoke reports are in place for packaged distribution validation.
@@ -21,7 +22,7 @@ As of `2026-03-10`, the project is in a `release-candidate / frontend playtest-r
 - Automated quality gate: `npm run release:check` PASS
 - Release smoke: `npm run release:smoke` PASS
 - Release package + artifact verification: `npm run release:package`, `npm run verify:release-artifacts` PASS
-- Automated tests: `53/53` suites, `281/281` tests PASS
+- Automated tests: `53/53` suites, `285/285` tests PASS
 - Balance targets: baseline first clear `32.59h`, extended first clear `33.97h`, extended full completion `44.62h`
 
 ### What Is Ready Now
@@ -54,6 +55,7 @@ As of `2026-03-10`, the project is in a `release-candidate / frontend playtest-r
 - **Context Guide Hints**: Adaptive town/dungeon recommendations for safer progression and quest flow
 - **Adventure Focus Guide**: Surfaces the next objective, recommended destination, and boss approach progress so runs stay readable
 - **Episode Quest Board**: Groups quests into main story, character episodes, contracts, and seasonal runs with session-length previews
+- **Achievement Chase UX**: Reward previews, pinned tracking, resume routing, and browser/terminal achievement views keep the next unlock legible
 - **Dungeon Event Variety**: Non-combat exploration now produces supply caches, maintenance pockets, lore echoes, and shortcut scans instead of empty filler
 - **Smart Action Focus**: Town/dungeon menus preselect recommended next action so Enter can fast-track common loops
 - **First-Run Onboarding**: One-time quick-start guidance on first town entry for smoother early progression

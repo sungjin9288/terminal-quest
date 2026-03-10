@@ -35,8 +35,11 @@ import { getAdventureFocusSummary, getRecommendedTravelDestination } from './adv
 import { runDungeonEvent } from './dungeonEvents.js';
 import { getRuntimeSettings } from '../runtime/settings.js';
 import {
-  evaluateAchievements,
+  formatAchievementRewardMessage,
+  formatAchievementTrackingMessage,
   formatAchievementUnlockMessage,
+  getAchievementTrackingTone,
+  progressAchievements,
   recordRunGoldSpent
 } from './achievements.js';
 
@@ -47,9 +50,18 @@ export type {
 } from '../types/runtime.js';
 
 function showAchievementUnlocks(gameState: GameState): void {
-  const achievementResult = evaluateAchievements(gameState);
+  const achievementResult = progressAchievements(gameState, {
+    recordHistory: true,
+    cause: '허브 활동'
+  });
   for (const achievement of achievementResult.newlyUnlocked) {
     showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+  for (const rewardGrant of achievementResult.rewardGrants) {
+    showMessage(formatAchievementRewardMessage(rewardGrant), 'success');
+  }
+  for (const entry of achievementResult.trackingHistory) {
+    showMessage(formatAchievementTrackingMessage(entry), getAchievementTrackingTone(entry));
   }
 }
 

@@ -625,6 +625,8 @@ describe('Frontend achievement workspace actions', () => {
     expect(html).toContain('상점 구매 후 자동 전환: 전선 개척 3/4');
     expect(html).toContain('data-action="track-achievement"');
     expect(html).toContain('data-achievement-id="field_buyer"');
+    expect(html).toContain('다음 후보 핀 고정');
+    expect(html).toContain('data-action="clear-achievement-tracking"');
     expect(html).toContain('카드 선택 시 핀 고정');
   });
 

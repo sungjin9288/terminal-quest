@@ -4,6 +4,7 @@
 
 import { GameState } from './game.js';
 import type { AchievementTrackingMode } from './achievement.js';
+import type { AiDirectorMode } from './ai.js';
 
 /**
  * Save slot data
@@ -65,6 +66,9 @@ export interface SaveSlotMetadata {
   nextAchievementProgress?: string;
   nextAchievementHint?: string;
   achievementPerkSummary?: string[];
+  aiDirectorMode?: AiDirectorMode;
+  aiIntentTitle?: string;
+  aiIntentReason?: string;
 }
 
 /**

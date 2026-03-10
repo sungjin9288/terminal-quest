@@ -8,6 +8,7 @@ import {
 } from '../types/index.js';
 import { SaveType, type SaveSlotMetadata } from '../types/save.js';
 import { type AchievementTrackingMode } from '../types/achievement.js';
+import { type AiDirectorMode, type AiNarrativeMode } from '../types/ai.js';
 import { createNewGameState } from '../systems/newGameState.js';
 import {
   clearAchievementTracking,
@@ -33,6 +34,12 @@ import {
   syncAchievementTrackingState,
   trackAchievement
 } from '../systems/achievements.js';
+import { ensureAiState, syncAiState } from '../systems/aiDirector.js';
+import { recordAiMoment } from '../systems/aiMemory.js';
+import {
+  buildAiNarrativeCue,
+  buildAiNarrativeVoiceLine
+} from '../systems/aiNarrator.js';
 import {
   formatFirstClearRewardPreview,
   getAdventureFocusSummary,
@@ -121,6 +128,7 @@ import {
   getPresentationShopGreeting,
   getPresentationSkillCopy
 } from './presentationText.js';
+import { trackTelemetryEvent } from '../systems/telemetry.js';
 import {
   type FeedVoiceLine,
   getActClearVoiceLine,
@@ -173,6 +181,7 @@ export interface FrontendSession {
   nextFeedId: number;
   random: () => number;
   now: () => number;
+  lastShownAiIntentId: string | null;
 }
 
 export type FrontendAction =
@@ -256,6 +265,12 @@ export type FrontendAction =
   | {
       type: 'battle-item';
       itemId: string;
+    }
+  | {
+      type: 'ai-feedback';
+      feedback: 'follow' | 'dismiss';
+      intentId?: string;
+      source?: string;
     };
 
 interface SerializedQuest {
@@ -481,6 +496,33 @@ export interface FrontendSnapshot {
       label: string;
     }>;
   };
+  ai?: {
+    directorMode: AiDirectorMode;
+    narrativeMode: AiNarrativeMode;
+    currentIntent: {
+      id: string;
+      kind: string;
+      title: string;
+      reason: string;
+      tone: string;
+      confidence: number;
+      recommendedAction: string | null;
+      recommendedLocationId: string | null;
+      lines: string[];
+    } | null;
+    narrativeCue: {
+      speaker: string;
+      title: string;
+      summary: string;
+      beats: string[];
+      tone: string;
+    } | null;
+    recentMoments: Array<{
+      type: string;
+      label: string;
+      timestamp: number;
+    }>;
+  };
 }
 
 const MAX_FEED_ENTRIES = 40;
@@ -492,7 +534,8 @@ function createEmptySession(dependencies: FrontendRuntimeDependencies = {}): Fro
     feed: [],
     nextFeedId: 1,
     random: dependencies.random ?? Math.random,
-    now: dependencies.now ?? Date.now
+    now: dependencies.now ?? Date.now,
+    lastShownAiIntentId: null
   };
 }
 
@@ -546,6 +589,31 @@ function appendVoiceFeed(
   appendFeed(session, tone, line.text, line.speaker, category);
 }
 
+function appendAiNarrativeVoiceFeed(
+  session: FrontendSession,
+  tone: FeedTone,
+  event: {
+    type: import('../types/ai.js').AiMomentType;
+    label: string;
+  },
+  category: FeedCategory = 'system',
+  options: { record?: boolean } = {}
+): void {
+  if (!session.gameState) {
+    return;
+  }
+
+  if (options.record !== false) {
+    recordAiMoment(session.gameState, {
+      ...event,
+      timestamp: session.now()
+    });
+  }
+
+  const line = buildAiNarrativeVoiceLine(session.gameState, event, session.now());
+  appendVoiceFeed(session, tone, line, category);
+}
+
 function applyAchievementUnlocks(session: FrontendSession): void {
   if (!session.gameState) {
     return;
@@ -553,10 +621,32 @@ function applyAchievementUnlocks(session: FrontendSession): void {
 
   const achievementResult = evaluateAchievements(session.gameState, session.now());
   for (const achievement of achievementResult.newlyUnlocked) {
+    recordAiMoment(session.gameState, {
+      type: 'achievement-unlocked',
+      label: `업적 해금: ${achievement.title}`,
+      timestamp: session.now()
+    });
     appendFeed(session, 'success', formatAchievementUnlockMessage(achievement), undefined, 'reward');
   }
   for (const rewardGrant of achievementResult.rewardGrants) {
     appendFeed(session, 'success', formatAchievementRewardMessage(rewardGrant), undefined, 'reward');
+  }
+
+  if (achievementResult.newlyUnlocked.length > 0) {
+    const [firstAchievement] = achievementResult.newlyUnlocked;
+    const label = achievementResult.newlyUnlocked.length > 1
+      ? `업적 해금: ${firstAchievement.title} 외 ${achievementResult.newlyUnlocked.length - 1}개`
+      : `업적 해금: ${firstAchievement.title}`;
+    appendAiNarrativeVoiceFeed(
+      session,
+      'success',
+      {
+        type: 'achievement-unlocked',
+        label
+      },
+      'reward',
+      { record: false }
+    );
   }
 }
 
@@ -1047,6 +1137,15 @@ function finalizeBossProgress(session: FrontendSession, bossId: string): void {
       'combat'
     );
   }
+  appendAiNarrativeVoiceFeed(
+    session,
+    'success',
+    {
+      type: 'boss-victory',
+      label: `${currentLocation.name} 오염원 차단`
+    },
+    'reward'
+  );
 
   const locationRewardFlag = `location-clear-reward-${currentLocation.id}`;
   if (!gameState.flags[locationRewardFlag]) {
@@ -1227,6 +1326,15 @@ function handlePlayerDefeat(session: FrontendSession): void {
 
   appendFeed(session, 'error', `패배했습니다. ${goldLoss} 골드를 잃고 비트 타운으로 후퇴합니다.`, undefined, 'combat');
   appendVoiceFeed(session, 'warning', getDefeatVoiceLine(defeatLocationId), 'combat');
+  appendAiNarrativeVoiceFeed(
+    session,
+    'warning',
+    {
+      type: 'defeat',
+      label: '비트 타운 후퇴'
+    },
+    'combat'
+  );
 }
 
 function travelTo(session: FrontendSession, destinationId: string): void {
@@ -1263,6 +1371,15 @@ function travelTo(session: FrontendSession, destinationId: string): void {
 
   appendFeed(session, 'success', `${getLocationDisplayName(destinationId)}에 도착했습니다.`, undefined, 'travel');
   appendVoiceFeed(session, 'info', getTravelArrivalVoiceLine(destinationId), 'travel');
+  appendAiNarrativeVoiceFeed(
+    session,
+    'info',
+    {
+      type: 'travel',
+      label: `${getPresentationDisplayName(getLocationDisplayName(destinationId))} 진입`
+    },
+    'travel'
+  );
   const questUpdates = updateQuestProgressOnExplore(gameState, destinationId);
   if (questUpdates.length > 0) {
     applyQuestProgressFeed(session, questUpdates);
@@ -1308,6 +1425,15 @@ function restAtInn(session: FrontendSession): void {
     applyQuestProgressFeed(session, updates);
   }
   appendVoiceFeed(session, 'info', getInnRestVoiceLine(), 'hub');
+  appendAiNarrativeVoiceFeed(
+    session,
+    'info',
+    {
+      type: 'rest',
+      label: '여관 정비 완료'
+    },
+    'hub'
+  );
 }
 
 function exploreTown(session: FrontendSession): void {
@@ -1442,6 +1568,15 @@ function buyShopItemAction(
     'hub'
   );
   appendVoiceFeed(session, 'info', getPurchaseVoiceLine(shopId), 'hub');
+  appendAiNarrativeVoiceFeed(
+    session,
+    'info',
+    {
+      type: 'purchase',
+      label: `${itemName} 확보`
+    },
+    'hub'
+  );
   applyCollectQuestUpdates(session, [itemId]);
 }
 
@@ -1534,6 +1669,15 @@ export function performFrontendAction(
         );
         appendFeed(session, 'info', '브라우저 프론트엔드 버전으로 여정이 시작됩니다.', undefined, 'system');
         appendVoiceFeed(session, 'info', getNewGameVoiceLine(), 'hub');
+        appendAiNarrativeVoiceFeed(
+          session,
+          'info',
+          {
+            type: 'new-game',
+            label: '비트 타운 도착'
+          },
+          'hub'
+        );
         actionSucceeded = true;
         break;
 
@@ -1589,6 +1733,15 @@ export function performFrontendAction(
         }
         appendFeed(session, 'success', result.message, undefined, 'quest');
         appendVoiceFeed(session, 'info', getQuestAcceptVoiceLine(result.quest ?? gameState.quests[action.questId]), 'quest');
+        appendAiNarrativeVoiceFeed(
+          session,
+          'info',
+          {
+            type: 'quest-accepted',
+            label: (result.quest ?? gameState.quests[action.questId]).name
+          },
+          'quest'
+        );
         actionSucceeded = true;
         break;
       }
@@ -1622,6 +1775,15 @@ export function performFrontendAction(
           );
         }
         appendVoiceFeed(session, 'success', getQuestCompleteVoiceLine(result.quest ?? gameState.quests[action.questId]), 'quest');
+        appendAiNarrativeVoiceFeed(
+          session,
+          'success',
+          {
+            type: 'quest-completed',
+            label: (result.quest ?? gameState.quests[action.questId]).name
+          },
+          'quest'
+        );
         actionSucceeded = true;
         break;
       }
@@ -1664,6 +1826,12 @@ export function performFrontendAction(
         performBattleAction(session, action);
         actionSucceeded = true;
         break;
+
+      case 'ai-feedback':
+        requireGameState(session);
+        trackAiFeedback(session, action);
+        actionSucceeded = true;
+        break;
     }
   } catch (error) {
     appendFeed(
@@ -1675,7 +1843,7 @@ export function performFrontendAction(
     );
   }
 
-  if (actionSucceeded) {
+  if (actionSucceeded && action.type !== 'ai-feedback') {
     applyAchievementUnlocks(session);
     appendAchievementTrackingFeed(session, action);
   }
@@ -1887,6 +2055,79 @@ function buildAchievementPerkSnapshot(
   };
 }
 
+function buildAiSnapshot(gameState: GameState): FrontendSnapshot['ai'] {
+  const aiState = ensureAiState(gameState);
+  const narrativeCue = buildAiNarrativeCue(gameState);
+
+  return {
+    directorMode: aiState.directorMode,
+    narrativeMode: aiState.narrativeMode,
+    currentIntent: aiState.currentIntent
+      ? {
+          id: aiState.currentIntent.id,
+          kind: aiState.currentIntent.kind,
+          title: aiState.currentIntent.title,
+          reason: aiState.currentIntent.reason,
+          tone: aiState.currentIntent.tone,
+          confidence: aiState.currentIntent.confidence,
+          recommendedAction: aiState.currentIntent.recommendedAction,
+          recommendedLocationId: aiState.currentIntent.recommendedLocationId,
+          lines: aiState.currentIntent.lines
+        }
+      : null,
+    narrativeCue,
+    recentMoments: aiState.memory.recentMoments.slice(0, 4).map(moment => ({
+      type: moment.type,
+      label: moment.label,
+      timestamp: moment.timestamp
+    }))
+  };
+}
+
+function trackAiIntentShown(session: FrontendSession, gameState: GameState): void {
+  const aiState = ensureAiState(gameState);
+  const currentIntentId = aiState.currentIntent?.id ?? null;
+
+  if (!currentIntentId) {
+    session.lastShownAiIntentId = null;
+    return;
+  }
+
+  if (session.lastShownAiIntentId === currentIntentId) {
+    return;
+  }
+
+  trackTelemetryEvent('ai_recommendation_shown', gameState, {
+    intentId: currentIntentId,
+    intentKind: aiState.currentIntent?.kind ?? null,
+    recommendedAction: aiState.currentIntent?.recommendedAction ?? null,
+    recommendedLocationId: aiState.currentIntent?.recommendedLocationId ?? null
+  });
+  session.lastShownAiIntentId = currentIntentId;
+}
+
+function trackAiFeedback(session: FrontendSession, action: Extract<FrontendAction, { type: 'ai-feedback' }>): void {
+  const gameState = requireGameState(session);
+  const aiState = ensureAiState(gameState);
+  const currentIntent = aiState.currentIntent;
+  const intentId = action.intentId ?? currentIntent?.id ?? null;
+  if (!intentId) {
+    return;
+  }
+
+  trackTelemetryEvent(
+    action.feedback === 'dismiss' ? 'ai_recommendation_dismissed' : 'ai_recommendation_followed',
+    gameState,
+    {
+      intentId,
+      currentIntentId: currentIntent?.id ?? null,
+      currentIntentKind: currentIntent?.kind ?? null,
+      source: action.source ?? null,
+      intentMatchesCurrent: currentIntent?.id === intentId
+    }
+  );
+}
+
 export function getFrontendSnapshot(session: FrontendSession): FrontendSnapshot {
   if (!session.gameState) {
     return {
@@ -1900,6 +2141,8 @@ export function getFrontendSnapshot(session: FrontendSession): FrontendSnapshot 
 
   const gameState = session.gameState;
   syncAchievementTrackingState(gameState, { recordHistory: false });
+  syncAiState(gameState, session.now());
+  trackAiIntentShown(session, gameState);
   const location = getLocationById(gameState.player.currentLocation);
   const adventureFocus = getAdventureFocusSummary(gameState);
   const tracker = getQuestTrackerSummary(gameState);
@@ -1995,6 +2238,7 @@ export function getFrontendSnapshot(session: FrontendSession): FrontendSnapshot 
     saveStatus: buildSaveStatus(session),
     achievements: buildAchievementSnapshot(gameState),
     achievementTracking: buildAchievementTrackingSnapshot(gameState),
-    achievementPerks: buildAchievementPerkSnapshot(gameState)
+    achievementPerks: buildAchievementPerkSnapshot(gameState),
+    ai: buildAiSnapshot(gameState)
   };
 }

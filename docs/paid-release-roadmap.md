@@ -82,3 +82,35 @@ Exit criteria:
 - `validate:playtime` passes with the 30h first-clear target.
 - `validate:playtime:extended` passes.
 - Internal runbooks confirm no single loop dominates playtime (>45% repeatable share).
+
+## Phase 6: Internal AI Layer (In Progress)
+- [x] Session Director AI
+  - [x] Shared intent engine for browser/terminal recommendations
+  - [x] Recommendation follow/dismiss telemetry
+  - [x] AI intent summary in save metadata and resume surfaces
+- [x] Narrative Companion AI (Initial)
+  - [x] Context-aware voice/feed selection
+  - [x] Short-term moment memory for payoff lines
+- [ ] Contract Composer AI
+  - [ ] Template-driven dynamic contracts
+  - [ ] Balance guardrail integration
+- [ ] Encounter Director AI
+  - [ ] Tension pacing across combat and dungeon events
+  - [ ] Endgame-specific pressure rules
+- [ ] Ops Analyst AI
+  - [ ] Telemetry-to-insight reporting
+  - [ ] Playtest observation prioritization
+
+Reference:
+- `docs/internal-ai-roadmap.md`
+
+Latest snapshot (2026-03-10):
+- `GameState.aiState` is the shared AI intent SSOT for browser, terminal, and save metadata.
+- Browser Action Rail now renders an `AI Director` card with follow/dismiss telemetry.
+- Browser Action Rail now renders a `Companion Note` card backed by recent AI memory.
+- Save metadata stores `aiDirectorMode`, `aiIntentTitle`, and `aiIntentReason`.
+
+Exit criteria:
+- Browser and terminal clients consume the same AI intent SSOT.
+- Playtests show improved resume comprehension and lower repeat-loop fatigue.
+- AI-generated or AI-directed content stays within existing balance and save-safety guardrails.

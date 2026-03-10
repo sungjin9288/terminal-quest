@@ -4206,6 +4206,7 @@ function renderActionRail(snapshot) {
   const isCombat = snapshot.scene === 'combat';
   const aiIntent = getVisibleAiIntent(snapshot);
   const aiIntentTarget = getAiIntentTarget(snapshot, aiIntent);
+  const aiNarrativeCue = snapshot.ai?.narrativeCue ?? null;
   const primaryAction = getPrimaryActionDescriptor(snapshot);
   const sessionWindow = getSessionWindowMeta();
   const primarySessionFit = primaryAction ? getSessionFitMeta(snapshot, primaryAction) : null;
@@ -4286,6 +4287,29 @@ function renderActionRail(snapshot) {
     `
     : '';
 
+  const aiCompanionCard = aiNarrativeCue
+    ? `
+      <article class="ai-companion-card" data-tone="${escapeHtml(aiNarrativeCue.tone ?? 'info')}">
+        <div class="ai-companion-head">
+          <div class="ai-companion-copy">
+            <p class="eyebrow">Companion Note</p>
+            <strong class="ai-companion-title">${escapeHtml(aiNarrativeCue.title)}</strong>
+            <p class="ai-companion-speaker">${escapeHtml(aiNarrativeCue.speaker)}</p>
+          </div>
+          ${renderBadge(`기억 ${escapeHtml(String((aiNarrativeCue.beats ?? []).length))}`, getAiIntentToneClass(aiIntent))}
+        </div>
+        <p class="ai-companion-summary">${escapeHtml(aiNarrativeCue.summary)}</p>
+        ${(aiNarrativeCue.beats ?? []).length > 0 ? `
+          <div class="ai-companion-beats">
+            ${(aiNarrativeCue.beats ?? []).map(beat => `
+              <span class="ai-companion-beat">${escapeHtml(beat)}</span>
+            `).join('')}
+          </div>
+        ` : ''}
+      </article>
+    `
+    : '';
+
   return `
     <section class="panel action-panel">
       <div class="panel-header">
@@ -4300,6 +4324,7 @@ function renderActionRail(snapshot) {
       ${isCombat ? '' : renderPaceModeRail()}
       ${isCombat ? '' : renderSessionWindowRail()}
       ${isCombat ? '' : aiDirectorCard}
+      ${isCombat ? '' : aiCompanionCard}
       ${uiState.resumeRoute ? renderResumeRoute(snapshot) : ''}
       ${sessionPlan ? renderSessionPlan(sessionPlan, resumeContextLabel) : ''}
       ${primaryAction

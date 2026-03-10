@@ -12,6 +12,7 @@ import {
   AchievementTrackingState,
   RunSummary
 } from './achievement.js';
+import { AiState } from './ai.js';
 
 /**
  * Game difficulty modes
@@ -330,6 +331,8 @@ export interface GameState {
   achievementPerks?: AchievementPerkState;
   /** Current expedition/run summary */
   runSummary?: RunSummary;
+  /** Shared internal AI state for recommendation and narrative systems */
+  aiState?: AiState;
   /** Game flags (for events/triggers) */
   flags: Record<string, boolean>;
   /** Save file name */

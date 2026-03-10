@@ -8,6 +8,12 @@ import {
   trackTelemetryEvent
 } from '../src/systems/telemetry';
 import {
+  createFrontendSession,
+  getFrontendSnapshot,
+  performFrontendAction
+} from '../src/frontend/runtime';
+import { CharacterClass, GameMode } from '../src/types';
+import {
   resetRuntimeSettings,
   updateRuntimeSettings
 } from '../src/runtime/settings';
@@ -75,5 +81,56 @@ describe('Telemetry', () => {
     expect(record.payload.source).toBe('unit-test');
     expect(record.payload.characterName).toBeUndefined();
     expect(record.payload.freeText).toBeUndefined();
+  });
+
+  it('should record ai recommendation shown and feedback events through frontend runtime', () => {
+    updateRuntimeSettings({ telemetryOptIn: true });
+    const session = createFrontendSession();
+
+    performFrontendAction(session, {
+      type: 'new-game',
+      name: 'TelemetryRunner',
+      characterClass: CharacterClass.Warrior,
+      gameMode: GameMode.Adventure
+    });
+    const snapshot = getFrontendSnapshot(session);
+
+    expect(snapshot.ai?.currentIntent?.id).toBe('new-quest:town');
+
+    performFrontendAction(session, {
+      type: 'ai-feedback',
+      feedback: 'follow',
+      intentId: snapshot.ai?.currentIntent?.id,
+      source: 'ai-card'
+    });
+    performFrontendAction(session, {
+      type: 'ai-feedback',
+      feedback: 'dismiss',
+      intentId: snapshot.ai?.currentIntent?.id,
+      source: 'ai-card'
+    });
+
+    const lines = fs.readFileSync(getTelemetryFilePath(), 'utf-8')
+      .trim()
+      .split('\n')
+      .map(line => JSON.parse(line) as {
+        eventType: string;
+        payload: Record<string, unknown>;
+      });
+
+    expect(lines.some(record =>
+      record.eventType === 'ai_recommendation_shown' &&
+      record.payload.intentId === 'new-quest:town'
+    )).toBe(true);
+    expect(lines.some(record =>
+      record.eventType === 'ai_recommendation_followed' &&
+      record.payload.intentId === 'new-quest:town' &&
+      record.payload.source === 'ai-card'
+    )).toBe(true);
+    expect(lines.some(record =>
+      record.eventType === 'ai_recommendation_dismissed' &&
+      record.payload.intentId === 'new-quest:town' &&
+      record.payload.source === 'ai-card'
+    )).toBe(true);
   });
 });

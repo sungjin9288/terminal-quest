@@ -167,6 +167,33 @@ type FrontendSnapshot = {
       label: string;
     }>;
   };
+  ai?: {
+    directorMode: 'off' | 'light' | 'full';
+    narrativeMode: 'off' | 'light' | 'full';
+    currentIntent: null | {
+      id: string;
+      kind: string;
+      title: string;
+      reason: string;
+      tone: string;
+      confidence: number;
+      recommendedAction: string | null;
+      recommendedLocationId: string | null;
+      lines: string[];
+    };
+    narrativeCue: null | {
+      speaker: string;
+      title: string;
+      summary: string;
+      beats: string[];
+      tone: string;
+    };
+    recentMoments: Array<{
+      type: string;
+      label: string;
+      timestamp: number;
+    }>;
+  };
 };
 
 type FrontendExports = {
@@ -216,6 +243,7 @@ type FrontendExports = {
   renderSidebarHud: (snapshot: FrontendSnapshot) => string;
   renderWorkspaceTabs: (snapshot: FrontendSnapshot) => string;
   renderRewardHorizon: (snapshot: FrontendSnapshot) => string;
+  renderMarket: (snapshot: FrontendSnapshot) => string;
   renderSavePanel: (snapshot: FrontendSnapshot) => string;
   renderMomentumPanel: (snapshot: FrontendSnapshot) => string;
   renderSidebarAlerts: (snapshot: FrontendSnapshot) => string;
@@ -279,6 +307,7 @@ type FrontendHarness = FrontendExports & {
   setSnapshot(nextSnapshot: FrontendSnapshot): void;
   getAppHtml(): string;
   getToastText(): string;
+  getFetchCalls(): unknown[][];
 };
 
 class MockElement {
@@ -405,6 +434,13 @@ function createSnapshot(
       shopDiscountPercent: 0,
       unlockedShopTiers: []
     },
+    ai: {
+      directorMode: 'full',
+      narrativeMode: 'light',
+      currentIntent: null,
+      narrativeCue: null,
+      recentMoments: []
+    },
     ...overrides
   };
 }
@@ -486,6 +522,7 @@ return {
   renderSidebarHud,
   renderWorkspaceTabs,
   renderRewardHorizon,
+  renderMarket,
   renderSavePanel,
   renderMomentumPanel,
   renderSidebarAlerts,
@@ -539,6 +576,9 @@ return {
     },
     getToastText() {
       return toastNode.textContent;
+    },
+    getFetchCalls() {
+      return fetchStub.mock.calls;
     }
   });
 }
@@ -1684,17 +1724,155 @@ describe('Frontend smart resume routing', () => {
       ]
     });
     const frontend = await createFrontendHarness(snapshot);
-
-    frontend.uiState.activeWorkspace = 'market';
-    frontend.handleClientAction(new MockElement({
-      clientAction: 'dismiss-resume-brief'
-    }));
-    const html = frontend.getAppHtml();
+    const html = frontend.renderMarket(snapshot);
 
     expect(html).toContain('상점 할인');
     expect(html).toContain('8%');
     expect(html).toContain('해금 진열');
     expect(html).toContain('1개');
+  });
+
+  it('should render an AI Director card with a follow target in the action rail', async () => {
+    const snapshot = createSnapshot({
+      ai: {
+        directorMode: 'full',
+        narrativeMode: 'light',
+        currentIntent: {
+          id: 'new-quest:town',
+          kind: 'new-quest',
+          title: '새 퀘스트',
+          reason: '게시판에서 다음 의뢰 3개를 확인하세요.',
+          tone: 'info',
+          confidence: 0.78,
+          recommendedAction: 'quest',
+          recommendedLocationId: 'bit-town',
+          lines: [
+            '수락 가능 퀘스트 3개가 있습니다.',
+            '게시판에서 다음 진행 루트를 확보하세요.'
+          ]
+        },
+        narrativeCue: {
+          speaker: '동행 기록관',
+          title: '첫 장면',
+          summary: '비트 타운 도착부터 천천히 가면 됩니다. 첫 의뢰 하나와 짧은 이동 하나만 묶어도 흐름이 잡힙니다.',
+          beats: ['비트 타운 도착'],
+          tone: 'info'
+        },
+        recentMoments: [
+          {
+            type: 'new-game',
+            label: '비트 타운 도착',
+            timestamp: 1700000000000
+          }
+        ]
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    const html = frontend.renderActionRail(snapshot);
+
+    expect(html).toContain('AI Director');
+    expect(html).toContain('게시판에서 다음 의뢰 3개를 확인하세요.');
+    expect(html).toContain('퀘스트 작업공간 열기');
+    expect(html).toContain('data-ai-follow-intent-id="new-quest:town"');
+  });
+
+  it('should render a Companion Note card from AI narrative memory', async () => {
+    const snapshot = createSnapshot({
+      ai: {
+        directorMode: 'full',
+        narrativeMode: 'light',
+        currentIntent: {
+          id: 'quest-objective:forest-survey',
+          kind: 'quest-objective',
+          title: '다음 목표',
+          reason: '숲 현장 조사: 메모리 숲 도착',
+          tone: 'info',
+          confidence: 0.88,
+          recommendedAction: 'travel',
+          recommendedLocationId: 'memory-forest',
+          lines: [
+            '숲 현장 조사: 메모리 숲 도착',
+            '추천 목적지: 메모리 숲'
+          ]
+        },
+        narrativeCue: {
+          speaker: '동행 기록관',
+          title: '장면 고정',
+          summary: '숲 현장 조사가 이번 세션의 중심선입니다. 메모리 숲 쪽으로 바로 이어가면 장면이 끊기지 않습니다.',
+          beats: ['숲 현장 조사', '비트 타운 도착'],
+          tone: 'info'
+        },
+        recentMoments: [
+          {
+            type: 'quest-accepted',
+            label: '숲 현장 조사',
+            timestamp: 1700000001000
+          },
+          {
+            type: 'new-game',
+            label: '비트 타운 도착',
+            timestamp: 1700000000000
+          }
+        ]
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    const html = frontend.renderActionRail(snapshot);
+
+    expect(html).toContain('Companion Note');
+    expect(html).toContain('장면 고정');
+    expect(html).toContain('숲 현장 조사');
+    expect(html).toContain('비트 타운 도착');
+  });
+
+  it('should dismiss the AI Director card and report feedback telemetry', async () => {
+    const snapshot = createSnapshot({
+      ai: {
+        directorMode: 'full',
+        narrativeMode: 'light',
+        currentIntent: {
+          id: 'frontier:memory-forest',
+          kind: 'frontier',
+          title: '다음 공략',
+          reason: '메모리 숲은 지금 공략하기 좋은 지역입니다.',
+          tone: 'info',
+          confidence: 0.81,
+          recommendedAction: 'travel',
+          recommendedLocationId: 'memory-forest',
+          lines: [
+            '메모리 숲은 지금 공략하기 좋은 지역입니다.',
+            '첫 클리어 보상: EXP +500 / 골드 +300'
+          ]
+        },
+        narrativeCue: null,
+        recentMoments: []
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    expect(frontend.getAppHtml()).toContain('AI Director');
+
+    const handled = frontend.handleClientAction(new MockElement({
+      clientAction: 'dismiss-ai-intent',
+      aiIntentId: 'frontier:memory-forest',
+      aiFeedbackSource: 'ai-card'
+    }));
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(handled).toBe(true);
+    expect(frontend.getAppHtml()).not.toContain('AI Director');
+
+    const fetchCalls = frontend.getFetchCalls();
+    const latestCall = fetchCalls[fetchCalls.length - 1];
+    const latestOptions = (latestCall?.[1] ?? {}) as { body?: string };
+    expect(latestCall?.[0]).toBe('/api/action');
+    expect(String(latestOptions.body)).toContain('"type":"ai-feedback"');
+    expect(String(latestOptions.body)).toContain('"feedback":"dismiss"');
+    expect(String(latestOptions.body)).toContain('"intentId":"frontier:memory-forest"');
   });
 
   it('should prioritize an approaching achievement in the smart resume brief', async () => {

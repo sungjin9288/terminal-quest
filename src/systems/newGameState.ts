@@ -15,6 +15,7 @@ import {
   createAchievementTrackingState,
   createRunSummary
 } from './achievements.js';
+import { createAiState, syncAiState } from './aiDirector.js';
 import {
   CURRENT_GAME_STATE_VERSION,
   migrateLoadedGameState
@@ -154,10 +155,12 @@ export function createNewGameState(
     achievementTracking: createAchievementTrackingState(),
     achievementPerks: createAchievementPerkState(),
     runSummary: createRunSummary(),
+    aiState: createAiState(),
     flags: {},
     gameVersion: CURRENT_GAME_STATE_VERSION
   };
 
   migrateLoadedGameState(gameState, gameState.gameVersion);
+  syncAiState(gameState);
   return gameState;
 }

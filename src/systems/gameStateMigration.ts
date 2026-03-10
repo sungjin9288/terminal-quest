@@ -12,14 +12,16 @@ import {
   grantPendingAchievementRewards,
   syncAchievementTrackingState
 } from './achievements.js';
+import { ensureAiState, syncAiState } from './aiDirector.js';
 import { ensureEndgameChallengeState } from './endgameChallenge.js';
 import { ensureQuestState } from './quest.js';
 
 const BASE_MIGRATION_VERSION = '0.0.0';
 const SCHEMA_V1_0_0 = '1.0.0';
 const SCHEMA_V1_1_0 = '1.1.0';
-export const CURRENT_GAME_STATE_VERSION = '1.2.0';
-export const CURRENT_SAVE_SCHEMA_VERSION = '1.2.0';
+const SCHEMA_V1_2_0 = '1.2.0';
+export const CURRENT_GAME_STATE_VERSION = '1.3.0';
+export const CURRENT_SAVE_SCHEMA_VERSION = '1.3.0';
 export const QUEST_HISTORY_LIMIT = 60;
 
 const QUEST_HISTORY_TYPES: ReadonlySet<QuestHistoryType> = new Set([
@@ -121,6 +123,10 @@ function migrateToV1_2_0(_gameState: GameState): void {
   // Runtime safety-net normalization handles the new shared achievement tracking fields.
 }
 
+function migrateToV1_3_0(_gameState: GameState): void {
+  // Runtime safety-net normalization handles the new shared AI state fields.
+}
+
 interface MigrationStep {
   id: string;
   fromVersion: string;
@@ -144,8 +150,14 @@ const MIGRATION_STEPS: MigrationStep[] = [
   {
     id: 'v1_1-to-v1_2',
     fromVersion: SCHEMA_V1_1_0,
-    toVersion: CURRENT_SAVE_SCHEMA_VERSION,
+    toVersion: SCHEMA_V1_2_0,
     apply: migrateToV1_2_0
+  },
+  {
+    id: 'v1_2-to-v1_3',
+    fromVersion: SCHEMA_V1_2_0,
+    toVersion: CURRENT_SAVE_SCHEMA_VERSION,
+    apply: migrateToV1_3_0
   }
 ];
 
@@ -191,9 +203,11 @@ export function migrateLoadedGameState(
   ensureAchievementTrackingState(gameState);
   ensureAchievementPerkState(gameState);
   ensureRunSummary(gameState);
+  ensureAiState(gameState);
   evaluateAchievements(gameState);
   grantPendingAchievementRewards(gameState);
   syncAchievementTrackingState(gameState, { recordHistory: false });
+  syncAiState(gameState);
 
   gameState.gameVersion = CURRENT_GAME_STATE_VERSION;
 

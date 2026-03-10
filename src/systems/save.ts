@@ -20,6 +20,7 @@ import {
   getTrackedAchievement,
   syncAchievementTrackingState
 } from './achievements.js';
+import { getAiIntent, syncAiState } from './aiDirector.js';
 import { getLocationDisplayName } from './savePoint.js';
 import {
   CURRENT_SAVE_SCHEMA_VERSION,
@@ -141,6 +142,14 @@ function buildTrackingHistorySummary(gameState: GameState): SaveTrackingHistoryS
 }
 
 function buildSaveResumeSummary(gameState: GameState): SaveResumeSummary {
+  const aiIntent = getAiIntent(gameState);
+  if (aiIntent) {
+    return {
+      title: aiIntent.title,
+      hint: aiIntent.reason
+    };
+  }
+
   const tracker = getQuestTrackerSummary(gameState);
   if (tracker?.status === 'ready') {
     return {
@@ -201,9 +210,11 @@ function buildSaveResumeSummary(gameState: GameState): SaveResumeSummary {
 
 function createSaveSlotMetadata(slotNumber: number, saveSlot: SaveSlot): SaveSlotMetadata {
   syncAchievementTrackingState(saveSlot.gameState, { recordHistory: false });
+  syncAiState(saveSlot.gameState, saveSlot.savedAt);
   const achievementSummary = getAchievementSummary(saveSlot.gameState);
   const resumeSummary = buildSaveResumeSummary(saveSlot.gameState);
   const trackingState = ensureAchievementTrackingState(saveSlot.gameState);
+  const aiState = saveSlot.gameState.aiState;
   const trackingHistorySummary = buildTrackingHistorySummary(saveSlot.gameState);
   const trackedAchievementSummary = buildTrackedAchievementSummary(saveSlot.gameState);
   const nextAchievementSummary = buildNextAchievementSummary(saveSlot.gameState);
@@ -232,7 +243,10 @@ function createSaveSlotMetadata(slotNumber: number, saveSlot: SaveSlot): SaveSlo
     nextAchievementTitle: nextAchievementSummary?.title,
     nextAchievementProgress: nextAchievementSummary?.progress,
     nextAchievementHint: nextAchievementSummary?.hint,
-    achievementPerkSummary
+    achievementPerkSummary,
+    aiDirectorMode: aiState?.directorMode,
+    aiIntentTitle: aiState?.currentIntent?.title,
+    aiIntentReason: aiState?.currentIntent?.reason
   };
 }
 

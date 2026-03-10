@@ -7,8 +7,7 @@ import {
 import {
   getLocationDisplayName,
   getLocationById,
-  isTownLocation,
-  isLevelAppropriate
+  isTownLocation
 } from '../data/locations.js';
 import {
   clearScreen,
@@ -32,6 +31,7 @@ import { getQuestTrackerSummary } from './questTracker.js';
 import { canAffordCost, getInnRestCost } from './economy.js';
 import { getActiveSeasonalEvent } from './seasonalEvents.js';
 import { getAdventureFocusSummary, getRecommendedTravelDestination } from './adventureFocus.js';
+import { getAiIntent } from './aiDirector.js';
 import { runDungeonEvent } from './dungeonEvents.js';
 import { getRuntimeSettings } from '../runtime/settings.js';
 import {
@@ -139,84 +139,31 @@ function showContextGuidance(
     return { recommendedAction: null };
   }
 
-  const hints: string[] = [];
-  let recommendedAction: TownMenuOption | DungeonMenuOption | null = null;
-  const hpRatio = gameState.player.stats.maxHp > 0
-    ? gameState.player.stats.hp / gameState.player.stats.maxHp
-    : 1;
-  const mpRatio = gameState.player.stats.maxMp > 0
-    ? gameState.player.stats.mp / gameState.player.stats.maxMp
-    : 1;
-  const inventoryRatio = gameState.player.maxInventorySize > 0
-    ? gameState.player.inventory.length / gameState.player.maxInventorySize
-    : 0;
+  const intent = getAiIntent(gameState);
+  const allowedActions = context === 'town'
+    ? ['shop', 'inn', 'save', 'explore', 'travel', 'quest', 'menu']
+    : ['explore', 'rest', 'travel', 'menu'];
+  const rawRecommendedAction = intent?.recommendedAction ?? null;
+  const recommendedAction = rawRecommendedAction &&
+    allowedActions.includes(rawRecommendedAction) &&
+    !(rawRecommendedAction === 'quest' && !hasQuestBoard)
+    ? rawRecommendedAction as TownMenuOption | DungeonMenuOption
+    : context === 'town'
+      ? (hasQuestBoard ? 'quest' : 'explore')
+      : 'explore';
+  const displayed = intent?.lines?.length
+    ? intent.lines.slice(0, 2)
+    : [
+        context === 'town'
+          ? '퀘스트 확인 → 상점 정비 → 저장 순서로 다음 구간을 준비해 보세요.'
+          : '탐험 2~3회마다 상태를 점검하고, 위험하면 즉시 이동해 손실을 줄이세요.'
+      ];
 
-  if (context === 'town') {
-    const questSummary = getQuestTrackerSummary(gameState);
-    const restCost = getInnRestCost(gameState.player.level);
-
-    if (questSummary?.status === 'ready') {
-      hints.push('완료 가능한 퀘스트가 있습니다. 게시판에서 보상을 수령하세요.');
-      if (hasQuestBoard) {
-        recommendedAction = 'quest';
-      }
-    } else if (!questSummary && hasQuestBoard) {
-      hints.push('활성 퀘스트가 없습니다. 게시판에서 다음 목표를 수락해 보세요.');
-      recommendedAction = 'quest';
-    }
-
-    if (hpRatio <= 0.45) {
-      if (canAffordCost(gameState.player.gold, restCost)) {
-        hints.push(`HP가 낮습니다. 여관 휴식(${restCost} 골드)으로 안전하게 회복하세요.`);
-        recommendedAction = 'inn';
-      } else {
-        hints.push('HP가 낮고 골드가 부족합니다. 주변 탐색으로 골드를 모아 회복을 준비하세요.');
-        recommendedAction = 'explore';
-      }
-    }
-  } else {
-    const levelFit = isLevelAppropriate(
-      gameState.player.level,
-      gameState.player.currentLocation
-    );
-    if (levelFit === 'under') {
-      hints.push('현재 지역 난이도가 높습니다. 위험하면 마을로 돌아가 장비를 정비하세요.');
-      recommendedAction = 'travel';
-    }
-    if (hpRatio <= 0.4 || mpRatio <= 0.3) {
-      hints.push('전투 자원이 부족합니다. 휴식 후 탐험하거나 이동으로 전환하세요.');
-      if (recommendedAction !== 'travel') {
-        recommendedAction = 'rest';
-      }
-    }
-  }
-
-  if (inventoryRatio >= 0.9) {
-    hints.push('인벤토리가 거의 가득 찼습니다. 상점에서 정리해 드랍 손실을 막으세요.');
-    if (context === 'town') {
-      recommendedAction = 'shop';
-    }
-  }
-
-  if (hints.length === 0) {
-    hints.push(
-      context === 'town'
-        ? '퀘스트 확인 → 상점 정비 → 저장 순서로 다음 구간을 준비해 보세요.'
-        : '탐험 2~3회마다 상태를 점검하고, 위험하면 즉시 이동해 손실을 줄이세요.'
-    );
-    if (context === 'town') {
-      recommendedAction = hasQuestBoard ? 'quest' : 'explore';
-    } else {
-      recommendedAction = 'explore';
-    }
-  }
-
-  const displayed = hints.slice(0, 2);
   console.log(chalk.cyan.bold('🧭 추천 행동'));
   if (recommendedAction) {
     console.log(chalk.gray(`   기본 선택: ${getRecommendedActionLabel(recommendedAction)}`));
   }
-  displayed.forEach((hint) => {
+  displayed.forEach(hint => {
     console.log(chalk.gray(`   • ${hint}`));
   });
 

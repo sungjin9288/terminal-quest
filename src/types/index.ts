@@ -109,6 +109,19 @@ export {
   AchievementView
 } from './achievement.js';
 
+// AI types
+export {
+  AiDirectorMode,
+  AiNarrativeMode,
+  AiIntentTone,
+  AiIntentKind,
+  AiRecommendationAction,
+  AiIntent,
+  AiFatigueSnapshot,
+  AiMoment,
+  AiState
+} from './ai.js';
+
 // Save types
 export {
   SaveSlot,

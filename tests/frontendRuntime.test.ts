@@ -52,8 +52,16 @@ describe('Frontend runtime', () => {
     expect(snapshot.player?.experienceProgressPercent).toBe(0);
     expect(snapshot.location?.name).toBe('비트 타운');
     expect(snapshot.location?.description).toContain('안전 허브');
-    expect(snapshot.feed[0]?.speaker).toBe('게시판 담당관');
-    expect(snapshot.feed[0]?.category).toBe('hub');
+    expect(snapshot.feed.some(entry =>
+      entry.speaker === '게시판 담당관' &&
+      entry.category === 'hub'
+    )).toBe(true);
+    expect(snapshot.ai?.directorMode).toBe('full');
+    expect(snapshot.ai?.currentIntent?.title).toBe('새 퀘스트');
+    expect(snapshot.ai?.currentIntent?.recommendedAction).toBe('quest');
+    expect(snapshot.ai?.narrativeCue?.title).toBe('첫 장면');
+    expect(snapshot.ai?.narrativeCue?.beats).toContain('비트 타운 도착');
+    expect(snapshot.ai?.recentMoments[0]?.label).toBe('비트 타운 도착');
     expect(snapshot.achievements).toMatchObject({
       unlockedCount: 0,
       totalCount: 10,
@@ -77,11 +85,20 @@ describe('Frontend runtime', () => {
     expect(snapshot.tracker?.currentAmount).toBeDefined();
     expect(snapshot.tracker?.requiredAmount).toBeGreaterThan(0);
     expect(snapshot.tracker?.progressPercent).toBeGreaterThanOrEqual(0);
-    expect(snapshot.feed[0]).toMatchObject({
-      category: 'quest',
-      speaker: firstQuest?.narrative?.featuredNpc,
-      text: firstQuest?.narrative?.npcLine
-    });
+    expect(snapshot.feed.some(entry =>
+      entry.category === 'quest' &&
+      entry.speaker === firstQuest?.narrative?.featuredNpc &&
+      entry.text === firstQuest?.narrative?.npcLine
+    )).toBe(true);
+    expect(snapshot.feed.some(entry =>
+      entry.category === 'quest' &&
+      entry.speaker === '동행 기록관' &&
+      entry.text.includes('기준 장면')
+    )).toBe(true);
+    expect(snapshot.ai?.currentIntent?.title).toBe('다음 목표');
+    expect(snapshot.ai?.currentIntent?.kind).toBe('quest-objective');
+    expect(snapshot.ai?.narrativeCue?.title).toBe('장면 고정');
+    expect(snapshot.ai?.recentMoments[0]?.label).toBe(firstQuest?.name);
 
     const activeQuestIds = snapshot.questBoard?.active.flatMap(group =>
       group.quests.map(quest => quest.id)
@@ -109,10 +126,12 @@ describe('Frontend runtime', () => {
       type: 'travel',
       destinationId: 'memory-forest'
     });
-    expect(snapshot.feed[0]).toMatchObject({
-      category: 'travel',
-      speaker: '현장 기록관'
-    });
+    expect(snapshot.feed.some(entry =>
+      entry.category === 'travel' &&
+      entry.speaker === '현장 기록관'
+    )).toBe(true);
+    expect(snapshot.ai?.narrativeCue?.title).toBe('장면 전환');
+    expect(snapshot.ai?.recentMoments[0]?.label).toBe('메모리 숲 진입');
     expect(snapshot.location?.bossProgress?.current).toBe(0);
     expect(snapshot.location?.bossProgress?.target).toBeGreaterThan(0);
   });
@@ -216,6 +235,13 @@ describe('Frontend runtime', () => {
       entry.category === 'combat' &&
       entry.text.includes('압력이 빠지고')
     )).toBe(true);
+    expect(snapshot.feed.some(entry =>
+      entry.speaker === '현장 기록관' &&
+      entry.category === 'reward' &&
+      entry.text.includes('오염원 차단')
+    )).toBe(true);
+    expect(snapshot.ai?.narrativeCue?.title).toBe('성과 회고');
+    expect(snapshot.ai?.recentMoments[0]?.label).toContain('업적 해금');
     expect(snapshot.feed.some(entry => entry.category === 'reward')).toBe(true);
   });
 
@@ -248,10 +274,13 @@ describe('Frontend runtime', () => {
       achievementTotal: 10,
       resumeTitle: '새 퀘스트',
       achievementTrackingMode: 'auto',
+      aiDirectorMode: 'full',
+      aiIntentTitle: '새 퀘스트',
       nextAchievementTitle: '전선 개척',
       nextAchievementProgress: '2/4'
     });
     expect(savedSlot?.resumeHint).toContain('게시판에서 다음 의뢰');
+    expect(savedSlot?.aiIntentReason).toContain('게시판에서 다음 의뢰');
     expect(savedSlot?.nextAchievementHint).toContain('서로 다른 지역 4곳을 해금합니다.');
   });
 

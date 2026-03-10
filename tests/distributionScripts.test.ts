@@ -22,6 +22,9 @@ describe('Distribution Scripts', () => {
     expect(packageJson.scripts?.['frontend:playtest']).toBe(
       'node scripts/start-frontend.js --playtest'
     );
+    expect(packageJson.scripts?.['vercel:build']).toBe(
+      'npm run build && node scripts/build-vercel-static.js'
+    );
     expect(packageJson.scripts?.['test:achievements:smoke']).toBe(
       'jest tests/achievements.test.ts tests/playerMenu.test.ts tests/shop.test.ts tests/questSystem.test.ts tests/frontendRuntime.test.ts tests/frontendAppAchievements.test.ts tests/saveUi.test.ts tests/mainMenuRuntime.test.ts'
     );
@@ -88,12 +91,16 @@ describe('Distribution Scripts', () => {
     expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'playtest-report.js'))).toBe(true);
     expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'reset-playtest-env.js'))).toBe(true);
     expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'start-frontend.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'build-vercel-static.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'generate-browser-data.js'))).toBe(true);
   });
 
   it('should include browser frontend assets on disk', () => {
     expect(fs.existsSync(path.join(process.cwd(), 'frontend', 'index.html'))).toBe(true);
     expect(fs.existsSync(path.join(process.cwd(), 'frontend', 'styles.css'))).toBe(true);
     expect(fs.existsSync(path.join(process.cwd(), 'frontend', 'app.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'frontend', 'runtime-adapter.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'vercel.json'))).toBe(true);
   });
 
   it('should include release package script on disk', () => {

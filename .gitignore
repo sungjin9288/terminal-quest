@@ -29,3 +29,5 @@ coverage/
 saves/
 playtest-data/
 *.save
+vercel-dist/
+src/browser/generated/

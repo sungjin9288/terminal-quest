@@ -1,6 +1,6 @@
 # Terminal Quest
 
-A Node.js + TypeScript 기반 RPG adventure game으로, terminal client와 browser frontend를 모두 지원합니다.
+A Node.js + TypeScript 기반 RPG adventure game으로, terminal client와 browser frontend를 모두 지원합니다. 배포 기준으로는 `browser-only static build + localStorage save` 경로를 지원해 Vercel에 바로 올릴 수 있습니다.
 
 ## 개요 Overview
 
@@ -8,9 +8,10 @@ Terminal Quest는 장기 플레이를 전제로 설계한 long-form RPG campaign
 
 ## 현재 상태 Current Status
 
-`2026-03-10` 기준, 프로젝트는 `release-candidate / frontend playtest-ready` 상태입니다.
+`2026-03-10` 기준, 프로젝트는 `release-candidate / frontend playtest-ready / Vercel static deploy-ready` 상태입니다.
 
 - Browser frontend가 현재 primary playtest surface이며, quests, travel, market, combat, saves, logs, achievement routing을 one-screen workspace shell로 묶었습니다.
+- Vercel용 static build는 `vercel-dist/`를 출력하고, runtime state와 save slot은 browser `localStorage`에 저장됩니다.
 - Frontend flow에는 smart resume, resume preview, preview commit feedback, blocked-action recovery, session planning, reward horizon, momentum tracking, stop-and-return UX가 모두 구현되어 있습니다.
 - Achievement tracking은 browser와 terminal 양쪽에 연결되어 있고, reward preview, guided resume target, tracking history, dedicated terminal achievement menu까지 포함합니다.
 - Narrative presentation은 episode quest grouping, direct NPC line, voiced feed reaction, localized presentation text 중심으로 리팩토링되어 있습니다.
@@ -28,6 +29,7 @@ Terminal Quest는 장기 플레이를 전제로 설계한 long-form RPG campaign
 ### 지금 바로 가능한 것 What Is Ready Now
 
 - Frontend/browser playtest with isolated saves, telemetry, logs, notes
+- Vercel static deployment without server management
 - `releases/` 기준 packaged release bundle generation
 - External distribution 이전 package-level smoke validation
 
@@ -78,6 +80,7 @@ Terminal Quest는 장기 플레이를 전제로 설계한 long-form RPG campaign
 
 - **Language**: TypeScript (ES2022)
 - **Runtime**: Node.js (v18+)
+- **Deployment**: Vercel static hosting (`vercel-dist/`, browser-local save)
 - **CLI Libraries**:
   - `inquirer`: interactive command-line prompt
   - `chalk`: terminal string styling
@@ -112,6 +115,31 @@ npm run frontend:start
 ```
 
 그다음 `http://localhost:4310`을 열면 됩니다.
+
+Vercel용 static build flow:
+
+```bash
+npm install
+npm run vercel:build
+```
+
+출력은 `vercel-dist/`에 생성됩니다. 이 build는 server process 없이 browser에서 직접 game runtime을 돌리고, save/load는 각 브라우저의 `localStorage`를 사용합니다.
+
+## Vercel 배포 Vercel Deployment
+
+Vercel project에는 아래 설정으로 연결하면 됩니다.
+
+- Build Command: `npm run vercel:build`
+- Output Directory: `vercel-dist`
+- Framework Preset: `Other`
+
+핵심 caveat:
+
+- save data는 browser/device별 `localStorage`에 저장됩니다.
+- browser storage를 지우면 해당 device의 save도 함께 사라집니다.
+- server-side cloud save는 현재 포함되어 있지 않습니다.
+
+상세 절차는 `docs/vercel-deployment.md`를 보면 됩니다.
 
 ## 플레이테스트 환경 Playtest Environment
 

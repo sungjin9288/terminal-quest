@@ -15,6 +15,7 @@
     "playtest:reset": "node scripts/reset-playtest-env.js",
     "frontend:start": "node scripts/start-frontend.js",
     "frontend:playtest": "node scripts/start-frontend.js --playtest",
+    "vercel:build": "npm run build && node scripts/build-vercel-static.js",
     "dev": "tsc && node dist/index.js",
     "watch": "tsc --watch",
     "test": "jest",
@@ -50,20 +51,21 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "inquirer": "^9.2.12",
     "chalk": "^5.3.0",
+    "cli-table3": "^0.6.3",
     "figlet": "^1.7.0",
-    "cli-table3": "^0.6.3"
+    "inquirer": "^9.2.12"
   },
   "devDependencies": {
-    "@types/node": "^20.10.6",
-    "@types/inquirer": "^9.0.7",
     "@types/figlet": "^1.5.8",
-    "typescript": "^5.3.3",
-    "rimraf": "^5.0.5",
+    "@types/inquirer": "^9.0.7",
     "@types/jest": "^29.5.11",
+    "@types/node": "^20.10.6",
+    "esbuild": "^0.27.3",
     "jest": "^29.7.0",
-    "ts-jest": "^29.1.1"
+    "rimraf": "^5.0.5",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0"

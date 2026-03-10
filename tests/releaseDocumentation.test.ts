@@ -11,7 +11,8 @@ describe('Release Documentation', () => {
       'docs/seasonal-events.md',
       'docs/prompt-priority-policy.md',
       'docs/release-smoke-checklist.md',
-      'docs/save-migration-verification.md'
+      'docs/save-migration-verification.md',
+      'docs/vercel-deployment.md'
     ];
 
     for (const relativePath of requiredDocs) {

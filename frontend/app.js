@@ -64,6 +64,7 @@ const SESSION_WINDOW_OPTIONS = [
 const appRoot = document.querySelector('#app');
 const statusLine = document.querySelector('#status-line');
 const toast = document.querySelector('#toast');
+const runtimeWindow = typeof window !== 'undefined' ? window : globalThis;
 
 const uiState = {
   snapshot: null,
@@ -73,6 +74,7 @@ const uiState = {
   resumeRoute: null,
   resumePreviewStepId: null,
   previewCommit: null,
+  dismissedAiIntentId: null,
   achievementFocusId: null,
   activeWorkspace: 'quests',
   travelIndex: 0,
@@ -219,6 +221,146 @@ function getSnapshotTrackingLoadContext(snapshot) {
     achievementTitle: trackedAchievement.title,
     achievementProgress: trackedAchievement.progress
   };
+}
+
+function syncAiIntentVisibility(snapshot) {
+  const currentIntentId = snapshot?.ai?.currentIntent?.id ?? null;
+  if (!currentIntentId || uiState.dismissedAiIntentId !== currentIntentId) {
+    uiState.dismissedAiIntentId = null;
+  }
+}
+
+async function reportAiFeedback(feedback, intentId, source = 'ai-card') {
+  if (!intentId) {
+    return;
+  }
+
+  try {
+    const adapter = await resolveRuntimeAdapter();
+    const action = {
+      type: 'ai-feedback',
+      feedback,
+      intentId,
+      source
+    };
+    if (adapter) {
+      await adapter.performAction(action);
+    } else {
+      await requestJson('/api/action', {
+        method: 'POST',
+        body: JSON.stringify(action)
+      });
+    }
+  } catch {
+    // Telemetry reporting should never block UI flow.
+  }
+}
+
+function getVisibleAiIntent(snapshot) {
+  const intent = snapshot?.ai?.currentIntent ?? null;
+  if (!intent || uiState.dismissedAiIntentId === intent.id) {
+    return null;
+  }
+
+  return intent;
+}
+
+function getAiIntentToneClass(intent) {
+  if (!intent) {
+    return 'recommended';
+  }
+
+  return intent.tone === 'success'
+    ? 'success'
+    : intent.tone === 'warning' || intent.tone === 'error'
+      ? 'warning'
+      : 'recommended';
+}
+
+function getAiRecommendedActionBadge(intent) {
+  const action = intent?.recommendedAction;
+  const labelMap = {
+    quest: '퀘스트',
+    travel: '이동',
+    explore: '탐색',
+    inn: '여관',
+    rest: '휴식',
+    shop: '상점',
+    save: '저장',
+    menu: '재개'
+  };
+
+  return action ? `권고 ${labelMap[action] ?? action}` : '권고 경로';
+}
+
+function getAiIntentActionLabel(snapshot, intent, target) {
+  if (!intent || !target) {
+    return '추천 경로 열기';
+  }
+
+  if (target.action === 'travel') {
+    return '추천 이동 실행';
+  }
+  if (target.action === 'inn-rest') {
+    return '여관 휴식 실행';
+  }
+  if (target.action === 'dungeon-rest') {
+    return '짧은 휴식 실행';
+  }
+  if (target.action === 'town-explore' || target.action === 'dungeon-explore') {
+    return '추천 탐색 실행';
+  }
+  if (target.workspace === 'quests') {
+    return '퀘스트 작업공간 열기';
+  }
+  if (target.workspace === 'market') {
+    return '상점 작업공간 열기';
+  }
+  if (target.workspace === 'save') {
+    return '저장 작업공간 열기';
+  }
+  if (target.workspace === 'travel') {
+    return snapshot.location?.isTown ? '이동 작업공간 열기' : '전선 작업공간 열기';
+  }
+
+  return '추천 경로 열기';
+}
+
+function getAiIntentTarget(snapshot, intent) {
+  if (!intent) {
+    return null;
+  }
+
+  switch (intent.recommendedAction) {
+    case 'quest':
+      return { workspace: 'quests' };
+    case 'shop':
+      return { workspace: 'market' };
+    case 'save':
+      return { workspace: 'save' };
+    case 'travel':
+      return intent.recommendedLocationId
+        ? {
+            action: 'travel',
+            destinationId: intent.recommendedLocationId
+          }
+        : { workspace: 'travel' };
+    case 'inn':
+      return { action: 'inn-rest' };
+    case 'rest':
+      return { action: 'dungeon-rest' };
+    case 'explore':
+      return { action: snapshot.location?.isTown ? 'town-explore' : 'dungeon-explore' };
+    case 'menu':
+      return { clientAction: 'resume-focus' };
+    default:
+      return intent.recommendedLocationId
+        ? {
+            action: 'travel',
+            destinationId: intent.recommendedLocationId
+          }
+        : { clientAction: 'resume-focus' };
+  }
 }
 
 function getResumeToastMessage(plan, loadContext = null) {
@@ -1623,10 +1765,26 @@ async function requestJson(url, options = {}) {
   return payload;
 }
 
+function resolveRuntimeAdapter() {
+  const ready = runtimeWindow.__TERMINAL_QUEST_RUNTIME_ADAPTER_READY__;
+  if (ready && typeof ready.then === 'function') {
+    return ready;
+  }
+
+  return runtimeWindow.__TERMINAL_QUEST_RUNTIME_ADAPTER__ ?? null;
+}
+
 async function loadSnapshot() {
   setBusy(true);
   try {
-    uiState.snapshot = await requestJson('/api/state');
+    const adapterRef = resolveRuntimeAdapter();
+    const adapter = adapterRef && typeof adapterRef.then === 'function'
+      ? await adapterRef
+      : adapterRef;
+    uiState.snapshot = adapter
+      ? await adapter.getState()
+      : await requestJson('/api/state');
+    syncAiIntentVisibility(uiState.snapshot);
     uiState.resumeBrief = null;
     uiState.resumeRoute = null;
     uiState.resumePreviewStepId = null;
@@ -1658,10 +1816,17 @@ async function performAction(action) {
     delete requestAction.previewAction;
     uiState.previewCommit = null;
     uiState.resumePreviewStepId = null;
-    uiState.snapshot = await requestJson('/api/action', {
-      method: 'POST',
-      body: JSON.stringify(requestAction)
-    });
+    const adapterRef = resolveRuntimeAdapter();
+    const adapter = adapterRef && typeof adapterRef.then === 'function'
+      ? await adapterRef
+      : adapterRef;
+    uiState.snapshot = adapter
+      ? await adapter.performAction(requestAction)
+      : await requestJson('/api/action', {
+          method: 'POST',
+          body: JSON.stringify(requestAction)
+        });
+    syncAiIntentVisibility(uiState.snapshot);
     const loadContext = action.type === 'load-game'
       ? {
           intent: action.loadIntent ?? null,
@@ -2161,6 +2326,12 @@ function buildInteractionAttributes(target = {}) {
   }
   if (target.slotNumber) {
     attributes.push(`data-slot-number="${escapeHtml(target.slotNumber)}"`);
+  }
+  if (target.aiFollowIntentId) {
+    attributes.push(`data-ai-follow-intent-id="${escapeHtml(target.aiFollowIntentId)}"`);
+  }
+  if (target.aiFeedbackSource) {
+    attributes.push(`data-ai-feedback-source="${escapeHtml(target.aiFeedbackSource)}"`);
   }
   if (target.loadIntent) {
     attributes.push(`data-load-intent="${escapeHtml(target.loadIntent)}"`);
@@ -4033,6 +4204,8 @@ function renderOverview(snapshot) {
 function renderActionRail(snapshot) {
   const isTown = Boolean(snapshot.location?.isTown);
   const isCombat = snapshot.scene === 'combat';
+  const aiIntent = getVisibleAiIntent(snapshot);
+  const aiIntentTarget = getAiIntentTarget(snapshot, aiIntent);
   const primaryAction = getPrimaryActionDescriptor(snapshot);
   const sessionWindow = getSessionWindowMeta();
   const primarySessionFit = primaryAction ? getSessionFitMeta(snapshot, primaryAction) : null;
@@ -4064,6 +4237,55 @@ function renderActionRail(snapshot) {
           ['dungeon-rest', '짧은 휴식', '안전 여유가 있으면 HP/MP 일부 회복', '2-3분']
         ];
 
+  const aiDirectorCard = aiIntent
+    ? `
+      <article class="ai-director-card" data-tone="${escapeHtml(aiIntent.tone)}">
+        <div class="ai-director-head">
+          <div class="ai-director-copy">
+            <p class="eyebrow">AI Director</p>
+            <strong class="ai-director-title">${escapeHtml(aiIntent.title)}</strong>
+            <p class="ai-director-reason">${escapeHtml(aiIntent.reason)}</p>
+          </div>
+          <div class="slot-actions">
+            ${renderBadge(`신뢰 ${escapeHtml(String(Math.round((aiIntent.confidence ?? 0) * 100)))}%`, getAiIntentToneClass(aiIntent))}
+            ${renderBadge(getAiRecommendedActionBadge(aiIntent), 'recommended')}
+            <button
+              class="ghost-button inline-button"
+              type="button"
+              data-client-action="dismiss-ai-intent"
+              data-ai-intent-id="${escapeHtml(aiIntent.id)}"
+              data-ai-feedback-source="ai-card"
+            >
+              숨기기
+            </button>
+          </div>
+        </div>
+        <div class="ai-director-line-list">
+          ${(aiIntent.lines ?? []).slice(0, 3).map(line => `
+            <p class="ai-director-line">${escapeHtml(line)}</p>
+          `).join('')}
+        </div>
+        ${aiIntentTarget ? `
+          <button
+            class="ai-director-target"
+            type="button"
+            ${buildInteractionAttributes({
+              ...aiIntentTarget,
+              aiFollowIntentId: aiIntent.id,
+              aiFeedbackSource: 'ai-card'
+            })}
+          >
+            <span class="ai-director-target-label">AI Recommendation</span>
+            <strong>${escapeHtml(getAiIntentActionLabel(snapshot, aiIntent, aiIntentTarget))}</strong>
+            <span>${escapeHtml(aiIntent.recommendedLocationId && aiIntentTarget.action === 'travel'
+              ? `추천 목적지로 바로 이동합니다.`
+              : '현재 의도에 맞는 다음 경로를 엽니다.')}</span>
+          </button>
+        ` : ''}
+      </article>
+    `
+    : '';
+
   return `
     <section class="panel action-panel">
       <div class="panel-header">
@@ -4077,6 +4299,7 @@ function renderActionRail(snapshot) {
       </div>
       ${isCombat ? '' : renderPaceModeRail()}
       ${isCombat ? '' : renderSessionWindowRail()}
+      ${isCombat ? '' : aiDirectorCard}
       ${uiState.resumeRoute ? renderResumeRoute(snapshot) : ''}
       ${sessionPlan ? renderSessionPlan(sessionPlan, resumeContextLabel) : ''}
       ${primaryAction
@@ -7178,6 +7401,14 @@ function handleClientAction(target) {
     return true;
   }
 
+  if (target.dataset.clientAction === 'dismiss-ai-intent') {
+    const intentId = target.dataset.aiIntentId ?? uiState.snapshot?.ai?.currentIntent?.id ?? null;
+    uiState.dismissedAiIntentId = intentId;
+    render();
+    void reportAiFeedback('dismiss', intentId, target.dataset.aiFeedbackSource ?? 'ai-card');
+    return true;
+  }
+
   if (target.dataset.clientAction === 'dismiss-resume-brief') {
     uiState.resumeBrief = null;
     render();
@@ -7309,6 +7540,14 @@ document.addEventListener('click', event => {
   const target = event.target.closest('[data-client-action], [data-action], [data-workspace], [data-ui-action]');
   if (!target || uiState.busy) {
     return;
+  }
+
+  if (target.dataset.aiFollowIntentId) {
+    void reportAiFeedback(
+      'follow',
+      target.dataset.aiFollowIntentId,
+      target.dataset.aiFeedbackSource ?? 'ai-card'
+    );
   }
 
   if (target.dataset.clientAction && handleClientAction(target)) {

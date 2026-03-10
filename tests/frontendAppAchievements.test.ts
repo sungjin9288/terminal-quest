@@ -1686,6 +1686,9 @@ describe('Frontend smart resume routing', () => {
     const frontend = await createFrontendHarness(snapshot);
 
     frontend.uiState.activeWorkspace = 'market';
+    frontend.handleClientAction(new MockElement({
+      clientAction: 'dismiss-resume-brief'
+    }));
     const html = frontend.getAppHtml();
 
     expect(html).toContain('상점 할인');

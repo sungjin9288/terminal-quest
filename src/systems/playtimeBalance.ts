@@ -41,6 +41,12 @@ export interface FirstClearPlaytimeEstimate {
 export interface PlaytimeBalanceConfig {
   targetMinutes: number;
   fullCompletionTargetRange: MinutesRange;
+  questBaseRange: MinutesRange;
+  objectivePacingMultiplier: number;
+  coordinationPerObjectiveRange: MinutesRange;
+  locationPacingMultiplier: number;
+  perFloorRange: MinutesRange;
+  perSectionRange: MinutesRange;
   sideQuestCompletionMinRatio: number;
   sideQuestCompletionMaxRatio: number;
   staticTravelOverheadRange: MinutesRange;
@@ -57,35 +63,41 @@ export interface PlaytimeBalanceConfig {
 }
 
 export const DEFAULT_PLAYTIME_BALANCE_CONFIG: PlaytimeBalanceConfig = {
-  targetMinutes: 12 * 60,
-  fullCompletionTargetRange: { min: 20 * 60, max: 24 * 60 },
-  sideQuestCompletionMinRatio: 0.6,
-  sideQuestCompletionMaxRatio: 0.75,
-  staticTravelOverheadRange: { min: 40, max: 70 },
-  perLocationRetryRange: { min: 2, max: 4 },
-  perBossRetryRange: { min: 4, max: 7 },
-  perBranchRootRange: { min: 5, max: 9 },
-  postClearEndgameRunCountRange: { min: 8, max: 12 },
-  postClearEndgamePerRunRange: { min: 10, max: 14 },
-  postClearBuildExperimentRange: { min: 90, max: 150 },
-  postClearChallengeRouteRange: { min: 80, max: 140 },
-  minBranchRoots: 4,
-  minSideQuestShare: 0.12,
+  targetMinutes: 30 * 60,
+  fullCompletionTargetRange: { min: 38 * 60, max: 44 * 60 },
+  questBaseRange: { min: 6, max: 10 },
+  objectivePacingMultiplier: 2,
+  coordinationPerObjectiveRange: { min: 1.5, max: 3.0 },
+  locationPacingMultiplier: 1.55,
+  perFloorRange: { min: 8, max: 14 },
+  perSectionRange: { min: 7, max: 12 },
+  sideQuestCompletionMinRatio: 0.75,
+  sideQuestCompletionMaxRatio: 0.9,
+  staticTravelOverheadRange: { min: 70, max: 110 },
+  perLocationRetryRange: { min: 4, max: 7 },
+  perBossRetryRange: { min: 8, max: 13 },
+  perBranchRootRange: { min: 8, max: 14 },
+  postClearEndgameRunCountRange: { min: 10, max: 14 },
+  postClearEndgamePerRunRange: { min: 13, max: 18 },
+  postClearBuildExperimentRange: { min: 120, max: 200 },
+  postClearChallengeRouteRange: { min: 100, max: 170 },
+  minBranchRoots: 6,
+  minSideQuestShare: 0.2,
   maxRepeatableShare: 0.55
 };
 
 export const EXTENDED_PLAYTIME_BALANCE_CONFIG: PlaytimeBalanceConfig = {
   ...DEFAULT_PLAYTIME_BALANCE_CONFIG,
-  fullCompletionTargetRange: { min: 25 * 60, max: 30 * 60 },
-  sideQuestCompletionMinRatio: 0.75,
-  sideQuestCompletionMaxRatio: 0.9,
-  postClearEndgameRunCountRange: { min: 10, max: 14 },
-  postClearEndgamePerRunRange: { min: 11, max: 16 },
-  postClearBuildExperimentRange: { min: 120, max: 220 },
-  postClearChallengeRouteRange: { min: 130, max: 250 },
-  minBranchRoots: 6,
-  minSideQuestShare: 0.2,
-  maxRepeatableShare: 0.45
+  fullCompletionTargetRange: { min: 44 * 60, max: 50 * 60 },
+  sideQuestCompletionMinRatio: 0.9,
+  sideQuestCompletionMaxRatio: 1.0,
+  postClearEndgameRunCountRange: { min: 12, max: 16 },
+  postClearEndgamePerRunRange: { min: 14, max: 20 },
+  postClearBuildExperimentRange: { min: 160, max: 240 },
+  postClearChallengeRouteRange: { min: 150, max: 240 },
+  minBranchRoots: 8,
+  minSideQuestShare: 0.25,
+  maxRepeatableShare: 0.4
 };
 
 function clampMinMax(min: number, max: number): MinutesRange {
@@ -140,24 +152,32 @@ function getObjectiveMinuteWeight(objectiveType: QuestObjectiveType): MinutesRan
   }
 }
 
-function objectivePlaytimeRange(objective: QuestObjective): MinutesRange {
+function objectivePlaytimeRange(
+  objective: QuestObjective,
+  config: PlaytimeBalanceConfig
+): MinutesRange {
   const amount = Math.max(1, objective.requiredAmount || 1);
   const weight = getObjectiveMinuteWeight(objective.type);
 
   return {
-    min: weight.min * amount,
-    max: weight.max * amount
+    min: weight.min * amount * config.objectivePacingMultiplier,
+    max: weight.max * amount * config.objectivePacingMultiplier
   };
 }
 
-export function estimateQuestPlaytimeRange(quest: Quest): MinutesRange {
-  const baseRange: MinutesRange = { min: 3, max: 5 };
-  const objectiveRanges = quest.objectives.map(objectivePlaytimeRange);
+export function estimateQuestPlaytimeRange(
+  quest: Quest,
+  config: PlaytimeBalanceConfig = DEFAULT_PLAYTIME_BALANCE_CONFIG
+): MinutesRange {
+  const baseRange: MinutesRange = config.questBaseRange;
+  const objectiveRanges = quest.objectives.map(objective =>
+    objectivePlaytimeRange(objective, config)
+  );
   const objectiveSum = addRanges(...objectiveRanges);
   const coordinationOverhead = Math.max(0, quest.objectives.length - 1);
   const coordinationRange: MinutesRange = {
-    min: coordinationOverhead * 0.8,
-    max: coordinationOverhead * 1.5
+    min: coordinationOverhead * config.coordinationPerObjectiveRange.min,
+    max: coordinationOverhead * config.coordinationPerObjectiveRange.max
   };
 
   return addRanges(baseRange, objectiveSum, coordinationRange);
@@ -184,7 +204,13 @@ export function parseTargetPlaytimeRange(value: string): MinutesRange | null {
 }
 
 export function estimateFirstClearPlaytime(
-  locations: Array<{ id: string; targetPlaytime: string; boss?: string | null }>,
+  locations: Array<{
+    id: string;
+    targetPlaytime: string;
+    boss?: string | null;
+    floors?: number | null;
+    sections?: string[] | null;
+  }>,
   quests: Quest[],
   config: PlaytimeBalanceConfig = DEFAULT_PLAYTIME_BALANCE_CONFIG
 ): FirstClearPlaytimeEstimate {
@@ -200,7 +226,22 @@ export function estimateFirstClearPlaytime(
       continue;
     }
 
-    locationRange = addRanges(locationRange, parsed);
+    const scaledRange: MinutesRange = {
+      min: parsed.min * config.locationPacingMultiplier,
+      max: parsed.max * config.locationPacingMultiplier
+    };
+    const floorCount = Math.max(0, location.floors ?? 0);
+    const sectionCount = Math.max(0, location.sections?.length ?? 0);
+    const floorRange: MinutesRange = {
+      min: floorCount * config.perFloorRange.min,
+      max: floorCount * config.perFloorRange.max
+    };
+    const sectionRange: MinutesRange = {
+      min: sectionCount * config.perSectionRange.min,
+      max: sectionCount * config.perSectionRange.max
+    };
+
+    locationRange = addRanges(locationRange, scaledRange, floorRange, sectionRange);
   }
 
   if (missingLocationTargets.length > 0) {
@@ -212,7 +253,7 @@ export function estimateFirstClearPlaytime(
   let mainQuestRange: MinutesRange = { min: 0, max: 0 };
   let sideQuestRange: MinutesRange = { min: 0, max: 0 };
   for (const quest of quests) {
-    const questRange = estimateQuestPlaytimeRange(quest);
+    const questRange = estimateQuestPlaytimeRange(quest, config);
     if (quest.isMainQuest) {
       mainQuestRange = addRanges(mainQuestRange, questRange);
     } else {

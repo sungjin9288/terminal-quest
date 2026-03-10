@@ -11,6 +11,22 @@ import {
 } from './helpers/dataFixtureFactory';
 import { mockDisplayPreset } from './helpers/uiMocks';
 
+function createBattleResult(
+  overrides: Partial<Awaited<ReturnType<typeof battle.runBattle>>> = {}
+): Awaited<ReturnType<typeof battle.runBattle>> {
+  return {
+    won: false,
+    escaped: false,
+    leveledUp: false,
+    summary: {
+      damageDealt: 0,
+      damageTaken: 0,
+      turns: 1
+    },
+    ...overrides
+  };
+}
+
 describe('Encounter Flow', () => {
   afterEach(() => {
     jest.restoreAllMocks();
@@ -31,11 +47,7 @@ describe('Encounter Flow', () => {
     jest.spyOn(locationsData, 'getLocationMonsters').mockReturnValue([]);
     jest.spyOn(locationsData, 'getLocationById').mockReturnValue(null);
     jest.spyOn(monstersData, 'getRandomMonster').mockReturnValue(null);
-    const runBattleSpy = jest.spyOn(battle, 'runBattle').mockResolvedValue({
-      won: false,
-      escaped: false,
-      leveledUp: false
-    });
+    const runBattleSpy = jest.spyOn(battle, 'runBattle').mockResolvedValue(createBattleResult());
 
     const result = await runEncounter(gameState);
 
@@ -89,16 +101,14 @@ describe('Encounter Flow', () => {
     });
     jest.spyOn(locationsData, 'getLocationsByAct').mockReturnValue([bossLocation]);
     jest.spyOn(locationsData, 'getActSummary').mockReturnValue(null);
-    jest.spyOn(battle, 'runBattle').mockResolvedValue({
+    jest.spyOn(battle, 'runBattle').mockResolvedValue(createBattleResult({
       won: true,
-      escaped: false,
-      leveledUp: false,
       rewards: {
         experience: 0,
         gold: 20,
         items: []
       }
-    });
+    }));
 
     const result = await runEncounter(gameState);
 
@@ -139,11 +149,9 @@ describe('Encounter Flow', () => {
     jest.spyOn(locationsData, 'getLocationMonsters').mockReturnValue(['test-mob']);
     jest.spyOn(monstersData, 'getRandomMonster').mockReturnValue(normalMonster);
     jest.spyOn(Math, 'random').mockReturnValue(0);
-    jest.spyOn(battle, 'runBattle').mockResolvedValue({
-      won: false,
-      escaped: true,
-      leveledUp: false
-    });
+    jest.spyOn(battle, 'runBattle').mockResolvedValue(createBattleResult({
+      escaped: true
+    }));
 
     const result = await runEncounter(gameState);
 
@@ -194,16 +202,14 @@ describe('Encounter Flow', () => {
     });
     jest.spyOn(locationsData, 'getLocationsByAct').mockReturnValue([finalBossLocation]);
     jest.spyOn(locationsData, 'getActSummary').mockReturnValue(null);
-    jest.spyOn(battle, 'runBattle').mockResolvedValue({
+    jest.spyOn(battle, 'runBattle').mockResolvedValue(createBattleResult({
       won: true,
-      escaped: false,
-      leveledUp: false,
       rewards: {
         experience: 0,
         gold: 200,
         items: []
       }
-    });
+    }));
 
     const result = await runEncounter(gameState);
 
@@ -263,16 +269,14 @@ describe('Encounter Flow', () => {
       encounteredMonsterName = monster.name;
       player.gold += monster.dropTable.minGold;
 
-      return {
+      return createBattleResult({
         won: true,
-        escaped: false,
-        leveledUp: false,
         rewards: {
           experience: 0,
           gold: monster.dropTable.minGold,
           items: []
         }
-      };
+      });
     });
 
     const result = await runEncounter(gameState);
@@ -326,11 +330,9 @@ describe('Encounter Flow', () => {
     jest.spyOn(locationsData, 'getLocationMonsters').mockReturnValue(['endgame-escape-mob']);
     jest.spyOn(monstersData, 'getRandomMonster').mockReturnValue(normalMonster);
     jest.spyOn(Math, 'random').mockReturnValue(0);
-    jest.spyOn(battle, 'runBattle').mockResolvedValue({
-      won: false,
-      escaped: true,
-      leveledUp: false
-    });
+    jest.spyOn(battle, 'runBattle').mockResolvedValue(createBattleResult({
+      escaped: true
+    }));
 
     const result = await runEncounter(gameState);
 

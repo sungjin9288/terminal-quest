@@ -9,6 +9,19 @@ describe('Distribution Scripts', () => {
     };
 
     expect(packageJson.scripts?.play).toBe('node scripts/start-game.js');
+    expect(packageJson.scripts?.['playtest:setup']).toBe('node scripts/setup-playtest-env.js');
+    expect(packageJson.scripts?.['playtest:start']).toBe(
+      'node scripts/start-frontend.js --playtest'
+    );
+    expect(packageJson.scripts?.['playtest:start:terminal']).toBe(
+      'node scripts/start-playtest.js'
+    );
+    expect(packageJson.scripts?.['playtest:report']).toBe('node scripts/playtest-report.js');
+    expect(packageJson.scripts?.['playtest:reset']).toBe('node scripts/reset-playtest-env.js');
+    expect(packageJson.scripts?.['frontend:start']).toBe('node scripts/start-frontend.js');
+    expect(packageJson.scripts?.['frontend:playtest']).toBe(
+      'node scripts/start-frontend.js --playtest'
+    );
   });
 
   it('should expose release package scripts in package scripts', () => {
@@ -66,6 +79,20 @@ describe('Distribution Scripts', () => {
     expect(fs.existsSync(launcherPath)).toBe(true);
   });
 
+  it('should include playtest environment scripts on disk', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'setup-playtest-env.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'start-playtest.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'playtest-report.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'reset-playtest-env.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'start-frontend.js'))).toBe(true);
+  });
+
+  it('should include browser frontend assets on disk', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'frontend', 'index.html'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'frontend', 'styles.css'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'frontend', 'app.js'))).toBe(true);
+  });
+
   it('should include release package script on disk', () => {
     const releaseScriptPath = path.join(process.cwd(), 'scripts', 'release-package.js');
     expect(fs.existsSync(releaseScriptPath)).toBe(true);
@@ -119,5 +146,21 @@ describe('Distribution Scripts', () => {
   it('should include prompt priority validator script on disk', () => {
     const validatorScriptPath = path.join(process.cwd(), 'scripts', 'validate-prompt-priority.js');
     expect(fs.existsSync(validatorScriptPath)).toBe(true);
+  });
+
+  it('should include extended playtime validation in the release readiness gate', () => {
+    const releaseCheckPath = path.join(process.cwd(), 'scripts', 'release-readiness-check.js');
+    const content = fs.readFileSync(releaseCheckPath, 'utf-8');
+
+    expect(content).toContain("['run', 'validate:data']");
+    expect(content).toContain("['run', 'validate:playtime:extended']");
+  });
+
+  it('should copy browser frontend assets into release packages', () => {
+    const releasePackagePath = path.join(process.cwd(), 'scripts', 'release-package.js');
+    const content = fs.readFileSync(releasePackagePath, 'utf-8');
+
+    expect(content).toContain("'frontend'");
+    expect(content).toContain("'scripts'");
   });
 });

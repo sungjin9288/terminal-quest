@@ -9,7 +9,11 @@ const steps = [
   { label: 'Test suite', command: [npmCommand, ['test', '--', '--runInBand']] },
   { label: 'Prompt priority validation', command: [npmCommand, ['run', 'validate:prompt-priority']] },
   { label: 'Save migration verification', command: [npmCommand, ['run', 'verify:save-migration']] },
-  { label: 'Data validation', command: [npmCommand, ['run', 'validate:data']] }
+  { label: 'Data validation', command: [npmCommand, ['run', 'validate:data']] },
+  {
+    label: 'Extended playtime validation',
+    command: [npmCommand, ['run', 'validate:playtime:extended']]
+  }
 ];
 
 const requiredDocs = [

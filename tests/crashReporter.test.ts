@@ -45,4 +45,24 @@ describe('Crash Reporter', () => {
       rmSync(rootDir, { recursive: true, force: true });
     }
   });
+
+  it('should honor TERMINAL_QUEST_LOGS_DIR when no logsDir option is provided', () => {
+    const logsDir = mkdtempSync(join(tmpdir(), 'terminal-quest-crash-env-'));
+    process.env.TERMINAL_QUEST_LOGS_DIR = logsDir;
+
+    try {
+      const reportPath = writeCrashReport(
+        'runtimeError',
+        { error: new Error('env override crash') },
+        {
+          occurredAt: new Date('2026-03-06T00:00:00.000Z')
+        }
+      );
+
+      expect(reportPath).toBe(join(logsDir, 'crash-2026-03-06T00-00-00-000Z-runtimeError.log'));
+    } finally {
+      delete process.env.TERMINAL_QUEST_LOGS_DIR;
+      rmSync(logsDir, { recursive: true, force: true });
+    }
+  });
 });

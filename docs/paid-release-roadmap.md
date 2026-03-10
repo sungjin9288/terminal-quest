@@ -15,7 +15,7 @@ Exit criteria:
 
 ## Phase 2: Product Completeness
 - [x] Minimum content depth target:
-  - [x] 12+ hour first clear playtime
+  - [x] 30+ hour first clear playtime
   - [x] 25+ meaningful quests with branching objectives
   - [x] Endgame loop (repeatable challenge, scaling rewards)
 - [x] Economy balancing:
@@ -63,19 +63,22 @@ Exit criteria:
 Exit criteria:
 - Stable update cadence with measurable retention improvement.
 
-## Phase 5: Playtime Depth Expansion (Completed)
-- [x] Full completion target: 25-30h without pacing fatigue
+## Phase 5: Long-Form Campaign Expansion (Completed)
+- [x] First clear target: 30h+ without pacing fatigue
+- [x] Full completion target: 44-50h with post-clear depth
 - [x] Extended playtime profile and guardrails (`npm run validate:playtime:extended`)
 - [x] Branch density expansion (branch roots 6+)
 - [x] Side-quest share expansion (20%+ within first clear estimate)
 - [x] Post-clear curated route content to reduce repeatable grind share
 
-Latest snapshot (2026-03-05):
-- Extended full completion average: 25.72h (`1543.4분`)
+Latest snapshot (2026-03-06):
+- First clear average: 32.59h (`1955.6분`)
+- Extended full completion average: 44.62h (`2677분`)
 - Branch roots: `9`
-- Side-quest share: `29%`
-- Repeatable share: `10.8%`
+- Side-quest share: `32.9%`
+- Repeatable share: `9.1%`
 
 Exit criteria:
+- `validate:playtime` passes with the 30h first-clear target.
 - `validate:playtime:extended` passes.
 - Internal runbooks confirm no single loop dominates playtime (>45% repeatable share).

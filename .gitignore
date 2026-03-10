@@ -27,4 +27,5 @@ coverage/
 
 # Save files (user data)
 saves/
+playtest-data/
 *.save

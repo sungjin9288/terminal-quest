@@ -60,28 +60,31 @@ describe('Playtime Balance', () => {
     expect(longRange.max).toBeGreaterThan(shortRange.max);
   });
 
-  it('should estimate current content at or above 12-hour first clear average target', () => {
+  it('should estimate current content at or above 30-hour first clear average target', () => {
     const estimate = estimateFirstClearPlaytime(
       getAllLocations(),
       Object.values(getDefaultQuests())
     );
 
+    expect(estimate.targetMinutes).toBe(30 * 60);
     expect(estimate.meetsTarget).toBe(true);
     expect(estimate.averageMinutes).toBeGreaterThanOrEqual(estimate.targetMinutes);
-    expect(estimate.branchRootCount).toBeGreaterThanOrEqual(4);
+    expect(estimate.branchRootCount).toBeGreaterThanOrEqual(6);
   });
 
-  it('should satisfy 25-30 hour extended profile target and guardrails', () => {
+  it('should satisfy 44-50 hour extended profile target and guardrails', () => {
     const estimate = estimateFirstClearPlaytime(
       getAllLocations(),
       Object.values(getDefaultQuests()),
       EXTENDED_PLAYTIME_BALANCE_CONFIG
     );
 
-    expect(estimate.fullCompletionTargetRange.min).toBe(25 * 60);
-    expect(estimate.fullCompletionTargetRange.max).toBe(30 * 60);
+    expect(estimate.targetMinutes).toBe(30 * 60);
+    expect(estimate.fullCompletionTargetRange.min).toBe(44 * 60);
+    expect(estimate.fullCompletionTargetRange.max).toBe(50 * 60);
     expect(estimate.guardrailViolations).toEqual([]);
     expect(estimate.meetsGuardrails).toBe(true);
+    expect(estimate.meetsTarget).toBe(true);
     expect(estimate.meetsFullCompletionTarget).toBe(true);
     expect(estimate.fullCompletionAverageMinutes).toBeGreaterThanOrEqual(
       estimate.fullCompletionTargetRange.min

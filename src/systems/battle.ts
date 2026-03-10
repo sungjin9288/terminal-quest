@@ -40,6 +40,13 @@ export interface BattleResult {
   escaped: boolean;
   rewards?: BattleRewards;
   leveledUp: boolean;
+  summary: BattleSummary;
+}
+
+export interface BattleSummary {
+  damageDealt: number;
+  damageTaken: number;
+  turns: number;
 }
 
 async function selectBattleSkill(player: Player): Promise<string | null> {
@@ -80,6 +87,8 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
   let battleState: CombatState = CombatState.PlayerTurn;
   let playerDefending = false;
   let leveledUp = false;
+  let damageDealt = 0;
+  let damageTaken = 0;
 
   // Determine first turn
   const firstTurn = determineTurnOrder(player.stats.speed, monster.stats.speed);
@@ -106,6 +115,7 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
       switch (action) {
         case 'attack': {
           const result = playerAttack(player, monsterInstance, false);
+          damageDealt += result.damage ?? 0;
           showActionResult(result);
 
           if (result.targetDefeated) {
@@ -130,6 +140,7 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
           }
 
           const result = useSkill(player, monsterInstance, selectedSkillId);
+          damageDealt += result.damage ?? 0;
           showActionResult(result);
 
           if (!result.success) {
@@ -225,6 +236,7 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
           player.stats.hp += Math.floor(result.damage * 0.5); // Refund the reduced damage
           result.message += ' (방어로 피해 감소)';
         }
+        damageTaken += result.damage ?? 0;
 
         showActionResult(result);
 
@@ -302,7 +314,12 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
       won: true,
       escaped: false,
       rewards,
-      leveledUp
+      leveledUp,
+      summary: {
+        damageDealt,
+        damageTaken,
+        turns: turnNumber
+      }
     };
   } else if (battleState === CombatState.Defeat) {
     showBattleResult(false);
@@ -313,7 +330,12 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
     return {
       won: false,
       escaped: false,
-      leveledUp: false
+      leveledUp: false,
+      summary: {
+        damageDealt,
+        damageTaken,
+        turns: turnNumber
+      }
     };
   } else if (battleState === CombatState.Escaped) {
     showBattleLog('전투에서 도주했습니다!', 'info');
@@ -323,7 +345,12 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
     return {
       won: false,
       escaped: true,
-      leveledUp: false
+      leveledUp: false,
+      summary: {
+        damageDealt,
+        damageTaken,
+        turns: turnNumber
+      }
     };
   }
 
@@ -331,6 +358,11 @@ export async function runBattle(player: Player, monster: Monster): Promise<Battl
   return {
     won: false,
     escaped: false,
-    leveledUp: false
+    leveledUp: false,
+    summary: {
+      damageDealt,
+      damageTaken,
+      turns: turnNumber
+    }
   };
 }

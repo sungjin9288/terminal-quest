@@ -1,4 +1,5 @@
 import { GameState } from './game.js';
+import { SaveSlotMetadata } from './save.js';
 
 export type MainMenuChoice = 'new-game' | 'load-game' | 'settings' | 'exit';
 export type EncounterResult = 'victory' | 'defeat' | 'escape';
@@ -9,7 +10,10 @@ export interface TravelResult {
 
 export type ShopMenuHandler = (gameState: GameState) => Promise<void>;
 export type SaveGameHandler = (gameState: GameState) => Promise<boolean>;
-export type TravelHandler = (gameState: GameState) => Promise<TravelResult>;
+export type TravelHandler = (
+  gameState: GameState,
+  preferredDestinationId?: string | null
+) => Promise<TravelResult>;
 export type InGameMenuHandler = (gameState: GameState) => Promise<boolean>;
 export type RunEncounterHandler = (gameState: GameState) => Promise<EncounterResult>;
 export type HandlePlayerDeathHandler = (gameState: GameState) => Promise<boolean>;
@@ -63,6 +67,7 @@ export type StartNewGameHandler = () => Promise<GameState>;
 export type LoadGameHandler = () => Promise<GameState | null>;
 export type GameLoopHandler = (gameState: GameState) => Promise<void>;
 export type OpenSettingsHandler = () => Promise<void>;
+export type ListSavesHandler = () => SaveSlotMetadata[];
 
 export interface MainMenuRuntimeDependencies {
   showMainMenu: ShowMainMenuHandler;
@@ -70,4 +75,5 @@ export interface MainMenuRuntimeDependencies {
   loadGame: LoadGameHandler;
   gameLoop: GameLoopHandler;
   openSettings: OpenSettingsHandler;
+  listSaves: ListSavesHandler;
 }

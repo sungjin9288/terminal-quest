@@ -50,6 +50,91 @@ function getSaveTypeIcon(saveType: SaveType): string {
   }
 }
 
+function formatAchievementProgress(
+  achievementCount?: number,
+  achievementTotal?: number
+): string | null {
+  if (typeof achievementTotal !== 'number') {
+    return null;
+  }
+
+  return `업적: ${achievementCount ?? 0}/${achievementTotal}`;
+}
+
+function formatResumeProgress(
+  resumeTitle?: string,
+  resumeHint?: string
+): string | null {
+  if (!resumeTitle && !resumeHint) {
+    return null;
+  }
+
+  if (resumeTitle && resumeHint) {
+    return `재개 힌트: ${resumeTitle} - ${resumeHint}`;
+  }
+
+  return `재개 힌트: ${resumeTitle ?? resumeHint}`;
+}
+
+function formatAchievementTrackingMode(
+  achievementTrackingMode?: SaveSlotMetadata['achievementTrackingMode']
+): string | null {
+  if (!achievementTrackingMode) {
+    return null;
+  }
+
+  return `추적 모드: ${achievementTrackingMode === 'pinned' ? '핀 고정' : '자동 전환'}`;
+}
+
+function formatAchievementTrackingHistory(
+  achievementTrackingHistory?: string,
+  achievementTrackingHistoryAt?: number
+): string | null {
+  if (!achievementTrackingHistory) {
+    return null;
+  }
+
+  const timeLabel = achievementTrackingHistoryAt
+    ? `${formatDate(achievementTrackingHistoryAt)} · `
+    : '';
+
+  return `추적 기록: ${timeLabel}${achievementTrackingHistory}`;
+}
+
+function formatNextAchievementProgress(
+  nextAchievementTitle?: string,
+  nextAchievementProgress?: string,
+  nextAchievementHint?: string
+): string | null {
+  if (!nextAchievementTitle) {
+    return null;
+  }
+
+  const summary = `${nextAchievementTitle}${nextAchievementProgress ? ` (${nextAchievementProgress})` : ''}`;
+  if (nextAchievementHint) {
+    return `다음 업적: ${summary} - ${nextAchievementHint}`;
+  }
+
+  return `다음 업적: ${summary}`;
+}
+
+function formatTrackedAchievementProgress(
+  trackedAchievementTitle?: string,
+  trackedAchievementProgress?: string,
+  trackedAchievementHint?: string
+): string | null {
+  if (!trackedAchievementTitle) {
+    return null;
+  }
+
+  const summary = `${trackedAchievementTitle}${trackedAchievementProgress ? ` (${trackedAchievementProgress})` : ''}`;
+  if (trackedAchievementHint) {
+    return `추적 업적: ${summary} - ${trackedAchievementHint}`;
+  }
+
+  return `추적 업적: ${summary}`;
+}
+
 /**
  * Show save slots
  */
@@ -63,12 +148,50 @@ export function showSaveSlots(slots: SaveSlotMetadata[]): void {
   slots.forEach(slot => {
     if (slot.exists && slot.savedAt && slot.playerName && slot.locationName) {
       const saveTypeIcon = getSaveTypeIcon(slot.saveType || SaveType.Manual);
+      const achievementProgress = formatAchievementProgress(
+        slot.achievementCount,
+        slot.achievementTotal
+      );
 
       console.log(chalk.yellow.bold(`[슬롯 ${slot.slotNumber}] ${saveTypeIcon}`));
       console.log(chalk.white(`  ${slot.playerName} - Lv ${slot.playerLevel}`));
       console.log(chalk.gray(`  위치: ${slot.locationName}`));
       console.log(chalk.gray(`  플레이 시간: ${formatPlayTime(slot.playTime || 0)}`));
       console.log(chalk.gray(`  저장 시간: ${formatDate(slot.savedAt)}`));
+      if (achievementProgress) {
+        console.log(chalk.gray(`  ${achievementProgress}`));
+      }
+      const resumeProgress = formatResumeProgress(slot.resumeTitle, slot.resumeHint);
+      if (resumeProgress) {
+        console.log(chalk.cyan(`  ${resumeProgress}`));
+      }
+      const trackingMode = formatAchievementTrackingMode(slot.achievementTrackingMode);
+      if (trackingMode) {
+        console.log(chalk.yellow(`  ${trackingMode}`));
+      }
+      const trackedAchievementProgress = formatTrackedAchievementProgress(
+        slot.trackedAchievementTitle,
+        slot.trackedAchievementProgress,
+        slot.trackedAchievementHint
+      );
+      if (trackedAchievementProgress) {
+        console.log(chalk.magenta(`  ${trackedAchievementProgress}`));
+      }
+      const nextAchievementProgress = formatNextAchievementProgress(
+        slot.nextAchievementTitle,
+        slot.nextAchievementProgress,
+        slot.nextAchievementHint
+      );
+      if (nextAchievementProgress) {
+        console.log(chalk.magenta(`  ${nextAchievementProgress}`));
+      }
+      const trackingHistory = formatAchievementTrackingHistory(
+        slot.achievementTrackingHistory,
+        slot.achievementTrackingHistoryAt
+      );
+      if (trackingHistory) {
+        console.log(chalk.blue(`  ${trackingHistory}`));
+      }
     } else {
       console.log(chalk.gray.bold(`[슬롯 ${slot.slotNumber}]`));
       console.log(chalk.gray('  비어있음'));
@@ -92,7 +215,32 @@ export async function selectSaveSlot(
 
     if (slot.exists && slot.savedAt && slot.playerName && slot.locationName) {
       const saveTypeIcon = getSaveTypeIcon(slot.saveType || SaveType.Manual);
-      name = `${saveTypeIcon} 슬롯 ${slot.slotNumber}: ${slot.playerName} Lv${slot.playerLevel} - ${slot.locationName}`;
+      const achievementProgress = formatAchievementProgress(
+        slot.achievementCount,
+        slot.achievementTotal
+      );
+      const resumeProgress = formatResumeProgress(slot.resumeTitle, slot.resumeHint);
+      const trackingMode = formatAchievementTrackingMode(slot.achievementTrackingMode);
+      const trackedAchievementProgress = formatTrackedAchievementProgress(
+        slot.trackedAchievementTitle,
+        slot.trackedAchievementProgress,
+        slot.trackedAchievementHint
+      );
+      const nextAchievementProgress = formatNextAchievementProgress(
+        slot.nextAchievementTitle,
+        slot.nextAchievementProgress,
+        slot.nextAchievementHint
+      );
+      const trackingHistory = formatAchievementTrackingHistory(
+        slot.achievementTrackingHistory,
+        slot.achievementTrackingHistoryAt
+      );
+      name =
+        `${saveTypeIcon} 슬롯 ${slot.slotNumber}: ${slot.playerName} Lv${slot.playerLevel} - ${slot.locationName}` +
+        [achievementProgress, resumeProgress, trackingMode, trackedAchievementProgress, nextAchievementProgress, trackingHistory]
+          .filter(Boolean)
+          .map(text => `(${text})`)
+          .join(' ');
     } else {
       name = chalk.gray(`슬롯 ${slot.slotNumber}: 비어있음`);
     }
@@ -143,6 +291,44 @@ export async function confirmSaveOverwrite(slotNumber: number, metadata: SaveSlo
   console.log(chalk.white(`슬롯 ${slotNumber}:`));
   if (metadata.playerName && metadata.locationName) {
     console.log(chalk.gray(`  ${metadata.playerName} Lv${metadata.playerLevel} - ${metadata.locationName}`));
+    const achievementProgress = formatAchievementProgress(
+      metadata.achievementCount,
+      metadata.achievementTotal
+    );
+    if (achievementProgress) {
+      console.log(chalk.gray(`  ${achievementProgress}`));
+    }
+    const resumeProgress = formatResumeProgress(metadata.resumeTitle, metadata.resumeHint);
+    if (resumeProgress) {
+      console.log(chalk.cyan(`  ${resumeProgress}`));
+    }
+    const trackingMode = formatAchievementTrackingMode(metadata.achievementTrackingMode);
+    if (trackingMode) {
+      console.log(chalk.yellow(`  ${trackingMode}`));
+    }
+    const trackedAchievementProgress = formatTrackedAchievementProgress(
+      metadata.trackedAchievementTitle,
+      metadata.trackedAchievementProgress,
+      metadata.trackedAchievementHint
+    );
+    if (trackedAchievementProgress) {
+      console.log(chalk.magenta(`  ${trackedAchievementProgress}`));
+    }
+    const nextAchievementProgress = formatNextAchievementProgress(
+      metadata.nextAchievementTitle,
+      metadata.nextAchievementProgress,
+      metadata.nextAchievementHint
+    );
+    if (nextAchievementProgress) {
+      console.log(chalk.magenta(`  ${nextAchievementProgress}`));
+    }
+    const trackingHistory = formatAchievementTrackingHistory(
+      metadata.achievementTrackingHistory,
+      metadata.achievementTrackingHistoryAt
+    );
+    if (trackingHistory) {
+      console.log(chalk.blue(`  ${trackingHistory}`));
+    }
     if (metadata.savedAt) {
       console.log(chalk.gray(`  ${formatDate(metadata.savedAt)}`));
     }
@@ -171,6 +357,40 @@ export async function confirmDelete(metadata: SaveSlotMetadata): Promise<boolean
   console.log(chalk.white(`슬롯 ${metadata.slotNumber}:`));
   if (metadata.playerName && metadata.locationName) {
     console.log(chalk.gray(`  ${metadata.playerName} Lv${metadata.playerLevel} - ${metadata.locationName}`));
+    const achievementProgress = formatAchievementProgress(
+      metadata.achievementCount,
+      metadata.achievementTotal
+    );
+    if (achievementProgress) {
+      console.log(chalk.gray(`  ${achievementProgress}`));
+    }
+    const resumeProgress = formatResumeProgress(metadata.resumeTitle, metadata.resumeHint);
+    if (resumeProgress) {
+      console.log(chalk.cyan(`  ${resumeProgress}`));
+    }
+    const trackedAchievementProgress = formatTrackedAchievementProgress(
+      metadata.trackedAchievementTitle,
+      metadata.trackedAchievementProgress,
+      metadata.trackedAchievementHint
+    );
+    if (trackedAchievementProgress) {
+      console.log(chalk.magenta(`  ${trackedAchievementProgress}`));
+    }
+    const nextAchievementProgress = formatNextAchievementProgress(
+      metadata.nextAchievementTitle,
+      metadata.nextAchievementProgress,
+      metadata.nextAchievementHint
+    );
+    if (nextAchievementProgress) {
+      console.log(chalk.magenta(`  ${nextAchievementProgress}`));
+    }
+    const trackingHistory = formatAchievementTrackingHistory(
+      metadata.achievementTrackingHistory,
+      metadata.achievementTrackingHistoryAt
+    );
+    if (trackingHistory) {
+      console.log(chalk.blue(`  ${trackingHistory}`));
+    }
     if (metadata.savedAt) {
       console.log(chalk.gray(`  ${formatDate(metadata.savedAt)}`));
     }
@@ -281,6 +501,44 @@ export function showLoadSuccess(metadata: SaveSlotMetadata): void {
   console.log(chalk.green.bold('📂 불러오기 완료!'));
   if (metadata.playerName && metadata.locationName) {
     console.log(chalk.white(`${metadata.playerName} Lv${metadata.playerLevel} - ${metadata.locationName}`));
+  }
+  const achievementProgress = formatAchievementProgress(
+    metadata.achievementCount,
+    metadata.achievementTotal
+  );
+  if (achievementProgress) {
+    console.log(chalk.gray(achievementProgress));
+  }
+  const resumeProgress = formatResumeProgress(metadata.resumeTitle, metadata.resumeHint);
+  if (resumeProgress) {
+    console.log(chalk.cyan(resumeProgress));
+  }
+  const trackedAchievementProgress = formatTrackedAchievementProgress(
+    metadata.trackedAchievementTitle,
+    metadata.trackedAchievementProgress,
+    metadata.trackedAchievementHint
+  );
+  if (trackedAchievementProgress) {
+    console.log(chalk.magenta(trackedAchievementProgress));
+  }
+  const nextAchievementProgress = formatNextAchievementProgress(
+    metadata.nextAchievementTitle,
+    metadata.nextAchievementProgress,
+    metadata.nextAchievementHint
+  );
+  if (nextAchievementProgress) {
+    console.log(chalk.magenta(nextAchievementProgress));
+  }
+  const trackingMode = formatAchievementTrackingMode(metadata.achievementTrackingMode);
+  if (trackingMode) {
+    console.log(chalk.yellow(trackingMode));
+  }
+  const trackingHistory = formatAchievementTrackingHistory(
+    metadata.achievementTrackingHistory,
+    metadata.achievementTrackingHistoryAt
+  );
+  if (trackingHistory) {
+    console.log(chalk.blue(trackingHistory));
   }
   console.log();
 }

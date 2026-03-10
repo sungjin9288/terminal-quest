@@ -12,6 +12,12 @@ import {
   updateQuestProgressOnCollect
 } from './quest.js';
 import {
+  evaluateAchievements,
+  formatAchievementUnlockMessage,
+  recordRunGoldSpent,
+  recordRunItemsCollected
+} from './achievements.js';
+import {
   showQuestProgressUpdates,
   applyTalkQuestProgress
 } from './questUi.js';
@@ -31,21 +37,28 @@ const SHOP_NPCS: Record<string, { name: string; icon: string; owner: string; gre
     name: '무기상 바이너리',
     icon: '⚔️',
     owner: '캐시',
-    greeting: '어서오게, 모험가! 최고의 무기들이 자네를 기다리고 있다네.'
+    greeting: '전선에 나가기 전에 손에 맞는 무기부터 맞추시죠. 오늘 필요한 화력을 함께 보겠습니다.'
   },
   'armor-code': {
     name: '방어구상 아머 코드',
     icon: '🛡️',
     owner: '버퍼',
-    greeting: '방어구를 찾나? 내 물건이라면 어떤 공격도 막아낼 수 있지!'
+    greeting: '오래 버틸수록 이깁니다. 현재 작전에 맞는 방호 장비를 골라 보세요.'
   },
   'buffer-potions': {
     name: '포션상 버퍼',
     icon: '🧪',
     owner: '힙',
-    greeting: '포션이 필요한가? 내 특제 조합은 최고라네!'
+    greeting: '보급품은 항상 한 박자 먼저 챙기세요. 회복과 버프가 전선을 붙들어 줍니다.'
   }
 };
+
+function showAchievementUnlocks(gameState: GameState): void {
+  const achievementResult = evaluateAchievements(gameState);
+  for (const achievement of achievementResult.newlyUnlocked) {
+    showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+}
 
 export async function shopMenu(gameState: GameState): Promise<void> {
   while (true) {
@@ -160,12 +173,15 @@ async function buyFromShop(
   if (result.success && result.item) {
     gameState.statistics.goldSpent += result.cost ?? 0;
     gameState.statistics.itemsCollected += 1;
+    recordRunGoldSpent(gameState, result.cost ?? 0);
+    recordRunItemsCollected(gameState, 1);
     showMessage(`${result.item.name}을(를) 구매했습니다!`, 'success');
 
     const questUpdates = updateQuestProgressOnCollect(gameState, answer.item as string, 1);
     if (questUpdates.length > 0) {
       showQuestProgressUpdates(gameState, questUpdates);
     }
+    showAchievementUnlocks(gameState);
   } else {
     showMessage(result.message, 'error');
   }

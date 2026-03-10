@@ -84,6 +84,8 @@ function ensurePathExists(relativePath) {
 function copyReleaseAssets(targetDir) {
   const assets = [
     'dist',
+    'frontend',
+    'scripts',
     'data',
     'docs',
     'README.md',

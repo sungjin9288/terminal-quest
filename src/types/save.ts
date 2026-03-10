@@ -3,6 +3,7 @@
  */
 
 import { GameState } from './game.js';
+import type { AchievementTrackingMode } from './achievement.js';
 
 /**
  * Save slot data
@@ -50,6 +51,19 @@ export interface SaveSlotMetadata {
   playerLevel?: number;
   playTime?: number;
   saveType?: SaveType;
+  achievementCount?: number;
+  achievementTotal?: number;
+  resumeTitle?: string;
+  resumeHint?: string;
+  achievementTrackingMode?: AchievementTrackingMode;
+  achievementTrackingHistory?: string;
+  achievementTrackingHistoryAt?: number;
+  trackedAchievementTitle?: string;
+  trackedAchievementProgress?: string;
+  trackedAchievementHint?: string;
+  nextAchievementTitle?: string;
+  nextAchievementProgress?: string;
+  nextAchievementHint?: string;
 }
 
 /**

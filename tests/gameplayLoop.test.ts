@@ -261,6 +261,33 @@ describe('Gameplay Loop', () => {
     expect(logs.some(line => line.includes('추천 행동'))).toBe(true);
   });
 
+  it('should show boss progress in adventure focus while exploring a dungeon', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'FocusTester',
+        level: 4,
+        currentLocation: 'memory-forest'
+      }
+    });
+    gameState.position.locationId = 'memory-forest';
+    gameState.position.stepsTaken = 8;
+    mockDisplayPreset('townLoop');
+
+    jest.spyOn(travelUi, 'showDungeonMenu').mockResolvedValue('menu');
+
+    await dungeonLoop(gameState, {
+      runEncounter: jest.fn(async () => 'victory'),
+      handlePlayerDeath: jest.fn(async () => true),
+      handleTravel: jest.fn(async () => ({ locationChanged: false })),
+      inGameMenuLoop: jest.fn(async () => false),
+      random: jest.fn(() => 0.9)
+    });
+
+    const logs = (console.log as jest.Mock).mock.calls.map(args => String(args[0] ?? ''));
+    expect(logs.some(line => line.includes('모험 포커스'))).toBe(true);
+    expect(logs.some(line => line.includes('2회 남음'))).toBe(true);
+  });
+
   it('should hide context guidance when setting is disabled', async () => {
     const gameState = createTestGameState({
       playerOptions: {
@@ -361,5 +388,37 @@ describe('Gameplay Loop', () => {
     });
 
     expect(showDungeonMenuMock.mock.calls[0]?.[2]).toBe('rest');
+  });
+
+  it('should apply route scan progress when exploration triggers a non-combat dungeon event', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'EventTester',
+        level: 4,
+        currentLocation: 'memory-forest'
+      }
+    });
+    gameState.position.locationId = 'memory-forest';
+    gameState.position.stepsTaken = 7;
+    mockDisplayPreset('townLoop');
+
+    jest.spyOn(travelUi, 'showDungeonMenu')
+      .mockResolvedValueOnce('explore')
+      .mockResolvedValueOnce('menu');
+
+    const random = jest.fn()
+      .mockReturnValueOnce(0.8)
+      .mockReturnValueOnce(0.9)
+      .mockReturnValueOnce(0.5);
+
+    await dungeonLoop(gameState, {
+      runEncounter: jest.fn(async () => 'victory'),
+      handlePlayerDeath: jest.fn(async () => true),
+      handleTravel: jest.fn(async () => ({ locationChanged: false })),
+      inGameMenuLoop: jest.fn(async () => false),
+      random
+    });
+
+    expect(gameState.position.stepsTaken).toBe(9);
   });
 });

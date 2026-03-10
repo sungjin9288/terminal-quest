@@ -18,6 +18,14 @@ import {
 import { getItemById } from '../data/items.js';
 import { runBattle } from './battle.js';
 import {
+  evaluateAchievements,
+  formatAchievementUnlockMessage,
+  recordRunBossDefeat,
+  recordRunDamageTaken,
+  recordRunGoldEarned,
+  recordRunItemsCollected
+} from './achievements.js';
+import {
   applyActClearRewards,
   applyLocationFirstClearRewards
 } from './locationRewards.js';
@@ -62,6 +70,15 @@ function formatMonsterName(monsterId: string): string {
     .split('-')
     .map(token => token.charAt(0).toUpperCase() + token.slice(1))
     .join(' ');
+}
+
+function showAchievementUnlocks(gameState: GameState): boolean {
+  const achievementResult = evaluateAchievements(gameState);
+  for (const achievement of achievementResult.newlyUnlocked) {
+    showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+
+  return achievementResult.newlyUnlocked.length > 0;
 }
 
 function getCompletedActs(gameState: GameState): number[] {
@@ -186,6 +203,7 @@ async function applyBossProgress(gameState: GameState, bossId: string): Promise<
 
   if (!gameState.statistics.bossesDefeated.includes(bossId)) {
     gameState.statistics.bossesDefeated.push(bossId);
+    recordRunBossDefeat(gameState, bossId);
     showMessage(`보스 ${formatMonsterName(bossId)} 격파!`, 'success');
     trackTelemetryEvent('boss_defeated', gameState, { bossId });
     hasProgressMessage = true;
@@ -235,12 +253,14 @@ async function applyBossProgress(gameState: GameState, bossId: string): Promise<
       if (locationReward.goldGained > 0) {
         showMessage(`보너스 골드 +${locationReward.goldGained}`, 'info');
         gameState.statistics.goldEarned += locationReward.goldGained;
+        recordRunGoldEarned(gameState, locationReward.goldGained);
       }
       if (locationReward.rewardSkillPointsGained > 0) {
         showMessage(`스킬 포인트 +${locationReward.rewardSkillPointsGained}`, 'info');
       }
       if (locationReward.itemsAdded.length > 0) {
         gameState.statistics.itemsCollected += locationReward.itemsAdded.length;
+        recordRunItemsCollected(gameState, locationReward.itemsAdded.length);
         const addedItems = locationReward.itemsAdded.map(itemId => getItemById(itemId)?.name ?? itemId);
         showMessage(`아이템 획득: ${addedItems.join(', ')}`, 'info');
 
@@ -302,6 +322,7 @@ async function applyBossProgress(gameState: GameState, bossId: string): Promise<
       }
       if (actReward.saveTokensAdded > 0) {
         gameState.statistics.itemsCollected += actReward.saveTokensAdded;
+        recordRunItemsCollected(gameState, actReward.saveTokensAdded);
         showMessage(`Act 클리어 보너스: 세이브 토큰 +${actReward.saveTokensAdded}`, 'success');
         const questUpdates = updateQuestProgressOnCollect(gameState, 'save-token', actReward.saveTokensAdded);
         if (questUpdates.length > 0) {
@@ -339,6 +360,7 @@ async function applyBossProgress(gameState: GameState, bossId: string): Promise<
   }
 
   syncUnlockedConnections(gameState);
+  hasProgressMessage = showAchievementUnlocks(gameState) || hasProgressMessage;
 
   if (hasProgressMessage) {
     await pressEnterToContinue('important');
@@ -407,6 +429,7 @@ export async function runEncounter(gameState: GameState): Promise<'victory' | 'd
     showMessage('아무것도 나타나지 않았습니다...', 'info');
     gameState.player.gold += 10;
     gameState.statistics.goldEarned += 10;
+    recordRunGoldEarned(gameState, 10);
     showMessage('10 골드를 발견했습니다!', 'success');
     return 'victory';
   }
@@ -452,6 +475,9 @@ export async function runEncounter(gameState: GameState): Promise<'victory' | 'd
     );
   }
   const battleResult = await runBattle(gameState.player, monster);
+  gameState.statistics.totalDamageDealt += battleResult.summary.damageDealt;
+  gameState.statistics.totalDamageTaken += battleResult.summary.damageTaken;
+  recordRunDamageTaken(gameState, battleResult.summary.damageTaken);
 
   if (battleResult.won) {
     gameState.statistics.enemiesDefeated[monster.id] =
@@ -463,6 +489,7 @@ export async function runEncounter(gameState: GameState): Promise<'victory' | 'd
 
     if (battleResult.rewards) {
       gameState.statistics.goldEarned += battleResult.rewards.gold;
+      recordRunGoldEarned(gameState, battleResult.rewards.gold);
     }
 
     const questUpdates: QuestProgressUpdate[] = [];
@@ -482,6 +509,7 @@ export async function runEncounter(gameState: GameState): Promise<'victory' | 'd
         }
       }
       gameState.statistics.itemsCollected += collectedRewardItems;
+      recordRunItemsCollected(gameState, collectedRewardItems);
     }
 
     if (challengeState.active) {

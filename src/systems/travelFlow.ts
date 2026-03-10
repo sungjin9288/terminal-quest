@@ -1,5 +1,5 @@
 import { GameState } from '../types/game.js';
-import { isLocationUnlocked } from '../data/locations.js';
+import { isLocationUnlocked, isTownLocation } from '../data/locations.js';
 import {
   showTravelMenu,
   showTravelAnimation,
@@ -9,6 +9,12 @@ import {
   showMessage,
   pressEnterToContinue
 } from '../ui/display.js';
+import {
+  closeRunSummary,
+  evaluateAchievements,
+  formatAchievementUnlockMessage,
+  resetRunSummary
+} from './achievements.js';
 import {
   updateQuestProgressOnExplore
 } from './quest.js';
@@ -20,6 +26,13 @@ export interface TravelFlowResult {
   locationChanged: boolean;
 }
 
+function showAchievementUnlocks(gameState: GameState): void {
+  const achievementResult = evaluateAchievements(gameState);
+  for (const achievement of achievementResult.newlyUnlocked) {
+    showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+}
+
 function getCompletedActs(gameState: GameState): number[] {
   const acts = Object.entries(gameState.flags)
     .filter(([key, value]) => value && key.startsWith('act-complete-'))
@@ -29,7 +42,10 @@ function getCompletedActs(gameState: GameState): number[] {
   return Array.from(new Set(acts)).sort((a, b) => a - b);
 }
 
-export async function handleTravel(gameState: GameState): Promise<TravelFlowResult> {
+export async function handleTravel(
+  gameState: GameState,
+  preferredDestinationId: string | null = null
+): Promise<TravelFlowResult> {
   const completedActs = getCompletedActs(gameState);
   const travelResult = await showTravelMenu(
     gameState.player.currentLocation,
@@ -37,7 +53,8 @@ export async function handleTravel(gameState: GameState): Promise<TravelFlowResu
     gameState.statistics.bossesDefeated,
     completedActs,
     gameState.player.completedQuests,
-    gameState.player.unlockedLocations
+    gameState.player.unlockedLocations,
+    preferredDestinationId
   );
 
   if (!travelResult.traveled || !travelResult.destination) {
@@ -66,6 +83,12 @@ export async function handleTravel(gameState: GameState): Promise<TravelFlowResu
   gameState.position.locationId = travelResult.destination;
   gameState.position.stepsTaken = 0;
 
+  if (isTownLocation(travelResult.destination)) {
+    closeRunSummary(gameState);
+  } else {
+    resetRunSummary(gameState, travelResult.destination);
+  }
+
   if (!gameState.player.unlockedLocations.includes(travelResult.destination)) {
     gameState.player.unlockedLocations.push(travelResult.destination);
     gameState.statistics.locationsDiscovered++;
@@ -77,6 +100,7 @@ export async function handleTravel(gameState: GameState): Promise<TravelFlowResu
   if (questUpdates.length > 0) {
     showQuestProgressUpdates(gameState, questUpdates);
   }
+  showAchievementUnlocks(gameState);
 
   await pressEnterToContinue('important');
 

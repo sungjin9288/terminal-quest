@@ -39,8 +39,23 @@ import {
   pressEnterToContinue
 } from '../ui/display.js';
 import { confirmAction } from '../ui/menu.js';
+import {
+  evaluateAchievements,
+  formatAchievementUnlockMessage,
+  recordRunGoldEarned,
+  recordRunItemsCollected,
+  recordRunQuestCompleted
+} from './achievements.js';
+import {
+  getQuestCategoryPresentation,
+  getQuestEstimatedTimeLabel,
+  getQuestSessionLabel,
+  groupQuestsByCategory,
+  summarizeQuestCategories
+} from './questPresentation.js';
 
 const NO_QUEST_HISTORY_FILTER = '__without-quest__';
+const QUEST_GROUP_HEADER_PREFIX = '__quest-group__:';
 type QuestHistoryLimitMode = '12' | '30' | 'all';
 
 interface QuestHistoryViewState {
@@ -95,10 +110,39 @@ function showQuestDetails(quest: Quest): void {
     : quest.status === 'active'
       ? chalk.cyan('진행 중')
       : chalk.gray('미수락');
+  const category = getQuestCategoryPresentation(quest);
 
   console.log(chalk.yellow.bold(`\n📜 ${quest.name}`));
   console.log(chalk.gray(`  ${quest.description}`));
   console.log(chalk.white(`  상태: ${statusText} / 권장 레벨: ${quest.requiredLevel}`));
+  console.log(
+    chalk.white(
+      `  분류: ${category.icon} ${category.label} / 세션: ${getQuestSessionLabel(quest)} / 예상: ${getQuestEstimatedTimeLabel(quest)}`
+    )
+  );
+  if (quest.narrative?.arcTitle) {
+    console.log(chalk.gray(`  에피소드: ${quest.narrative.arcTitle} / ${quest.narrative.chapterLabel}`));
+  }
+  if (quest.narrative?.featuredNpc) {
+    console.log(chalk.gray(`  관련 인물: ${quest.narrative.featuredNpc}`));
+  }
+  if (quest.narrative?.hook) {
+    console.log(
+      chalk.cyan(
+        `  브리핑 메모${quest.narrative.featuredNpc ? ` / ${quest.narrative.featuredNpc}` : ''}: ${quest.narrative.hook}`
+      )
+    );
+  }
+  if (quest.narrative?.npcLine) {
+    console.log(
+      chalk.yellow(
+        `  직접 전달${quest.narrative.featuredNpc ? ` / ${quest.narrative.featuredNpc}` : ''}: "${quest.narrative.npcLine}"`
+      )
+    );
+  }
+  if (quest.narrative?.storyBeat) {
+    console.log(chalk.gray(`  이번 장면: ${quest.narrative.storyBeat}`));
+  }
 
   for (const objective of quest.objectives) {
     const done = objective.currentAmount >= objective.requiredAmount;
@@ -119,6 +163,75 @@ function showQuestDetails(quest: Quest): void {
   if (quest.seasonalEventId) {
     const seasonalEventName = getSeasonalEventNameById(quest.seasonalEventId);
     console.log(chalk.yellow(`  시즌 제한: ${seasonalEventName ?? quest.seasonalEventId}`));
+  }
+}
+
+function buildQuestChoiceName(quest: Quest): string {
+  const category = getQuestCategoryPresentation(quest);
+  const timeLabel = getQuestEstimatedTimeLabel(quest);
+
+  if (quest.seasonalEventId) {
+    const seasonalEventName = getSeasonalEventNameById(quest.seasonalEventId);
+    const seasonalLabel = seasonalEventName ?? '시즌 이벤트';
+    return `${category.icon} ${seasonalLabel} | ${quest.name} (Lv ${quest.requiredLevel} / ${timeLabel})`;
+  }
+
+  return `${category.icon} ${quest.name} (Lv ${quest.requiredLevel} / ${timeLabel})`;
+}
+
+function buildQuestSelectionChoices(
+  quests: Quest[]
+): Array<{
+  name: string;
+  value: string;
+  disabled?: boolean;
+}> {
+  const choices: Array<{
+    name: string;
+    value: string;
+    disabled?: boolean;
+  }> = [];
+
+  for (const group of groupQuestsByCategory(quests)) {
+    choices.push({
+      name: chalk.gray(`━━ ${group.icon} ${group.label} (${group.quests.length}) ━━`),
+      value: `${QUEST_GROUP_HEADER_PREFIX}${group.category}`,
+      disabled: true
+    });
+
+    for (const quest of group.quests) {
+      choices.push({
+        name: buildQuestChoiceName(quest),
+        value: quest.id
+      });
+    }
+  }
+
+  return choices;
+}
+
+function showAchievementUnlocks(gameState: GameState): void {
+  const achievementResult = evaluateAchievements(gameState);
+  for (const achievement of achievementResult.newlyUnlocked) {
+    showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+}
+
+function showQuestCollection(title: string, quests: Quest[]): void {
+  console.log(chalk.magenta.bold(`\n${title}\n`));
+
+  if (quests.length === 0) {
+    console.log(chalk.gray('표시할 퀘스트가 없습니다.'));
+    return;
+  }
+
+  console.log(chalk.gray(`분류 요약: ${summarizeQuestCategories(quests)}`));
+
+  for (const group of groupQuestsByCategory(quests)) {
+    console.log(chalk.cyan.bold(`\n${group.icon} ${group.label} (${group.quests.length})`));
+    for (const quest of group.quests) {
+      showQuestDetails(quest);
+    }
   }
 }
 
@@ -262,6 +375,9 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
 
     console.log(chalk.magenta.bold('\n📋 퀘스트 게시판\n'));
     console.log(chalk.white(`진행 중: ${activeQuests.length} / 완료 가능: ${completableQuests.length}`));
+    if (availableQuests.length > 0) {
+      console.log(chalk.gray(`수락 가능 에피소드: ${summarizeQuestCategories(availableQuests)}`));
+    }
     console.log(chalk.gray('─'.repeat(60)));
 
     const answer = await inquirer.prompt([
@@ -305,18 +421,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
     }
 
     if (answer.action === 'accept') {
-      const questChoices = availableQuests.map(quest => ({
-        name: (() => {
-          if (!quest.seasonalEventId) {
-            return `${quest.name} (Lv ${quest.requiredLevel})`;
-          }
-
-          const seasonalEventName = getSeasonalEventNameById(quest.seasonalEventId);
-          const seasonalLabel = seasonalEventName ?? '시즌 이벤트';
-          return `🌤 ${seasonalLabel} | ${quest.name} (Lv ${quest.requiredLevel})`;
-        })(),
-        value: quest.id
-      }));
+      const questChoices = buildQuestSelectionChoices(availableQuests);
       questChoices.push({ name: chalk.gray('← 취소'), value: 'cancel' });
 
       const questAnswer = await inquirer.prompt([
@@ -359,11 +464,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
     if (answer.action === 'active') {
       clearScreen();
       await showTitle();
-      console.log(chalk.magenta.bold('\n📌 진행 중인 퀘스트\n'));
-
-      for (const quest of activeQuests) {
-        showQuestDetails(quest);
-      }
+      showQuestCollection('📌 진행 중인 퀘스트', activeQuests);
 
       await pressEnterToContinue('important');
       continue;
@@ -372,11 +473,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
     if (answer.action === 'completed') {
       clearScreen();
       await showTitle();
-      console.log(chalk.magenta.bold('\n✅ 완료한 퀘스트\n'));
-
-      for (const quest of completedQuests) {
-        showQuestDetails(quest);
-      }
+      showQuestCollection('✅ 완료한 퀘스트', completedQuests);
 
       await pressEnterToContinue('important');
       continue;
@@ -635,10 +732,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
     }
 
     if (answer.action === 'complete') {
-      const completeChoices = completableQuests.map(quest => ({
-        name: quest.name,
-        value: quest.id
-      }));
+      const completeChoices = buildQuestSelectionChoices(completableQuests);
       completeChoices.push({ name: chalk.gray('← 취소'), value: 'cancel' });
 
       const completeAnswer = await inquirer.prompt([
@@ -671,6 +765,8 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
         showMessage(result.message, result.success ? 'success' : 'error');
 
         if (result.success) {
+          recordRunGoldEarned(gameState, result.goldGained);
+          recordRunQuestCompleted(gameState);
           if (result.quest) {
             pushQuestHistory(gameState, 'completed', `${result.quest.name} 완료`, result.quest.id);
           }
@@ -690,6 +786,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
             );
           }
           if (result.itemsAdded.length > 0) {
+            recordRunItemsCollected(gameState, result.itemsAdded.length);
             const itemNames = result.itemsAdded.map(itemId => getItemById(itemId)?.name ?? itemId);
             showMessage(`획득 아이템: ${itemNames.join(', ')}`, 'info');
 
@@ -717,6 +814,7 @@ export async function questBoardLoop(gameState: GameState): Promise<void> {
           if (result.repeatableReset) {
             showMessage('반복 퀘스트가 초기화되어 다시 수락할 수 있습니다.', 'info');
           }
+          showAchievementUnlocks(gameState);
         }
       }
 

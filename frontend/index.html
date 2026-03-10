@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Terminal Quest Browser Ops</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+    <div class="app-shell">
+      <header class="masthead">
+        <div class="masthead-copy">
+          <p class="eyebrow">Browser Operations Deck</p>
+          <h1>Terminal Quest</h1>
+          <p class="masthead-subtitle">
+            터미널 감성은 유지하고, 플레이어 경험은 브라우저용으로 다시 설계한 전술 대시보드.
+          </p>
+        </div>
+        <div class="masthead-controls">
+          <button class="ghost-button" type="button" data-client-action="refresh">
+            상태 새로고침
+          </button>
+          <p id="status-line" class="status-line">상태를 불러오는 중...</p>
+        </div>
+      </header>
+      <main id="app" class="app-root" aria-live="polite"></main>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

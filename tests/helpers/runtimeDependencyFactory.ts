@@ -3,6 +3,7 @@ import {
   GameRuntimeDependencies,
   MainMenuRuntimeDependencies
 } from '../../src/types/runtime';
+import { SaveSlotMetadata } from '../../src/types/save';
 import { createTestGameState } from './gameStateFactory';
 import { mergeTestDependencies } from './dependencyFactory';
 import { mockFn } from './mockFactory';
@@ -30,13 +31,15 @@ export function createMainMenuRuntimeDependencies(
   overrides: Partial<MainMenuRuntimeDependencies> = {}
 ): MainMenuRuntimeDependencies {
   const defaultState = createTestGameState();
+  const defaultSaves: SaveSlotMetadata[] = [];
 
   const defaults: MainMenuRuntimeDependencies = {
     showMainMenu: mockFn<MainMenuRuntimeDependencies['showMainMenu']>(async () => 'exit'),
     startNewGame: mockFn<MainMenuRuntimeDependencies['startNewGame']>(async () => defaultState),
     loadGame: mockFn<MainMenuRuntimeDependencies['loadGame']>(async () => null),
     gameLoop: mockFn<MainMenuRuntimeDependencies['gameLoop']>(async (_state: GameState) => undefined),
-    openSettings: mockFn<MainMenuRuntimeDependencies['openSettings']>(async () => undefined)
+    openSettings: mockFn<MainMenuRuntimeDependencies['openSettings']>(async () => undefined),
+    listSaves: mockFn<MainMenuRuntimeDependencies['listSaves']>(() => defaultSaves)
   };
 
   return mergeTestDependencies(defaults, overrides);

@@ -10,6 +10,7 @@ import { MainMenuRuntimeDependencies } from '../types/runtime.js';
 import { mergeDependencies } from '../dependencies.js';
 import { trackTelemetryEvent } from './telemetry.js';
 import { initializeRuntimeSettings } from '../runtime/settings.js';
+import { listSaves } from './save.js';
 
 export type { MainMenuRuntimeDependencies } from '../types/runtime.js';
 
@@ -18,8 +19,47 @@ const DEFAULT_MAIN_MENU_DEPENDENCIES: MainMenuRuntimeDependencies = {
   startNewGame,
   loadGame,
   gameLoop,
-  openSettings: showSettingsMenu
+  openSettings: showSettingsMenu,
+  listSaves
 };
+
+function showRecentSaveSummary(dependencies: MainMenuRuntimeDependencies): void {
+  const latestSave = dependencies
+    .listSaves()
+    .filter(slot => slot.exists && typeof slot.savedAt === 'number')
+    .sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0))[0];
+
+  if (!latestSave) {
+    showMessage('저장된 여정이 없습니다. 새 작전을 시작할 수 있습니다.', 'info');
+    return;
+  }
+
+  const achievementProgress = typeof latestSave.achievementTotal === 'number'
+    ? ` | 업적 ${latestSave.achievementCount ?? 0}/${latestSave.achievementTotal}`
+    : '';
+  const resumeSummary = latestSave.resumeTitle
+    ? ` | 재개 ${latestSave.resumeTitle}`
+    : '';
+  const trackingModeSummary = latestSave.achievementTrackingMode
+    ? ` | 추적 ${latestSave.achievementTrackingMode === 'pinned' ? '핀 고정' : '자동 전환'}`
+    : '';
+  const trackedAchievementSummary = latestSave.trackedAchievementTitle
+    ? ` | 추적 업적 ${latestSave.trackedAchievementTitle}${latestSave.trackedAchievementProgress ? ` ${latestSave.trackedAchievementProgress}` : ''}`
+    : '';
+  const nextAchievementSummary = latestSave.nextAchievementTitle &&
+    latestSave.nextAchievementTitle !== latestSave.trackedAchievementTitle
+    ? ` | 다음 업적 ${latestSave.nextAchievementTitle}${latestSave.nextAchievementProgress ? ` ${latestSave.nextAchievementProgress}` : ''}`
+    : '';
+  const trackingHistorySummary = latestSave.achievementTrackingHistory
+    ? ` | 추적 기록 ${latestSave.achievementTrackingHistory}`
+    : '';
+
+  showMessage(
+    `최근 기록: 슬롯 ${latestSave.slotNumber} ${latestSave.playerName ?? 'Unknown'} ` +
+    `Lv${latestSave.playerLevel ?? 0} @ ${latestSave.locationName ?? 'Unknown'}${achievementProgress}${resumeSummary}${trackingModeSummary}${trackedAchievementSummary}${nextAchievementSummary}${trackingHistorySummary}`,
+    'info'
+  );
+}
 
 export async function runMainMenuRuntime(
   dependencies: Partial<MainMenuRuntimeDependencies> = {}
@@ -50,6 +90,7 @@ export async function runMainMenuRuntime(
   while (running) {
     clearScreen();
     await showTitle();
+    showRecentSaveSummary(runtimeDependencies);
 
     const choice = await runtimeDependencies.showMainMenu();
 

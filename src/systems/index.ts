@@ -5,5 +5,6 @@
 
 export * from './prefix.js';
 export * from './element.js';
+export * from './achievements.js';
 export * from './shop.js';
 export * from './death.js';

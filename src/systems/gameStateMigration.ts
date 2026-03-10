@@ -3,12 +3,22 @@ import {
   QuestHistoryEntry,
   QuestHistoryType
 } from '../types/game.js';
+import {
+  ensureAchievementState,
+  ensureAchievementTrackingState,
+  ensureRunSummary,
+  evaluateAchievements,
+  grantPendingAchievementRewards,
+  syncAchievementTrackingState
+} from './achievements.js';
 import { ensureEndgameChallengeState } from './endgameChallenge.js';
 import { ensureQuestState } from './quest.js';
 
 const BASE_MIGRATION_VERSION = '0.0.0';
-export const CURRENT_GAME_STATE_VERSION = '1.0.0';
-export const CURRENT_SAVE_SCHEMA_VERSION = '1.0.0';
+const SCHEMA_V1_0_0 = '1.0.0';
+const SCHEMA_V1_1_0 = '1.1.0';
+export const CURRENT_GAME_STATE_VERSION = '1.2.0';
+export const CURRENT_SAVE_SCHEMA_VERSION = '1.2.0';
 export const QUEST_HISTORY_LIMIT = 60;
 
 const QUEST_HISTORY_TYPES: ReadonlySet<QuestHistoryType> = new Set([
@@ -102,6 +112,14 @@ function migrateToV1_0_0(gameState: GameState): void {
   }
 }
 
+function migrateToV1_1_0(_gameState: GameState): void {
+  // Runtime safety-net normalization handles the new achievement/run fields.
+}
+
+function migrateToV1_2_0(_gameState: GameState): void {
+  // Runtime safety-net normalization handles the new shared achievement tracking fields.
+}
+
 interface MigrationStep {
   id: string;
   fromVersion: string;
@@ -113,8 +131,20 @@ const MIGRATION_STEPS: MigrationStep[] = [
   {
     id: 'v0-to-v1',
     fromVersion: BASE_MIGRATION_VERSION,
-    toVersion: CURRENT_SAVE_SCHEMA_VERSION,
+    toVersion: SCHEMA_V1_0_0,
     apply: migrateToV1_0_0
+  },
+  {
+    id: 'v1-to-v1_1',
+    fromVersion: SCHEMA_V1_0_0,
+    toVersion: SCHEMA_V1_1_0,
+    apply: migrateToV1_1_0
+  },
+  {
+    id: 'v1_1-to-v1_2',
+    fromVersion: SCHEMA_V1_1_0,
+    toVersion: CURRENT_SAVE_SCHEMA_VERSION,
+    apply: migrateToV1_2_0
   }
 ];
 
@@ -156,6 +186,12 @@ export function migrateLoadedGameState(
   ensureQuestState(gameState);
   ensureQuestHistoryState(gameState);
   ensureEndgameChallengeState(gameState);
+  ensureAchievementState(gameState);
+  ensureAchievementTrackingState(gameState);
+  ensureRunSummary(gameState);
+  evaluateAchievements(gameState);
+  grantPendingAchievementRewards(gameState);
+  syncAchievementTrackingState(gameState, { recordHistory: false });
 
   gameState.gameVersion = CURRENT_GAME_STATE_VERSION;
 

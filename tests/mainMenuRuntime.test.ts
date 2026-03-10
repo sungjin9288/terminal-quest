@@ -99,4 +99,42 @@ describe('Main Menu Runtime', () => {
       'info'
     );
   });
+
+  it('should show recent save summary with achievement progress before prompting', async () => {
+    mockDisplayPreset('mainMenuRuntime');
+
+    const showMainMenu = mockFn<MainMenuRuntimeDependencies['showMainMenu']>(async () => 'exit');
+    const listSaves = mockFn<MainMenuRuntimeDependencies['listSaves']>(() => [
+      {
+        slotNumber: 2,
+        exists: true,
+        savedAt: 1730390400000,
+        locationName: '비트 타운',
+        playerName: 'Archivist',
+        playerLevel: 4,
+        playTime: 600,
+        achievementCount: 3,
+        achievementTotal: 6,
+        resumeTitle: '새 퀘스트',
+        achievementTrackingMode: 'pinned',
+        achievementTrackingHistory: '상점 구매 후 자동 전환: 전선 개척 3/4',
+        trackedAchievementTitle: '전선 개척',
+        trackedAchievementProgress: '3/4',
+        nextAchievementTitle: '전선 개척',
+        nextAchievementProgress: '3/4'
+      }
+    ]);
+
+    await runMainMenuRuntime(
+      createMainMenuRuntimeDependencies({
+        showMainMenu,
+        listSaves
+      })
+    );
+
+    expect(display.showMessage).toHaveBeenCalledWith(
+      '최근 기록: 슬롯 2 Archivist Lv4 @ 비트 타운 | 업적 3/6 | 재개 새 퀘스트 | 추적 핀 고정 | 추적 업적 전선 개척 3/4 | 추적 기록 상점 구매 후 자동 전환: 전선 개척 3/4',
+      'info'
+    );
+  });
 });

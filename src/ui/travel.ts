@@ -16,6 +16,7 @@ import {
   isLevelAppropriate,
   getHubTown
 } from '../data/locations.js';
+import { formatFirstClearRewardPreview } from '../systems/adventureFocus.js';
 import { showSeparator, showMessage } from './display.js';
 import { getRuntimeSettings } from '../runtime/settings.js';
 
@@ -36,7 +37,8 @@ export async function showTravelMenu(
   defeatedBosses: string[] = [],
   completedActs: number[] = [],
   completedQuests: string[] = [],
-  manuallyUnlockedLocations: string[] = []
+  manuallyUnlockedLocations: string[] = [],
+  preferredDestinationId: string | null = null
 ): Promise<TravelResult> {
   console.log();
   const currentName = getLocationDisplayName(currentLocationId);
@@ -58,10 +60,12 @@ export async function showTravelMenu(
     const isUnlocked = manuallyUnlockedLocations.includes(location.id) ||
       isLocationUnlocked(location.id, defeatedBosses, completedActs, completedQuests);
     const isTown = isTownLocation(location.id);
+    const bossDefeated = !isTown && 'boss' in location && defeatedBosses.includes(location.boss);
 
     let displayName = location.name;
     let levelInfo = '';
     let statusIcon = '';
+    let tags = '';
 
     if (isTown) {
       statusIcon = '🏠 ';
@@ -81,6 +85,22 @@ export async function showTravelMenu(
       } else {
         statusIcon = '→ ';
       }
+
+      const tagValues: string[] = [];
+      if (bossDefeated) {
+        tagValues.push(chalk.green('클리어'));
+      } else {
+        if (appropriateness === 'appropriate') {
+          tagValues.push(chalk.cyan('추천'));
+        }
+        if (formatFirstClearRewardPreview(location.id)) {
+          tagValues.push(chalk.yellow('첫 보상'));
+        }
+      }
+
+      if (tagValues.length > 0) {
+        tags = ` ${tagValues.map(tag => `[${tag}]`).join(' ')}`;
+      }
     }
 
     if (!isUnlocked) {
@@ -91,7 +111,7 @@ export async function showTravelMenu(
       });
     } else {
       choices.push({
-        name: `${statusIcon}${displayName}${levelInfo}`,
+        name: `${statusIcon}${displayName}${levelInfo}${tags}`,
         value: location.id
       });
     }
@@ -103,12 +123,26 @@ export async function showTravelMenu(
     value: 'cancel'
   });
 
+  const isPreferredDestinationAvailable = Boolean(
+    preferredDestinationId &&
+    choices.some(choice => choice.value === preferredDestinationId && !choice.disabled)
+  );
+
+  if (getRuntimeSettings().showKeyHints) {
+    if (isPreferredDestinationAvailable && preferredDestinationId) {
+      const preferredLocationName = getLocationDisplayName(preferredDestinationId);
+      console.log(chalk.gray(`안내: Enter를 누르면 추천 목적지(${preferredLocationName})를 바로 선택합니다.`));
+    }
+    console.log(chalk.gray('안내: 방향키로 이동하고 Enter로 선택하세요.'));
+  }
+
   const answer = await inquirer.prompt([
     {
       type: 'list',
       name: 'destination',
       message: chalk.cyan('어디로 이동하시겠습니까?'),
-      choices
+      choices,
+      default: isPreferredDestinationAvailable ? preferredDestinationId ?? undefined : undefined
     }
   ]);
 

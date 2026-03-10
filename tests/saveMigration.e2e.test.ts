@@ -48,6 +48,12 @@ describe('Save Migration E2E', () => {
     expect(gameState.statistics.endgameChallengeTier).toBe(0);
     expect(gameState.statistics.endgameChallengeCurrentStreak).toBe(0);
     expect(gameState.statistics.endgameChallengeBestStreak).toBe(0);
+    expect(gameState.achievements?.unlocked.first_turn_in).toBeDefined();
+    expect(gameState.runSummary).toMatchObject({
+      activeLocationId: null,
+      damageTaken: 0,
+      bossesDefeated: []
+    });
   });
 
   it('should sanitize malformed legacy quest history entries during migration', () => {

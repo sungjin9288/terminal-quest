@@ -69,6 +69,9 @@ export {
   QuestObjectiveType,
   QuestObjective,
   QuestStatus,
+  QuestCategory,
+  QuestFatigueClass,
+  QuestNarrative,
   Quest,
   QuestHistoryType,
   QuestHistoryEntry,
@@ -81,6 +84,26 @@ export {
   SaveFileMetadata,
   GameConfig
 } from './game.js';
+
+// Achievement types
+export {
+  AchievementCategory,
+  AchievementAccent,
+  AchievementUnlockState,
+  AchievementState,
+  AchievementTrackingMode,
+  AchievementTrackingHistoryType,
+  AchievementTrackingHistoryEntry,
+  AchievementTrackingState,
+  AchievementRule,
+  AchievementRewardItem,
+  AchievementReward,
+  AchievementDefinition,
+  AchievementRewardGrant,
+  RunSummary,
+  AchievementProgress,
+  AchievementView
+} from './achievement.js';
 
 // Save types
 export {
@@ -112,6 +135,7 @@ export {
   ShowMainMenuHandler,
   StartNewGameHandler,
   LoadGameHandler,
+  ListSavesHandler,
   OpenSettingsHandler,
   GameLoopHandler,
   MainMenuRuntimeDependencies

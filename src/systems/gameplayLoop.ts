@@ -31,13 +31,27 @@ import {
 import { getQuestTrackerSummary } from './questTracker.js';
 import { canAffordCost, getInnRestCost } from './economy.js';
 import { getActiveSeasonalEvent } from './seasonalEvents.js';
+import { getAdventureFocusSummary, getRecommendedTravelDestination } from './adventureFocus.js';
+import { runDungeonEvent } from './dungeonEvents.js';
 import { getRuntimeSettings } from '../runtime/settings.js';
+import {
+  evaluateAchievements,
+  formatAchievementUnlockMessage,
+  recordRunGoldSpent
+} from './achievements.js';
 
 export type {
   EncounterResult,
   TownLoopDependencies,
   DungeonLoopDependencies
 } from '../types/runtime.js';
+
+function showAchievementUnlocks(gameState: GameState): void {
+  const achievementResult = evaluateAchievements(gameState);
+  for (const achievement of achievementResult.newlyUnlocked) {
+    showMessage(formatAchievementUnlockMessage(achievement), 'success');
+  }
+}
 
 function showTrackedQuestSummary(gameState: GameState): void {
   const summary = getQuestTrackerSummary(gameState);
@@ -62,6 +76,25 @@ function showSeasonalEventSummary(gameState: GameState): void {
 
   console.log(chalk.yellow.bold(`🌤 시즌 이벤트: ${activeEvent.name}`));
   console.log(chalk.gray(`   ${activeEvent.description}`));
+}
+
+function showAdventureFocus(gameState: GameState): void {
+  const summary = getAdventureFocusSummary(gameState);
+  if (!summary) {
+    return;
+  }
+
+  const title =
+    summary.tone === 'warning'
+      ? chalk.yellow.bold('🎯 모험 포커스')
+      : summary.tone === 'success'
+        ? chalk.green.bold('🎯 모험 포커스')
+        : chalk.cyan.bold('🎯 모험 포커스');
+
+  console.log(title);
+  summary.lines.slice(0, 2).forEach(line => {
+    console.log(chalk.gray(`   ${line}`));
+  });
 }
 
 type GuidanceContext = 'town' | 'dungeon';
@@ -214,6 +247,7 @@ export async function townLoop(
     showStats(gameState.player);
     showSeasonalEventSummary(gameState);
     showTrackedQuestSummary(gameState);
+    showAdventureFocus(gameState);
 
     const currentLocation = getLocationById(gameState.player.currentLocation);
     const hasQuestBoard = Boolean(
@@ -249,6 +283,7 @@ export async function townLoop(
 
           gameState.player.gold -= innRestCost;
           gameState.statistics.goldSpent += innRestCost;
+          recordRunGoldSpent(gameState, innRestCost);
 
           await applyTalkQuestProgress(gameState, ['innkeeper']);
           showMessage(`여관에서 휴식을 취합니다... (비용: ${innRestCost} 골드)`, 'info');
@@ -256,6 +291,7 @@ export async function townLoop(
           gameState.player.stats.hp = gameState.player.stats.maxHp;
           gameState.player.stats.mp = gameState.player.stats.maxMp;
           showMessage(`HP와 MP가 완전히 회복되었습니다! (잔액: ${gameState.player.gold} 골드)`, 'success');
+          showAchievementUnlocks(gameState);
           await pressEnterToContinue('important');
           break;
         }
@@ -280,7 +316,8 @@ export async function townLoop(
 
       case 'travel':
         {
-          const travelResult = await dependencies.handleTravel(gameState);
+          const recommendedDestinationId = getRecommendedTravelDestination(gameState);
+          const travelResult = await dependencies.handleTravel(gameState, recommendedDestinationId);
           if (travelResult.locationChanged && !isTownLocation(gameState.player.currentLocation)) {
             return true;
           }
@@ -320,6 +357,7 @@ export async function dungeonLoop(
     showStats(gameState.player);
     showSeasonalEventSummary(gameState);
     showTrackedQuestSummary(gameState);
+    showAdventureFocus(gameState);
     const guidance = showContextGuidance(gameState, 'dungeon');
 
     const choice = await showDungeonMenu(
@@ -347,21 +385,9 @@ export async function dungeonLoop(
             }
           }
         } else {
-          const eventRoll = random();
-          if (eventRoll < 0.3) {
-            const goldFound = Math.floor(random() * 30) + 10;
-            gameState.player.gold += goldFound;
-            gameState.statistics.goldEarned += goldFound;
-            showMessage(`${goldFound} 골드를 발견했습니다!`, 'success');
-          } else if (eventRoll < 0.5) {
-            showMessage('체력 회복 샘을 발견했습니다!', 'success');
-            gameState.player.stats.hp = Math.min(
-              gameState.player.stats.hp + 30,
-              gameState.player.stats.maxHp
-            );
-            showMessage('HP가 30 회복되었습니다.', 'info');
-          } else {
-            showMessage('아무것도 발견하지 못했습니다.', 'info');
+          const eventResult = runDungeonEvent(gameState, random);
+          for (const message of eventResult.messages) {
+            showMessage(message.text, message.tone);
           }
           await pressEnterToContinue('normal');
         }
@@ -390,7 +416,8 @@ export async function dungeonLoop(
 
       case 'travel':
         {
-          const travelResult = await dependencies.handleTravel(gameState);
+          const recommendedDestinationId = getRecommendedTravelDestination(gameState);
+          const travelResult = await dependencies.handleTravel(gameState, recommendedDestinationId);
           if (travelResult.locationChanged && isTownLocation(gameState.player.currentLocation)) {
             return true;
           }

@@ -8,6 +8,7 @@ import {
   QuestObjectiveType,
   QuestStatus
 } from '../types/game.js';
+import { buildQuestNarrative } from './questNarratives.js';
 
 interface QuestSeed extends Omit<Quest, 'status' | 'isMainQuest' | 'repeatable'> {
   status?: QuestStatus;
@@ -66,7 +67,16 @@ function createQuest(seed: QuestSeed): Quest {
     ...seed,
     status: seed.status ?? QuestStatus.NotStarted,
     isMainQuest: seed.isMainQuest ?? false,
-    repeatable: seed.repeatable ?? false
+    repeatable: seed.repeatable ?? false,
+    narrative: seed.narrative ?? buildQuestNarrative({
+      id: seed.id,
+      name: seed.name,
+      description: seed.description,
+      questGiver: seed.questGiver,
+      isMainQuest: seed.isMainQuest,
+      repeatable: seed.repeatable,
+      seasonalEventId: seed.seasonalEventId
+    })
   };
 }
 

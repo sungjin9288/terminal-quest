@@ -45,7 +45,10 @@ export function writeCrashReport(
     occurredAt?: Date;
   } = {}
 ): string | null {
-  const logsDir = options.logsDir ?? join(process.cwd(), 'logs');
+  const logsDir =
+    options.logsDir ??
+    process.env.TERMINAL_QUEST_LOGS_DIR?.trim() ??
+    join(process.cwd(), 'logs');
   const occurredAt = options.occurredAt ?? new Date();
   const safeTimestamp = occurredAt.toISOString().replace(/[:.]/g, '-');
   const reportPath = join(logsDir, `crash-${safeTimestamp}-${eventType}.log`);

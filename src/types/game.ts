@@ -6,6 +6,7 @@ import { Player } from './character.js';
 import { AnyItem } from './item.js';
 import { Monster, MonsterInstance } from './monster.js';
 import { Location, SavePoint, PlayerPosition, FastTravelPoint } from './location.js';
+import { AchievementState, AchievementTrackingState, RunSummary } from './achievement.js';
 
 /**
  * Game difficulty modes
@@ -88,6 +89,49 @@ export enum QuestStatus {
 }
 
 /**
+ * Quest narrative category
+ */
+export enum QuestCategory {
+  MainStory = 'main-story',
+  CharacterStory = 'character-story',
+  Contract = 'contract',
+  Seasonal = 'seasonal'
+}
+
+/**
+ * Quest session intensity classification
+ */
+export enum QuestFatigueClass {
+  Short = 'short',
+  Medium = 'medium',
+  Long = 'long'
+}
+
+/**
+ * Narrative metadata layered on top of quest objectives
+ */
+export interface QuestNarrative {
+  /** Board category */
+  category: QuestCategory;
+  /** Story arc identifier */
+  arcId: string;
+  /** Story arc display title */
+  arcTitle: string;
+  /** Chapter or episode label */
+  chapterLabel: string;
+  /** Featured NPC or support role */
+  featuredNpc?: string;
+  /** Short direct line from the featured NPC */
+  npcLine?: string;
+  /** What happens in this beat */
+  storyBeat: string;
+  /** Why the player should care right now */
+  hook: string;
+  /** Session intensity hint */
+  fatigueClass: QuestFatigueClass;
+}
+
+/**
  * Quest definition
  */
 export interface Quest {
@@ -124,6 +168,8 @@ export interface Quest {
   repeatable: boolean;
   /** Seasonal event requirement (optional) */
   seasonalEventId?: string;
+  /** Narrative framing shown in the board UI */
+  narrative?: QuestNarrative;
   /** Time limit in seconds (if any) */
   timeLimit?: number;
   /** Failure conditions */
@@ -271,6 +317,12 @@ export interface GameState {
   statistics: GameStatistics;
   /** Recent quest history */
   questHistory: QuestHistoryEntry[];
+  /** Persistent achievement unlock state */
+  achievements?: AchievementState;
+  /** Shared achievement tracking mode, target, and recent history */
+  achievementTracking?: AchievementTrackingState;
+  /** Current expedition/run summary */
+  runSummary?: RunSummary;
   /** Game flags (for events/triggers) */
   flags: Record<string, boolean>;
   /** Save file name */

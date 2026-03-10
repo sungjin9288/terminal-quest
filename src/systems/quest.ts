@@ -64,6 +64,9 @@ function cloneQuest(quest: Quest): Quest {
   return {
     ...quest,
     prerequisites: [...quest.prerequisites],
+    narrative: quest.narrative
+      ? { ...quest.narrative }
+      : undefined,
     objectives: quest.objectives.map(cloneObjective),
     rewards: {
       ...quest.rewards,

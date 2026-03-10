@@ -1,4 +1,5 @@
 import {
+  ensureAchievementPerkState,
   ensureAchievementState,
   ensureAchievementTrackingState,
   ensureRunSummary,
@@ -18,10 +19,12 @@ describe('Achievement system', () => {
 
     delete (gameState as { achievements?: unknown }).achievements;
     delete (gameState as { achievementTracking?: unknown }).achievementTracking;
+    delete (gameState as { achievementPerks?: unknown }).achievementPerks;
     delete (gameState as { runSummary?: unknown }).runSummary;
 
     ensureAchievementState(gameState);
     ensureAchievementTrackingState(gameState);
+    ensureAchievementPerkState(gameState);
     ensureRunSummary(gameState);
 
     expect(gameState.achievements).toEqual({ unlocked: {} });
@@ -30,6 +33,11 @@ describe('Achievement system', () => {
       achievementId: null,
       updatedAt: expect.any(Number),
       history: []
+    });
+    expect(gameState.achievementPerks).toEqual({
+      inventorySizeBonus: 0,
+      shopDiscountPercent: 0,
+      unlockedShopTiers: []
     });
     expect(gameState.runSummary).toMatchObject({
       activeLocationId: null,
@@ -54,7 +62,7 @@ describe('Achievement system', () => {
     expect(unlockedIds).toContain('flawless_clear');
     expect(getAchievementSummary(gameState)).toMatchObject({
       unlockedCount: 1,
-      totalCount: 6
+      totalCount: 10
     });
     expect(evaluation.rewardGrants[0]).toMatchObject({
       achievementId: 'flawless_clear',
@@ -144,7 +152,7 @@ describe('Achievement system', () => {
     expect(evaluation.rewardGrants).toHaveLength(1);
     expect(evaluation.rewardGrants[0]).toMatchObject({
       achievementId: 'first_turn_in',
-      goldGranted: 40,
+      goldGranted: 30,
       itemsAdded: [
         {
           itemId: 'save-token',
@@ -152,9 +160,53 @@ describe('Achievement system', () => {
         }
       ]
     });
-    expect(gameState.player.gold).toBe(140);
+    expect(gameState.player.gold).toBe(130);
     expect(gameState.player.inventory.filter(itemId => itemId === 'save-token')).toHaveLength(1);
     expect(secondEvaluation.rewardGrants).toHaveLength(0);
-    expect(formatAchievementRewardMessage(evaluation.rewardGrants[0])).toContain('골드 +40');
+    expect(formatAchievementRewardMessage(evaluation.rewardGrants[0])).toContain('골드 +30');
+  });
+
+  it('should apply perk rewards for economy, exploration, and collection milestones', () => {
+    const gameState = createTestGameState();
+
+    gameState.statistics.goldSpent = 250;
+    gameState.statistics.locationsDiscovered = 4;
+    gameState.statistics.itemsCollected = 20;
+
+    const evaluation = evaluateAchievements(gameState, 1000);
+    const unlockedIds = evaluation.newlyUnlocked.map(achievement => achievement.id).sort();
+
+    expect(unlockedIds).toEqual([
+      'field_buyer',
+      'frontier_scout',
+      'supply_runner'
+    ]);
+    expect(gameState.achievementPerks).toMatchObject({
+      inventorySizeBonus: 6,
+      shopDiscountPercent: 8,
+      unlockedShopTiers: []
+    });
+    expect(gameState.player.maxInventorySize).toBe(26);
+    expect(formatAchievementRewardMessage(evaluation.rewardGrants[0])).toContain('상점 할인');
+  });
+
+  it('should unlock seasonal and endgame perk rewards through shared state', () => {
+    const gameState = createTestGameState();
+
+    gameState.flags['seasonal-quest-completed'] = true;
+    gameState.statistics.endgameChallengeUnlocked = true;
+
+    const evaluation = evaluateAchievements(gameState, 1000);
+    const unlockedIds = evaluation.newlyUnlocked.map(achievement => achievement.id).sort();
+
+    expect(unlockedIds).toEqual([
+      'endgame_signal',
+      'seasonal_contractor'
+    ]);
+    expect(gameState.achievementPerks?.shopDiscountPercent).toBe(5);
+    expect(gameState.achievementPerks?.unlockedShopTiers.sort()).toEqual([
+      'binary-weapons:level25',
+      'buffer-potions:level15'
+    ]);
   });
 });

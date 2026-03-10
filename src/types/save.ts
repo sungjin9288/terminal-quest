@@ -64,6 +64,7 @@ export interface SaveSlotMetadata {
   nextAchievementTitle?: string;
   nextAchievementProgress?: string;
   nextAchievementHint?: string;
+  achievementPerkSummary?: string[];
 }
 
 /**

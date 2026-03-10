@@ -10,6 +10,7 @@ import { addItem } from './inventory.js';
 import { getExpForNextLevel } from './leveling.js';
 import { getStartingSkills } from './skills.js';
 import {
+  createAchievementPerkState,
   createAchievementState,
   createAchievementTrackingState,
   createRunSummary
@@ -151,6 +152,7 @@ export function createNewGameState(
     questHistory: [],
     achievements: createAchievementState(),
     achievementTracking: createAchievementTrackingState(),
+    achievementPerks: createAchievementPerkState(),
     runSummary: createRunSummary(),
     flags: {},
     gameVersion: CURRENT_GAME_STATE_VERSION

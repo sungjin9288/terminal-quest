@@ -314,7 +314,7 @@ function createSnapshot(
       inventoryCount: 0,
       saveTokenCount: 1,
       achievementCount: 0,
-      achievementTotal: 6
+      achievementTotal: 10
     },
     location: {
       id: 'bit-town',
@@ -380,7 +380,7 @@ function createSnapshot(
     },
     achievements: {
       unlockedCount: 0,
-      totalCount: 6,
+      totalCount: 10,
       latestUnlocked: null,
       entries: []
     },
@@ -532,7 +532,7 @@ describe('Frontend achievement workspace actions', () => {
     const snapshot = createSnapshot({
       achievements: {
         unlockedCount: 0,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -562,7 +562,7 @@ describe('Frontend achievement workspace actions', () => {
     const snapshot = createSnapshot({
       achievements: {
         unlockedCount: 0,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -634,7 +634,7 @@ describe('Frontend achievement workspace actions', () => {
     const snapshot = createSnapshot({
       achievements: {
         unlockedCount: 1,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -698,7 +698,7 @@ describe('Frontend achievement workspace actions', () => {
       },
       achievements: {
         unlockedCount: 0,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -779,7 +779,7 @@ describe('Frontend achievement workspace actions', () => {
       ],
       achievements: {
         unlockedCount: 0,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -848,7 +848,7 @@ describe('Frontend achievement workspace actions', () => {
       },
       achievements: {
         unlockedCount: 2,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: {
           id: 'flawless_clear',
           title: '무결점 클리어',
@@ -913,7 +913,7 @@ describe('Frontend achievement workspace actions', () => {
     const snapshot = createSnapshot({
       achievements: {
         unlockedCount: 1,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -965,7 +965,7 @@ describe('Frontend achievement workspace actions', () => {
     const snapshot = createSnapshot({
       achievements: {
         unlockedCount: 0,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -1611,7 +1611,7 @@ describe('Frontend smart resume routing', () => {
     const loadedSnapshot = createSnapshot({
       achievements: {
         unlockedCount: 0,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -1738,7 +1738,7 @@ describe('Frontend smart resume routing', () => {
       },
       achievements: {
         unlockedCount: 1,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: {
           id: 'first_turn_in',
           title: '첫 정산',
@@ -1900,7 +1900,7 @@ describe('Frontend smart resume routing', () => {
     const loadedSnapshot = createSnapshot({
       achievements: {
         unlockedCount: 0,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -1953,7 +1953,7 @@ describe('Frontend smart resume routing', () => {
     const afterBuySnapshot = createSnapshot({
       achievements: {
         unlockedCount: 1,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: {
           id: 'field_buyer',
           title: '현장 조달',
@@ -2066,7 +2066,7 @@ describe('Frontend smart resume routing', () => {
       },
       achievements: {
         unlockedCount: 0,
-        totalCount: 6,
+        totalCount: 10,
         latestUnlocked: null,
         entries: [
           {
@@ -2117,7 +2117,7 @@ describe('Frontend smart resume routing', () => {
           playerLevel: 4,
           locationName: '비트 타운',
           achievementCount: 3,
-          achievementTotal: 6,
+          achievementTotal: 10,
           resumeTitle: '새 퀘스트',
           resumeHint: '게시판에서 다음 의뢰 2개를 확인하세요.',
           trackedAchievementTitle: '전선 개척',
@@ -2158,7 +2158,7 @@ describe('Frontend smart resume routing', () => {
           playerLevel: 5,
           locationName: '비트 타운',
           achievementCount: 4,
-          achievementTotal: 6,
+          achievementTotal: 10,
           nextAchievementTitle: '현장 조달',
           nextAchievementProgress: '120/250',
           nextAchievementHint: '상점과 여관에 누적 250골드를 사용합니다.'
@@ -2171,7 +2171,7 @@ describe('Frontend smart resume routing', () => {
           playerLevel: 4,
           locationName: '메모리 숲',
           achievementCount: 3,
-          achievementTotal: 6,
+          achievementTotal: 10,
           trackedAchievementTitle: '전선 개척',
           trackedAchievementProgress: '3/4',
           trackedAchievementHint: '서로 다른 지역 4곳을 해금합니다.',
@@ -2187,7 +2187,7 @@ describe('Frontend smart resume routing', () => {
 
     expect(html).toContain('업적 기록');
     expect(html).toContain('추적 대상 Slot 2 · 전선 개척 3/4');
-    expect(html).toContain('최고 해금 Slot 1 · 4 / 6');
+    expect(html).toContain('최고 해금 Slot 1 · 4 / 10');
     expect(html).toContain('data-load-intent="achievement-chase"');
     expect(html).toContain('data-load-achievement-title="전선 개척"');
     expect(html).toContain('data-load-achievement-progress="3/4"');

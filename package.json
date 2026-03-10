@@ -18,6 +18,7 @@
     "dev": "tsc && node dist/index.js",
     "watch": "tsc --watch",
     "test": "jest",
+    "test:achievements:smoke": "jest tests/achievements.test.ts tests/playerMenu.test.ts tests/shop.test.ts tests/questSystem.test.ts tests/frontendRuntime.test.ts tests/frontendAppAchievements.test.ts tests/saveUi.test.ts tests/mainMenuRuntime.test.ts",
     "clean": "rimraf dist",
     "validate:quests": "npm run build && node scripts/validate-quest-balance.js",
     "validate:economy": "npm run build && node scripts/validate-economy-balance.js",

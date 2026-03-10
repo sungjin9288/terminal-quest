@@ -135,6 +135,16 @@ function formatTrackedAchievementProgress(
   return `추적 업적: ${summary}`;
 }
 
+function formatAchievementPerkSummary(
+  achievementPerkSummary?: SaveSlotMetadata['achievementPerkSummary']
+): string | null {
+  if (!achievementPerkSummary?.length) {
+    return null;
+  }
+
+  return `활성 특전: ${achievementPerkSummary.join(' / ')}`;
+}
+
 /**
  * Show save slots
  */
@@ -185,6 +195,10 @@ export function showSaveSlots(slots: SaveSlotMetadata[]): void {
       if (nextAchievementProgress) {
         console.log(chalk.magenta(`  ${nextAchievementProgress}`));
       }
+      const achievementPerkSummary = formatAchievementPerkSummary(slot.achievementPerkSummary);
+      if (achievementPerkSummary) {
+        console.log(chalk.green(`  ${achievementPerkSummary}`));
+      }
       const trackingHistory = formatAchievementTrackingHistory(
         slot.achievementTrackingHistory,
         slot.achievementTrackingHistoryAt
@@ -231,13 +245,14 @@ export async function selectSaveSlot(
         slot.nextAchievementProgress,
         slot.nextAchievementHint
       );
+      const achievementPerkSummary = formatAchievementPerkSummary(slot.achievementPerkSummary);
       const trackingHistory = formatAchievementTrackingHistory(
         slot.achievementTrackingHistory,
         slot.achievementTrackingHistoryAt
       );
       name =
         `${saveTypeIcon} 슬롯 ${slot.slotNumber}: ${slot.playerName} Lv${slot.playerLevel} - ${slot.locationName}` +
-        [achievementProgress, resumeProgress, trackingMode, trackedAchievementProgress, nextAchievementProgress, trackingHistory]
+        [achievementProgress, resumeProgress, trackingMode, trackedAchievementProgress, nextAchievementProgress, achievementPerkSummary, trackingHistory]
           .filter(Boolean)
           .map(text => `(${text})`)
           .join(' ');
@@ -322,6 +337,10 @@ export async function confirmSaveOverwrite(slotNumber: number, metadata: SaveSlo
     if (nextAchievementProgress) {
       console.log(chalk.magenta(`  ${nextAchievementProgress}`));
     }
+    const achievementPerkSummary = formatAchievementPerkSummary(metadata.achievementPerkSummary);
+    if (achievementPerkSummary) {
+      console.log(chalk.green(`  ${achievementPerkSummary}`));
+    }
     const trackingHistory = formatAchievementTrackingHistory(
       metadata.achievementTrackingHistory,
       metadata.achievementTrackingHistoryAt
@@ -383,6 +402,10 @@ export async function confirmDelete(metadata: SaveSlotMetadata): Promise<boolean
     );
     if (nextAchievementProgress) {
       console.log(chalk.magenta(`  ${nextAchievementProgress}`));
+    }
+    const achievementPerkSummary = formatAchievementPerkSummary(metadata.achievementPerkSummary);
+    if (achievementPerkSummary) {
+      console.log(chalk.green(`  ${achievementPerkSummary}`));
     }
     const trackingHistory = formatAchievementTrackingHistory(
       metadata.achievementTrackingHistory,
@@ -528,6 +551,10 @@ export function showLoadSuccess(metadata: SaveSlotMetadata): void {
   );
   if (nextAchievementProgress) {
     console.log(chalk.magenta(nextAchievementProgress));
+  }
+  const achievementPerkSummary = formatAchievementPerkSummary(metadata.achievementPerkSummary);
+  if (achievementPerkSummary) {
+    console.log(chalk.green(achievementPerkSummary));
   }
   const trackingMode = formatAchievementTrackingMode(metadata.achievementTrackingMode);
   if (trackingMode) {

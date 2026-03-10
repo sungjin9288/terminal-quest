@@ -22,6 +22,9 @@ describe('Distribution Scripts', () => {
     expect(packageJson.scripts?.['frontend:playtest']).toBe(
       'node scripts/start-frontend.js --playtest'
     );
+    expect(packageJson.scripts?.['test:achievements:smoke']).toBe(
+      'jest tests/achievements.test.ts tests/playerMenu.test.ts tests/shop.test.ts tests/questSystem.test.ts tests/frontendRuntime.test.ts tests/frontendAppAchievements.test.ts tests/saveUi.test.ts tests/mainMenuRuntime.test.ts'
+    );
   });
 
   it('should expose release package scripts in package scripts', () => {

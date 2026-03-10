@@ -13,7 +13,7 @@ export const ACHIEVEMENT_CATALOG: readonly AchievementDefinition[] = [
       target: 1
     },
     reward: {
-      gold: 40,
+      gold: 30,
       items: [
         { itemId: 'save-token', quantity: 1 }
       ]
@@ -31,7 +31,8 @@ export const ACHIEVEMENT_CATALOG: readonly AchievementDefinition[] = [
       target: 250
     },
     reward: {
-      gold: 120
+      gold: 90,
+      shopDiscountPercent: 8
     }
   },
   {
@@ -46,6 +47,7 @@ export const ACHIEVEMENT_CATALOG: readonly AchievementDefinition[] = [
       target: 4
     },
     reward: {
+      inventorySlots: 2,
       items: [
         { itemId: 'save-token', quantity: 1 }
       ]
@@ -77,6 +79,9 @@ export const ACHIEVEMENT_CATALOG: readonly AchievementDefinition[] = [
     },
     reward: {
       gold: 180,
+      unlockShopTiers: [
+        { shopId: 'armor-code', tierKey: 'level20' }
+      ],
       items: [
         { itemId: 'save-token', quantity: 2 }
       ]
@@ -95,6 +100,74 @@ export const ACHIEVEMENT_CATALOG: readonly AchievementDefinition[] = [
       skillPoints: 1,
       items: [
         { itemId: 'health-potion', quantity: 2 }
+      ]
+    }
+  },
+  {
+    id: 'supply_runner',
+    title: '보급선 확보',
+    description: '아이템을 누적 20개 수집합니다.',
+    category: 'economy',
+    accent: 'reward',
+    rule: {
+      kind: 'stat_at_least',
+      stat: 'itemsCollected',
+      target: 20
+    },
+    reward: {
+      inventorySlots: 4
+    }
+  },
+  {
+    id: 'seasonal_contractor',
+    title: '시즌 대응반',
+    description: '시즌 한정 의뢰를 한 번 완료합니다.',
+    category: 'quest',
+    accent: 'quest',
+    rule: {
+      kind: 'flag_true',
+      flag: 'seasonal-quest-completed'
+    },
+    reward: {
+      items: [
+        { itemId: 'save-token', quantity: 1 }
+      ],
+      unlockShopTiers: [
+        { shopId: 'buffer-potions', tierKey: 'level15' }
+      ]
+    }
+  },
+  {
+    id: 'frontline_veteran',
+    title: '전선 베테랑',
+    description: '서로 다른 보스를 3번 격파합니다.',
+    category: 'boss',
+    accent: 'boss',
+    rule: {
+      kind: 'boss_count_at_least',
+      target: 3
+    },
+    reward: {
+      skillPoints: 1,
+      unlockShopTiers: [
+        { shopId: 'armor-code', tierKey: 'level25' }
+      ]
+    }
+  },
+  {
+    id: 'endgame_signal',
+    title: '심층 신호 감지',
+    description: '엔드게임 도전을 해금합니다.',
+    category: 'challenge',
+    accent: 'clear',
+    rule: {
+      kind: 'statistics_flag_true',
+      stat: 'endgameChallengeUnlocked'
+    },
+    reward: {
+      shopDiscountPercent: 5,
+      unlockShopTiers: [
+        { shopId: 'binary-weapons', tierKey: 'level25' }
       ]
     }
   }

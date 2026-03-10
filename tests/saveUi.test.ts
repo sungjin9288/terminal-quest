@@ -21,7 +21,7 @@ describe('Save UI', () => {
       playTime: 600,
       saveType: SaveType.Manual,
       achievementCount: 2,
-      achievementTotal: 6,
+      achievementTotal: 10,
       resumeTitle: '기록 복구',
       resumeHint: '게시판으로 돌아가 보상을 수령하세요.',
       achievementTrackingMode: 'pinned',
@@ -31,11 +31,12 @@ describe('Save UI', () => {
       trackedAchievementHint: '서로 다른 지역 4곳을 해금합니다.',
       nextAchievementTitle: '전선 개척',
       nextAchievementProgress: '3/4',
-      nextAchievementHint: '서로 다른 지역 4곳을 해금합니다.'
+      nextAchievementHint: '서로 다른 지역 4곳을 해금합니다.',
+      achievementPerkSummary: ['가방 +6칸', '상점 할인 8%']
     }
     ]);
 
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('업적: 2/6'));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('업적: 2/10'));
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('재개 힌트: 기록 복구 - 게시판으로 돌아가 보상을 수령하세요.')
     );
@@ -45,6 +46,9 @@ describe('Save UI', () => {
     );
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('다음 업적: 전선 개척 (3/4) - 서로 다른 지역 4곳을 해금합니다.')
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('활성 특전: 가방 +6칸 / 상점 할인 8%')
     );
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('추적 기록: 상점 구매 후 추적 완료: 현장 조달 250/250')
@@ -63,7 +67,7 @@ describe('Save UI', () => {
       playerLevel: 4,
       playTime: 600,
       achievementCount: 2,
-      achievementTotal: 6,
+      achievementTotal: 10,
       resumeTitle: '기록 복구',
       resumeHint: '게시판으로 돌아가 보상을 수령하세요.',
       achievementTrackingMode: 'pinned',
@@ -73,10 +77,11 @@ describe('Save UI', () => {
       trackedAchievementHint: '서로 다른 지역 4곳을 해금합니다.',
       nextAchievementTitle: '전선 개척',
       nextAchievementProgress: '3/4',
-      nextAchievementHint: '서로 다른 지역 4곳을 해금합니다.'
+      nextAchievementHint: '서로 다른 지역 4곳을 해금합니다.',
+      achievementPerkSummary: ['가방 +6칸', '상점 할인 8%']
     });
 
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('업적: 2/6'));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('업적: 2/10'));
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('재개 힌트: 기록 복구 - 게시판으로 돌아가 보상을 수령하세요.')
     );
@@ -86,6 +91,9 @@ describe('Save UI', () => {
     );
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('다음 업적: 전선 개척 (3/4) - 서로 다른 지역 4곳을 해금합니다.')
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('활성 특전: 가방 +6칸 / 상점 할인 8%')
     );
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('추적 기록: 상점 구매 후 추적 완료: 현장 조달 250/250')

@@ -1,6 +1,8 @@
 import {
   AchievementDefinition,
+  AchievementPerkState,
   AchievementRewardGrant,
+  AchievementStatisticCountKey,
   AchievementState,
   AchievementTrackingHistoryEntry,
   AchievementTrackingHistoryType,
@@ -9,12 +11,14 @@ import {
   AchievementView,
   RunSummary,
   type AchievementProgress,
+  type AchievementRewardShopTierUnlock,
   type AchievementUnlockState
 } from '../types/achievement.js';
 import { GameState } from '../types/game.js';
 import { ACHIEVEMENT_CATALOG } from '../data/achievements.js';
 import { addItem } from './inventory.js';
 import { getItemById } from '../data/items.js';
+import { getShop } from './shop.js';
 
 export interface AchievementSummary {
   unlockedCount: number;
@@ -44,6 +48,8 @@ interface AchievementTrackingOptions {
 }
 
 const ACHIEVEMENT_TRACKING_HISTORY_LIMIT = 12;
+const ACHIEVEMENT_SHOP_DISCOUNT_CAP = 20;
+const BASE_INVENTORY_SIZE = 20;
 
 function createCountProgress(current: number, target: number): AchievementProgress {
   return {
@@ -63,6 +69,17 @@ function getBossDefeatCount(gameState: GameState): number {
   return gameState.statistics.bossesDefeated.length;
 }
 
+function getStatisticCount(gameState: GameState, stat: AchievementStatisticCountKey): number {
+  const value = gameState.statistics[stat];
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : 0;
+}
+
+function getStatisticFlag(gameState: GameState, stat: 'endgameChallengeUnlocked'): boolean {
+  return gameState.statistics[stat] === true;
+}
+
 function isFlawlessCurrentRun(gameState: GameState): boolean {
   const runSummary = ensureRunSummary(gameState);
   return runSummary.activeLocationId !== null &&
@@ -77,11 +94,13 @@ function getRuleProgress(
   switch (definition.rule.kind) {
     case 'stat_at_least':
       return createCountProgress(
-        gameState.statistics[definition.rule.stat],
+        getStatisticCount(gameState, definition.rule.stat),
         definition.rule.target
       );
     case 'boss_count_at_least':
       return createCountProgress(getBossDefeatCount(gameState), definition.rule.target);
+    case 'statistics_flag_true':
+      return createBooleanProgress(getStatisticFlag(gameState, definition.rule.stat));
     case 'flag_true':
       return createBooleanProgress(Boolean(gameState.flags[definition.rule.flag]));
     case 'run_flawless_boss_clear':
@@ -97,9 +116,11 @@ function isDefinitionUnlocked(
 ): boolean {
   switch (definition.rule.kind) {
     case 'stat_at_least':
-      return gameState.statistics[definition.rule.stat] >= definition.rule.target;
+      return getStatisticCount(gameState, definition.rule.stat) >= definition.rule.target;
     case 'boss_count_at_least':
       return getBossDefeatCount(gameState) >= definition.rule.target;
+    case 'statistics_flag_true':
+      return getStatisticFlag(gameState, definition.rule.stat);
     case 'flag_true':
       return Boolean(gameState.flags[definition.rule.flag]);
     case 'run_flawless_boss_clear':
@@ -122,6 +143,12 @@ function normalizeTimestamp(value: unknown, fallback: number): number {
 function normalizeCount(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.max(0, Math.floor(value))
+    : 0;
+}
+
+function normalizeDiscountPercent(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.min(ACHIEVEMENT_SHOP_DISCOUNT_CAP, Math.floor(value)))
     : 0;
 }
 
@@ -209,6 +236,14 @@ export function createAchievementState(): AchievementState {
   };
 }
 
+export function createAchievementPerkState(): AchievementPerkState {
+  return {
+    inventorySizeBonus: 0,
+    shopDiscountPercent: 0,
+    unlockedShopTiers: []
+  };
+}
+
 export function createAchievementTrackingState(
   now: number = Date.now()
 ): AchievementTrackingState {
@@ -218,6 +253,27 @@ export function createAchievementTrackingState(
     updatedAt: now,
     history: []
   };
+}
+
+export function ensureAchievementPerkState(gameState: GameState): AchievementPerkState {
+  const legacyGameState = gameState as GameState & { achievementPerks?: unknown };
+  if (typeof legacyGameState.achievementPerks !== 'object' || legacyGameState.achievementPerks === null) {
+    gameState.achievementPerks = createAchievementPerkState();
+  } else {
+    const raw = legacyGameState.achievementPerks as unknown as Record<string, unknown>;
+    gameState.achievementPerks = {
+      inventorySizeBonus: normalizeCount(raw.inventorySizeBonus),
+      shopDiscountPercent: normalizeDiscountPercent(raw.shopDiscountPercent),
+      unlockedShopTiers: normalizeStringArray(raw.unlockedShopTiers)
+    };
+  }
+
+  gameState.player.maxInventorySize = Math.max(
+    gameState.player.maxInventorySize,
+    BASE_INVENTORY_SIZE + gameState.achievementPerks.inventorySizeBonus
+  );
+
+  return gameState.achievementPerks;
 }
 
 export function createRunSummary(
@@ -424,6 +480,55 @@ function buildAchievementView(
 
 function formatAchievementProgress(view: Pick<AchievementView, 'progress'>): string {
   return `${view.progress.current}/${view.progress.target}`;
+}
+
+function buildShopTierToken(unlock: AchievementRewardShopTierUnlock): string {
+  return `${unlock.shopId}:${unlock.tierKey}`;
+}
+
+function formatShopName(shopId: string): string {
+  const shop = getShop(shopId);
+  if (!shop) {
+    return shopId;
+  }
+
+  return shop.name.replace(/\s+\([^)]*\)\s*$/, '');
+}
+
+function formatShopTierLabel(tierKey: string): string {
+  if (tierKey === 'always') {
+    return '상시 진열';
+  }
+
+  const match = tierKey.match(/^level(\d+)$/);
+  if (!match) {
+    return tierKey;
+  }
+
+  return `Lv${match[1]} 진열`;
+}
+
+function formatShopTierUnlock(unlock: AchievementRewardShopTierUnlock): string {
+  return `${formatShopName(unlock.shopId)} ${formatShopTierLabel(unlock.tierKey)} 해금`;
+}
+
+export function getAchievementPerkSummary(gameState: GameState): string[] {
+  const perkState = ensureAchievementPerkState(gameState);
+  const summary: string[] = [];
+
+  if (perkState.inventorySizeBonus > 0) {
+    summary.push(`가방 +${perkState.inventorySizeBonus}칸`);
+  }
+
+  if (perkState.shopDiscountPercent > 0) {
+    summary.push(`상점 할인 ${perkState.shopDiscountPercent}%`);
+  }
+
+  if (perkState.unlockedShopTiers.length > 0) {
+    summary.push(`특수 진열 ${perkState.unlockedShopTiers.length}개`);
+  }
+
+  return summary;
 }
 
 function getTrackingCausePrefix(cause?: string): string {
@@ -783,6 +888,8 @@ function applyAchievementReward(
   const reward = definition.reward ?? {};
   const itemsAdded: AchievementRewardGrant['itemsAdded'] = [];
   const itemsFailed: AchievementRewardGrant['itemsFailed'] = [];
+  const unlockedShopTiers: AchievementRewardGrant['unlockedShopTiers'] = [];
+  const perkState = ensureAchievementPerkState(gameState);
 
   const goldGranted = Math.max(0, reward.gold ?? 0);
   if (goldGranted > 0) {
@@ -793,6 +900,23 @@ function applyAchievementReward(
   const skillPointsGranted = Math.max(0, reward.skillPoints ?? 0);
   if (skillPointsGranted > 0) {
     gameState.player.skillPoints += skillPointsGranted;
+  }
+
+  const inventorySlotsGranted = Math.max(0, reward.inventorySlots ?? 0);
+  if (inventorySlotsGranted > 0) {
+    perkState.inventorySizeBonus += inventorySlotsGranted;
+    gameState.player.maxInventorySize += inventorySlotsGranted;
+  }
+
+  const requestedDiscount = Math.max(0, reward.shopDiscountPercent ?? 0);
+  let shopDiscountPercentGranted = 0;
+  if (requestedDiscount > 0) {
+    const nextDiscount = Math.min(
+      ACHIEVEMENT_SHOP_DISCOUNT_CAP,
+      perkState.shopDiscountPercent + requestedDiscount
+    );
+    shopDiscountPercentGranted = nextDiscount - perkState.shopDiscountPercent;
+    perkState.shopDiscountPercent = nextDiscount;
   }
 
   for (const itemReward of reward.items ?? []) {
@@ -827,6 +951,16 @@ function applyAchievementReward(
     }
   }
 
+  for (const shopTierUnlock of reward.unlockShopTiers ?? []) {
+    const token = buildShopTierToken(shopTierUnlock);
+    if (perkState.unlockedShopTiers.includes(token)) {
+      continue;
+    }
+
+    perkState.unlockedShopTiers.push(token);
+    unlockedShopTiers.push(shopTierUnlock);
+  }
+
   if (unlockState) {
     unlockState.rewardGrantedAt = unlockedAt;
   } else {
@@ -842,7 +976,10 @@ function applyAchievementReward(
     goldGranted,
     skillPointsGranted,
     itemsAdded,
-    itemsFailed
+    itemsFailed,
+    inventorySlotsGranted,
+    shopDiscountPercentGranted,
+    unlockedShopTiers
   };
 }
 
@@ -893,6 +1030,7 @@ export function evaluateAchievements(
 ): AchievementEvaluationResult {
   const achievementState = ensureAchievementState(gameState);
   ensureAchievementTrackingState(gameState);
+  ensureAchievementPerkState(gameState);
   ensureRunSummary(gameState);
 
   const newlyUnlocked: AchievementView[] = [];
@@ -924,6 +1062,7 @@ export function evaluateAchievements(
 
 export function getAchievementSummary(gameState: GameState): AchievementSummary {
   const achievementState = ensureAchievementState(gameState);
+  ensureAchievementPerkState(gameState);
   ensureRunSummary(gameState);
 
   const entries = ACHIEVEMENT_DEFINITIONS.map(definition =>
@@ -984,9 +1123,18 @@ export function formatAchievementRewardPreview(
   if (reward.skillPoints && reward.skillPoints > 0) {
     parts.push(`SP +${reward.skillPoints}`);
   }
+  if (reward.inventorySlots && reward.inventorySlots > 0) {
+    parts.push(`가방 +${reward.inventorySlots}칸`);
+  }
+  if (reward.shopDiscountPercent && reward.shopDiscountPercent > 0) {
+    parts.push(`상점 할인 ${reward.shopDiscountPercent}%`);
+  }
   for (const item of reward.items ?? []) {
     const itemName = getItemById(item.itemId)?.name ?? item.itemId;
     parts.push(`${itemName} x${item.quantity}`);
+  }
+  for (const unlock of reward.unlockShopTiers ?? []) {
+    parts.push(formatShopTierUnlock(unlock));
   }
 
   return parts.length > 0 ? parts.join(', ') : undefined;
@@ -1005,9 +1153,21 @@ export function formatAchievementRewardMessage(
     parts.push(`SP +${rewardGrant.skillPointsGranted}`);
   }
 
+  if (rewardGrant.inventorySlotsGranted > 0) {
+    parts.push(`가방 +${rewardGrant.inventorySlotsGranted}칸`);
+  }
+
+  if (rewardGrant.shopDiscountPercentGranted > 0) {
+    parts.push(`상점 할인 ${rewardGrant.shopDiscountPercentGranted}%`);
+  }
+
   for (const item of rewardGrant.itemsAdded) {
     const itemName = getItemById(item.itemId)?.name ?? item.itemId;
     parts.push(`${itemName} x${item.quantity}`);
+  }
+
+  for (const unlock of rewardGrant.unlockedShopTiers) {
+    parts.push(formatShopTierUnlock(unlock));
   }
 
   if (parts.length === 0) {

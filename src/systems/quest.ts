@@ -524,6 +524,11 @@ export function completeQuest(gameState: GameState, questId: string): QuestCompl
     gameState.player.level
   );
 
+  if (quest.seasonalEventId) {
+    gameState.flags['seasonal-quest-completed'] = true;
+    gameState.flags[`seasonal-quest-completed-${quest.seasonalEventId}`] = true;
+  }
+
   trackTelemetryEvent('quest_completed', gameState, {
     questId: quest.id,
     isMainQuest: quest.isMainQuest,

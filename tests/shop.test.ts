@@ -34,6 +34,40 @@ describe('Shop System', () => {
     expect(player.gold).toBeLessThan(1000);
   });
 
+  it('should apply achievement discount perks to displayed and purchased prices', () => {
+    const player = createTestPlayer({
+      name: 'DiscountTester',
+      level: 10,
+      gold: 1000,
+      currentLocation: 'bit-town',
+      unlockedLocations: ['bit-town']
+    });
+
+    const fullPriceInventory = getShopInventory('binary-weapons', 10);
+    const discountedInventory = getShopInventory('binary-weapons', 10, {
+      discountPercent: 10
+    });
+    const fullPrice = fullPriceInventory.find(entry => entry.item.id === 'rusty-sword')?.buyPrice;
+    const discountedPrice = discountedInventory.find(entry => entry.item.id === 'rusty-sword')?.buyPrice;
+
+    const result = buyItem(player, 'rusty-sword', 'binary-weapons', 1, {
+      discountPercent: 10
+    });
+
+    expect(fullPrice).toBeDefined();
+    expect(discountedPrice).toBeDefined();
+    expect(discountedPrice).toBeLessThan(fullPrice ?? 0);
+    expect(result.cost).toBe(discountedPrice);
+  });
+
+  it('should surface achievement-unlocked shop tiers before the required level', () => {
+    const inventory = getShopInventory('binary-weapons', 10, {
+      extraUnlockedTiers: ['level25']
+    });
+
+    expect(inventory.map(entry => entry.item.id)).toContain('singularity-bow');
+  });
+
   it('should fail when shop does not exist', () => {
     const player = createTestPlayer({
       name: 'ShopTester',

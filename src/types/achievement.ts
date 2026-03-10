@@ -50,15 +50,35 @@ export interface AchievementTrackingState {
   history: AchievementTrackingHistoryEntry[];
 }
 
+export interface AchievementPerkState {
+  inventorySizeBonus: number;
+  shopDiscountPercent: number;
+  unlockedShopTiers: string[];
+}
+
+export type AchievementStatisticCountKey =
+  | 'questsCompleted'
+  | 'goldSpent'
+  | 'locationsDiscovered'
+  | 'itemsCollected'
+  | 'endgameChallengeClears';
+
+export type AchievementStatisticFlagKey =
+  | 'endgameChallengeUnlocked';
+
 export type AchievementRule =
   | {
       kind: 'stat_at_least';
-      stat: 'questsCompleted' | 'goldSpent' | 'locationsDiscovered';
+      stat: AchievementStatisticCountKey;
       target: number;
     }
   | {
       kind: 'boss_count_at_least';
       target: number;
+    }
+  | {
+      kind: 'statistics_flag_true';
+      stat: AchievementStatisticFlagKey;
     }
   | {
       kind: 'flag_true';
@@ -73,10 +93,18 @@ export interface AchievementRewardItem {
   quantity: number;
 }
 
+export interface AchievementRewardShopTierUnlock {
+  shopId: string;
+  tierKey: string;
+}
+
 export interface AchievementReward {
   gold?: number;
   skillPoints?: number;
   items?: AchievementRewardItem[];
+  inventorySlots?: number;
+  shopDiscountPercent?: number;
+  unlockShopTiers?: AchievementRewardShopTierUnlock[];
 }
 
 export interface AchievementDefinition {
@@ -96,6 +124,9 @@ export interface AchievementRewardGrant {
   skillPointsGranted: number;
   itemsAdded: AchievementRewardItem[];
   itemsFailed: AchievementRewardItem[];
+  inventorySlotsGranted: number;
+  shopDiscountPercentGranted: number;
+  unlockedShopTiers: AchievementRewardShopTierUnlock[];
 }
 
 export interface RunSummary {

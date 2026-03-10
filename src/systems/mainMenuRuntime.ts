@@ -50,13 +50,16 @@ function showRecentSaveSummary(dependencies: MainMenuRuntimeDependencies): void 
     latestSave.nextAchievementTitle !== latestSave.trackedAchievementTitle
     ? ` | 다음 업적 ${latestSave.nextAchievementTitle}${latestSave.nextAchievementProgress ? ` ${latestSave.nextAchievementProgress}` : ''}`
     : '';
+  const perkSummary = latestSave.achievementPerkSummary?.length
+    ? ` | 특전 ${latestSave.achievementPerkSummary.join(', ')}`
+    : '';
   const trackingHistorySummary = latestSave.achievementTrackingHistory
     ? ` | 추적 기록 ${latestSave.achievementTrackingHistory}`
     : '';
 
   showMessage(
     `최근 기록: 슬롯 ${latestSave.slotNumber} ${latestSave.playerName ?? 'Unknown'} ` +
-    `Lv${latestSave.playerLevel ?? 0} @ ${latestSave.locationName ?? 'Unknown'}${achievementProgress}${resumeSummary}${trackingModeSummary}${trackedAchievementSummary}${nextAchievementSummary}${trackingHistorySummary}`,
+    `Lv${latestSave.playerLevel ?? 0} @ ${latestSave.locationName ?? 'Unknown'}${achievementProgress}${resumeSummary}${trackingModeSummary}${trackedAchievementSummary}${nextAchievementSummary}${perkSummary}${trackingHistorySummary}`,
     'info'
   );
 }

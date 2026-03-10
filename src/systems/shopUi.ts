@@ -4,6 +4,7 @@ import { GameState } from '../types/game.js';
 import {
   getShopInventory,
   buyItem,
+  getUnlockedShopTiersForShop,
   sellItem,
   getPlayerSellableItems,
   type ShopInventoryItem
@@ -12,6 +13,7 @@ import {
   updateQuestProgressOnCollect
 } from './quest.js';
 import {
+  ensureAchievementPerkState,
   formatAchievementRewardMessage,
   formatAchievementTrackingMessage,
   formatAchievementUnlockMessage,
@@ -55,6 +57,17 @@ const SHOP_NPCS: Record<string, { name: string; icon: string; owner: string; gre
     greeting: '보급품은 항상 한 박자 먼저 챙기세요. 회복과 버프가 전선을 붙들어 줍니다.'
   }
 };
+
+function buildShopRewardOptions(gameState: GameState, shopId: string): {
+  discountPercent: number;
+  extraUnlockedTiers: string[];
+} {
+  const perkState = ensureAchievementPerkState(gameState);
+  return {
+    discountPercent: perkState.shopDiscountPercent,
+    extraUnlockedTiers: getUnlockedShopTiersForShop(perkState.unlockedShopTiers, shopId)
+  };
+}
 
 function showAchievementUnlocks(gameState: GameState): void {
   const achievementResult = progressAchievements(gameState, {
@@ -113,7 +126,8 @@ async function visitShop(gameState: GameState, shopId: string): Promise<void> {
     clearScreen();
     await showTitle();
 
-    const inventory = getShopInventory(shopId, gameState.player.level);
+    const shopRewardOptions = buildShopRewardOptions(gameState, shopId);
+    const inventory = getShopInventory(shopId, gameState.player.level, shopRewardOptions);
     const buyMenuDisplay = showBuyMenu(
       shop.name,
       shop.icon,
@@ -181,7 +195,10 @@ async function buyFromShop(
     return;
   }
 
-  const result = buyItem(gameState.player, answer.item as string, shopId, 1);
+  const shopRewardOptions = buildShopRewardOptions(gameState, shopId);
+  const result = buyItem(gameState.player, answer.item as string, shopId, 1, {
+    discountPercent: shopRewardOptions.discountPercent
+  });
   if (result.success && result.item) {
     gameState.statistics.goldSpent += result.cost ?? 0;
     gameState.statistics.itemsCollected += 1;

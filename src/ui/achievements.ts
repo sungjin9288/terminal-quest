@@ -8,6 +8,7 @@ import {
 } from '../types/index.js';
 import {
   ensureAchievementTrackingState,
+  getAchievementPerkSummary,
   getAchievementSummary,
   getNextAchievement,
   getTrackedAchievement
@@ -56,6 +57,11 @@ export function showAchievementPanel(gameState: GameState): void {
   const latestHistory = trackingState.history[0];
   if (latestHistory) {
     console.log(chalk.blue(`최근 기록: ${latestHistory.message}`));
+  }
+
+  const perkSummary = getAchievementPerkSummary(gameState);
+  if (perkSummary.length > 0) {
+    console.log(chalk.green(`활성 특전: ${perkSummary.join(' / ')}`));
   }
 
   console.log();

@@ -56,10 +56,10 @@ describe('Frontend runtime', () => {
     expect(snapshot.feed[0]?.category).toBe('hub');
     expect(snapshot.achievements).toMatchObject({
       unlockedCount: 0,
-      totalCount: 6,
+      totalCount: 10,
       latestUnlocked: null
     });
-    expect(snapshot.achievements?.entries).toHaveLength(6);
+    expect(snapshot.achievements?.entries).toHaveLength(10);
     expect(snapshot.achievements?.entries.every(entry => entry.unlocked === false)).toBe(true);
     expect(snapshot.shops?.[0].greeting).toContain('무기');
     expect(snapshot.shops?.[0].inventory[0]?.name).toBe('녹슨 검');
@@ -200,9 +200,9 @@ describe('Frontend runtime', () => {
 
     expect(snapshot.scene).toBe('dungeon');
     expect(snapshot.player?.achievementCount).toBe(2);
-    expect(snapshot.player?.achievementTotal).toBe(6);
+    expect(snapshot.player?.achievementTotal).toBe(10);
     expect(snapshot.achievements?.unlockedCount).toBe(2);
-    expect(snapshot.achievements?.totalCount).toBe(6);
+    expect(snapshot.achievements?.totalCount).toBe(10);
     expect(
       snapshot.achievements?.entries
         .filter(entry => entry.unlocked)
@@ -245,7 +245,7 @@ describe('Frontend runtime', () => {
     expect(savedSlot).toMatchObject({
       exists: true,
       achievementCount: 1,
-      achievementTotal: 6,
+      achievementTotal: 10,
       resumeTitle: '새 퀘스트',
       achievementTrackingMode: 'auto',
       nextAchievementTitle: '전선 개척',

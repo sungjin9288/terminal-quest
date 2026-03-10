@@ -12,11 +12,13 @@ import { createNewGameState } from '../systems/newGameState.js';
 import {
   clearAchievementTracking,
   closeRunSummary,
+  ensureAchievementPerkState,
   ensureAchievementTrackingState,
   evaluateAchievements,
   formatAchievementRewardMessage,
   formatAchievementTrackingMessage,
   formatAchievementUnlockMessage,
+  getAchievementPerkSummary,
   getAchievementById,
   getAchievementSummary,
   getTrackedAchievement,
@@ -75,6 +77,7 @@ import { canAffordCost, getInnRestCost } from '../systems/economy.js';
 import {
   getShop,
   getShopInventory,
+  getUnlockedShopTiersForShop,
   updateAffordability,
   buyItem
 } from '../systems/shop.js';
@@ -468,6 +471,16 @@ export interface FrontendSnapshot {
       cause?: string;
     }>;
   };
+  achievementPerks?: {
+    summary: string[];
+    inventorySizeBonus: number;
+    shopDiscountPercent: number;
+    unlockedShopTiers: Array<{
+      shopId: string;
+      tierKey: string;
+      label: string;
+    }>;
+  };
 }
 
 const MAX_FEED_ENTRIES = 40;
@@ -658,6 +671,17 @@ function getPresentedItemName(itemId: string): string {
     level: item.requiredLevel,
     fallbackDescription: item.description
   }).name;
+}
+
+function buildShopRewardOptions(gameState: GameState, shopId: string): {
+  discountPercent: number;
+  extraUnlockedTiers: string[];
+} {
+  const perkState = ensureAchievementPerkState(gameState);
+  return {
+    discountPercent: perkState.shopDiscountPercent,
+    extraUnlockedTiers: getUnlockedShopTiersForShop(perkState.unlockedShopTiers, shopId)
+  };
 }
 
 function requireGameState(session: FrontendSession): GameState {
@@ -1398,7 +1422,10 @@ function buyShopItemAction(
     throw new Error('상점을 찾을 수 없습니다.');
   }
 
-  const result = buyItem(gameState.player, itemId, shopId, 1);
+  const shopRewardOptions = buildShopRewardOptions(gameState, shopId);
+  const result = buyItem(gameState.player, itemId, shopId, 1, {
+    discountPercent: shopRewardOptions.discountPercent
+  });
   if (!result.success) {
     throw new Error(result.message);
   }
@@ -1726,7 +1753,7 @@ function buildShopSnapshot(gameState: GameState): FrontendSnapshot['shops'] {
         icon: shop.icon,
         greeting: getPresentationShopGreeting(shop.id, shop.greeting),
         inventory: updateAffordability(
-          getShopInventory(shopId, gameState.player.level),
+          getShopInventory(shopId, gameState.player.level, buildShopRewardOptions(gameState, shopId)),
           gameState.player.gold
         ).map(entry => {
           const presentation = getPresentationItemCopy({
@@ -1838,6 +1865,28 @@ function buildAchievementTrackingSnapshot(
   };
 }
 
+function buildAchievementPerkSnapshot(
+  gameState: GameState
+): FrontendSnapshot['achievementPerks'] {
+  const perkState = ensureAchievementPerkState(gameState);
+
+  return {
+    summary: getAchievementPerkSummary(gameState),
+    inventorySizeBonus: perkState.inventorySizeBonus,
+    shopDiscountPercent: perkState.shopDiscountPercent,
+    unlockedShopTiers: perkState.unlockedShopTiers.map(entry => {
+      const separatorIndex = entry.indexOf(':');
+      const shopId = separatorIndex >= 0 ? entry.slice(0, separatorIndex) : entry;
+      const tierKey = separatorIndex >= 0 ? entry.slice(separatorIndex + 1) : '';
+      return {
+        shopId,
+        tierKey,
+        label: entry
+      };
+    })
+  };
+}
+
 export function getFrontendSnapshot(session: FrontendSession): FrontendSnapshot {
   if (!session.gameState) {
     return {
@@ -1945,6 +1994,7 @@ export function getFrontendSnapshot(session: FrontendSession): FrontendSnapshot 
     battle: buildBattleSnapshot(session),
     saveStatus: buildSaveStatus(session),
     achievements: buildAchievementSnapshot(gameState),
-    achievementTracking: buildAchievementTrackingSnapshot(gameState)
+    achievementTracking: buildAchievementTrackingSnapshot(gameState),
+    achievementPerks: buildAchievementPerkSnapshot(gameState)
   };
 }

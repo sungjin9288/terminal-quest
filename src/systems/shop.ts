@@ -86,6 +86,15 @@ export interface ShopInventoryItem {
   meetsLevelReq: boolean;
 }
 
+export interface ShopInventoryOptions {
+  discountPercent?: number;
+  extraUnlockedTiers?: string[];
+}
+
+export interface ShopPurchaseOptions {
+  discountPercent?: number;
+}
+
 /**
  * Level thresholds for unlocking items
  */
@@ -97,6 +106,31 @@ const LEVEL_THRESHOLDS = {
   level20: 20,
   level25: 25
 };
+
+function normalizeDiscountPercent(discountPercent: number | undefined): number {
+  if (typeof discountPercent !== 'number' || !Number.isFinite(discountPercent)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(20, Math.floor(discountPercent)));
+}
+
+export function getUnlockedShopTiersForShop(
+  unlockedTiers: string[] | undefined,
+  shopId: string
+): string[] {
+  if (!Array.isArray(unlockedTiers)) {
+    return [];
+  }
+
+  return Array.from(new Set(
+    unlockedTiers
+      .map(entry => entry.trim())
+      .filter(entry => entry.startsWith(`${shopId}:`))
+      .map(entry => entry.slice(shopId.length + 1))
+      .filter(entry => entry.length > 0)
+  ));
+}
 
 /**
  * Shop data store
@@ -227,7 +261,8 @@ export function calculateSellPrice(
  */
 export function getShopInventory(
   shopId: string,
-  playerLevel: number
+  playerLevel: number,
+  options: ShopInventoryOptions = {}
 ): ShopInventoryItem[] {
   const shop = getShop(shopId);
   if (!shop) {
@@ -237,10 +272,12 @@ export function getShopInventory(
   const items = getSampleItems();
   const inventory: ShopInventoryItem[] = [];
   const addedItems = new Set<string>();
+  const extraUnlockedTiers = new Set(options.extraUnlockedTiers ?? []);
+  const effectiveBuyMultiplier = shop.buyPriceMultiplier * (1 - normalizeDiscountPercent(options.discountPercent) / 100);
 
   // Add items from each level tier
   for (const [tierKey, threshold] of Object.entries(LEVEL_THRESHOLDS)) {
-    if (playerLevel >= threshold) {
+    if (playerLevel >= threshold || extraUnlockedTiers.has(tierKey)) {
       const tierItems = shop.inventory[tierKey] ?? [];
       for (const itemId of tierItems) {
         if (addedItems.has(itemId)) continue;
@@ -251,7 +288,7 @@ export function getShopInventory(
         addedItems.add(itemId);
         inventory.push(createShopInventoryItem(
           item,
-          shop.buyPriceMultiplier,
+          effectiveBuyMultiplier,
           shop.sellPriceMultiplier,
           playerLevel,
           false
@@ -309,7 +346,8 @@ export function buyItem(
   player: Player,
   itemId: string,
   shopId: string,
-  quantity: number = 1
+  quantity: number = 1,
+  options: ShopPurchaseOptions = {}
 ): PurchaseResult {
   const shop = getShop(shopId);
   if (!shop) {
@@ -337,7 +375,8 @@ export function buyItem(
   }
 
   // Calculate total cost
-  const unitPrice = calculateBuyPrice(item, shop.buyPriceMultiplier);
+  const effectiveBuyMultiplier = shop.buyPriceMultiplier * (1 - normalizeDiscountPercent(options.discountPercent) / 100);
+  const unitPrice = calculateBuyPrice(item, effectiveBuyMultiplier);
   let totalCost = unitPrice * quantity;
 
   // Apply bulk discount if applicable

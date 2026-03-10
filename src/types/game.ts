@@ -6,7 +6,12 @@ import { Player } from './character.js';
 import { AnyItem } from './item.js';
 import { Monster, MonsterInstance } from './monster.js';
 import { Location, SavePoint, PlayerPosition, FastTravelPoint } from './location.js';
-import { AchievementState, AchievementTrackingState, RunSummary } from './achievement.js';
+import {
+  AchievementPerkState,
+  AchievementState,
+  AchievementTrackingState,
+  RunSummary
+} from './achievement.js';
 
 /**
  * Game difficulty modes
@@ -321,6 +326,8 @@ export interface GameState {
   achievements?: AchievementState;
   /** Shared achievement tracking mode, target, and recent history */
   achievementTracking?: AchievementTrackingState;
+  /** Persistent achievement reward perks applied to this save */
+  achievementPerks?: AchievementPerkState;
   /** Current expedition/run summary */
   runSummary?: RunSummary;
   /** Game flags (for events/triggers) */

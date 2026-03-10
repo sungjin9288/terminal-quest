@@ -114,14 +114,15 @@ describe('Main Menu Runtime', () => {
         playerLevel: 4,
         playTime: 600,
         achievementCount: 3,
-        achievementTotal: 6,
+        achievementTotal: 10,
         resumeTitle: '새 퀘스트',
         achievementTrackingMode: 'pinned',
         achievementTrackingHistory: '상점 구매 후 자동 전환: 전선 개척 3/4',
         trackedAchievementTitle: '전선 개척',
         trackedAchievementProgress: '3/4',
         nextAchievementTitle: '전선 개척',
-        nextAchievementProgress: '3/4'
+        nextAchievementProgress: '3/4',
+        achievementPerkSummary: ['가방 +6칸', '상점 할인 8%']
       }
     ]);
 
@@ -133,7 +134,7 @@ describe('Main Menu Runtime', () => {
     );
 
     expect(display.showMessage).toHaveBeenCalledWith(
-      '최근 기록: 슬롯 2 Archivist Lv4 @ 비트 타운 | 업적 3/6 | 재개 새 퀘스트 | 추적 핀 고정 | 추적 업적 전선 개척 3/4 | 추적 기록 상점 구매 후 자동 전환: 전선 개척 3/4',
+      '최근 기록: 슬롯 2 Archivist Lv4 @ 비트 타운 | 업적 3/10 | 재개 새 퀘스트 | 추적 핀 고정 | 추적 업적 전선 개척 3/4 | 특전 가방 +6칸, 상점 할인 8% | 추적 기록 상점 구매 후 자동 전환: 전선 개척 3/4',
       'info'
     );
   });

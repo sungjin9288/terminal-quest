@@ -13,6 +13,7 @@ import {
   LoadResult
 } from '../types/save.js';
 import {
+  getAchievementPerkSummary,
   ensureAchievementTrackingState,
   getAchievementSummary,
   getNextAchievement,
@@ -206,6 +207,7 @@ function createSaveSlotMetadata(slotNumber: number, saveSlot: SaveSlot): SaveSlo
   const trackingHistorySummary = buildTrackingHistorySummary(saveSlot.gameState);
   const trackedAchievementSummary = buildTrackedAchievementSummary(saveSlot.gameState);
   const nextAchievementSummary = buildNextAchievementSummary(saveSlot.gameState);
+  const achievementPerkSummary = getAchievementPerkSummary(saveSlot.gameState);
 
   return {
     slotNumber,
@@ -229,7 +231,8 @@ function createSaveSlotMetadata(slotNumber: number, saveSlot: SaveSlot): SaveSlo
     trackedAchievementHint: trackedAchievementSummary?.hint,
     nextAchievementTitle: nextAchievementSummary?.title,
     nextAchievementProgress: nextAchievementSummary?.progress,
-    nextAchievementHint: nextAchievementSummary?.hint
+    nextAchievementHint: nextAchievementSummary?.hint,
+    achievementPerkSummary
   };
 }
 

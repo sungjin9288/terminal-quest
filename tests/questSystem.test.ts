@@ -209,6 +209,8 @@ describe('Quest System', () => {
     expect(result.goldGained).toBeGreaterThan(result.baseGoldGained);
     expect(gameState.quests['spring-memory-festival-sweep']?.status).toBe('not-started');
     expect(gameState.player.completedQuests).not.toContain('spring-memory-festival-sweep');
+    expect(gameState.flags['seasonal-quest-completed']).toBe(true);
+    expect(gameState.flags['seasonal-quest-completed-spring-memory-festival']).toBe(true);
 
     const acceptedAgain = acceptQuest(gameState, 'spring-memory-festival-sweep');
     expect(acceptedAgain.success).toBe(true);

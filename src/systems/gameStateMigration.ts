@@ -4,6 +4,7 @@ import {
   QuestHistoryType
 } from '../types/game.js';
 import {
+  ensureAchievementPerkState,
   ensureAchievementState,
   ensureAchievementTrackingState,
   ensureRunSummary,
@@ -188,6 +189,7 @@ export function migrateLoadedGameState(
   ensureEndgameChallengeState(gameState);
   ensureAchievementState(gameState);
   ensureAchievementTrackingState(gameState);
+  ensureAchievementPerkState(gameState);
   ensureRunSummary(gameState);
   evaluateAchievements(gameState);
   grantPendingAchievementRewards(gameState);

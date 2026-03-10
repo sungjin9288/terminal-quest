@@ -3573,6 +3573,12 @@ function getSaveSlotTrackedAchievementHint(slot) {
   return slot?.trackedAchievementHint ?? slot?.nextAchievementHint ?? null;
 }
 
+function getSaveSlotPerkSummary(slot) {
+  return Array.isArray(slot?.achievementPerkSummary) && slot.achievementPerkSummary.length
+    ? slot.achievementPerkSummary.join(' / ')
+    : null;
+}
+
 function getSaveSlotTrackingModeLabel(slot) {
   if (slot?.achievementTrackingMode === 'pinned') {
     return '핀 고정';
@@ -3583,6 +3589,29 @@ function getSaveSlotTrackingModeLabel(slot) {
   }
 
   return null;
+}
+
+function getAchievementPerkSummaryItems(snapshot) {
+  return Array.isArray(snapshot?.achievementPerks?.summary)
+    ? snapshot.achievementPerks.summary
+    : [];
+}
+
+function getAchievementPerkSummaryLabel(snapshot) {
+  const summary = getAchievementPerkSummaryItems(snapshot);
+  return summary.length ? summary.join(' / ') : '없음';
+}
+
+function getShopPerkDetails(snapshot, shopId) {
+  const achievementPerks = snapshot?.achievementPerks ?? null;
+  const unlockedShopTiers = Array.isArray(achievementPerks?.unlockedShopTiers)
+    ? achievementPerks.unlockedShopTiers.filter(entry => entry?.shopId === shopId)
+    : [];
+
+  return {
+    discountPercent: achievementPerks?.shopDiscountPercent ?? 0,
+    unlockedShopTierCount: unlockedShopTiers.length
+  };
 }
 
 function getLatestSaveSlot(snapshot) {
@@ -3649,6 +3678,14 @@ function renderLanding(snapshot) {
           ? `${latestSaveSlot.nextAchievementTitle}${latestSaveSlot.nextAchievementProgress ? ` · ${latestSaveSlot.nextAchievementProgress}` : ''}`
           : '',
         latestSaveSlot.nextAchievementHint ?? '',
+        'slot-resume continue-run-cue'
+      )
+    : '';
+  const continuePerkCue = latestSaveSlot
+    ? renderSaveCue(
+        'Active Perks',
+        getSaveSlotPerkSummary(latestSaveSlot) ?? '',
+        getSaveSlotPerkSummary(latestSaveSlot) ? '현재 세이브에 누적된 업적 특전입니다.' : '',
         'slot-resume continue-run-cue'
       )
     : '';
@@ -3735,6 +3772,7 @@ function renderLanding(snapshot) {
           <p>${escapeHtml(latestSaveSlot.resumeHint ?? `${latestSaveSlot.locationName ?? '현재 위치'}에서 여정을 이어갑니다.`)}</p>
         </div>
         ${continueNextAchievementCue}
+        ${continuePerkCue}
         <div class="slot-actions">
           <button
             class="primary-button"
@@ -4722,6 +4760,7 @@ function renderMarket(snapshot) {
   const resumePreview = isResumePreviewWorkspace(snapshot, 'market');
   const resumeTarget = !resumePreview && isResumeTargetWorkspace(snapshot, 'market');
   const achievementTarget = getActiveWorkspaceAchievementTarget(snapshot);
+  const shopPerkDetails = getShopPerkDetails(snapshot, activeShop?.id ?? null);
   const cardAchievementTarget = achievementTarget?.focus.workspace === 'market' &&
     (!achievementTarget.focus.shopId || achievementTarget.focus.shopId === activeShop?.id) &&
     (!achievementTarget.focus.itemId || achievementTarget.focus.itemId === activeItem?.id)
@@ -4771,6 +4810,8 @@ function renderMarket(snapshot) {
           [
             { label: '재고 수', value: `${formatNumber(activeShop?.inventory.length ?? 0)}개` },
             { label: '보유 골드', value: `${formatNumber(snapshot.player?.gold ?? 0)} G` },
+            { label: '상점 할인', value: `${formatNumber(shopPerkDetails.discountPercent)}%` },
+            { label: '해금 진열', value: `${formatNumber(shopPerkDetails.unlockedShopTierCount)}개` },
             { label: '추적 대상', value: cardAchievementTarget?.label ?? '없음' },
             { label: '구매 가능', value: isTown && !isCombat ? '허브에서 즉시 구매' : '현장에서는 미리보기만' }
           ]
@@ -5446,6 +5487,7 @@ function renderAchievements(snapshot) {
   const filteredPercent = totalInView > 0
     ? Math.round((unlockedInView / totalInView) * 100)
     : 0;
+  const achievementPerkSummary = getAchievementPerkSummaryLabel(snapshot);
 
   return `
     <section class="panel deck-panel">
@@ -5505,6 +5547,10 @@ function renderAchievements(snapshot) {
             {
               label: '추적 대상',
               value: trackedAchievement?.label ?? '없음'
+            },
+            {
+              label: '활성 특전',
+              value: achievementPerkSummary
             },
             {
               label: '정렬',
@@ -5573,6 +5619,13 @@ function renderSaveSlot(slot, options) {
         slot.nextAchievementHint ?? ''
       )
     : '';
+  const achievementPerkCue = slot.exists && getSaveSlotPerkSummary(slot)
+    ? renderSaveCue(
+        'Active Perks',
+        getSaveSlotPerkSummary(slot),
+        '누적 업적 특전이 이 세이브에 적용되어 있습니다.'
+      )
+    : '';
 
   return `
     <article class="slot-card ${slot.exists ? 'active-slot' : ''} ${isRecommended ? 'recommended-slot' : ''} ${isLatest ? 'latest-slot' : ''} ${isTracked ? 'tracked-slot' : ''}">
@@ -5597,6 +5650,7 @@ function renderSaveSlot(slot, options) {
             ${resumeCue}
             ${trackedAchievementCue}
             ${nextAchievementCue}
+            ${achievementPerkCue}
           `
           : `<p class="slot-meta">새 여정을 기록할 준비가 된 슬롯입니다.</p>`
       }

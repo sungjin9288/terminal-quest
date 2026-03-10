@@ -1,21 +1,21 @@
 # Terminal Quest
 
-A Node.js and TypeScript RPG adventure game with both terminal and browser frontends.
+A Node.js + TypeScript 기반 RPG adventure game으로, terminal client와 browser frontend를 모두 지원합니다.
 
-## Overview
+## 개요 Overview
 
-Terminal Quest is a long-form RPG campaign that now supports both the original terminal flow and a browser-based operations deck. Embark on epic adventures, battle monsters, collect items, and level up your character with a UI that keeps quests, travel, combat, and saves readable.
+Terminal Quest는 장기 플레이를 전제로 설계한 long-form RPG campaign입니다. 기존 terminal flow에 더해 browser-based operations deck를 지원하며, quest, travel, combat, save/load를 한눈에 읽히는 UI로 진행할 수 있습니다.
 
-## Current Status
+## 현재 상태 Current Status
 
-As of `2026-03-10`, the project is in a `release-candidate / frontend playtest-ready` state.
+`2026-03-10` 기준, 프로젝트는 `release-candidate / frontend playtest-ready` 상태입니다.
 
-- The browser frontend is now the primary playtest surface, with a one-screen workspace shell for quests, travel, market, combat, saves, logs, and achievement-driven routing.
-- Smart resume, resume preview, preview commit feedback, blocked-action recovery, session planning, reward horizon, momentum tracking, and stop-and-return UX are all implemented in the frontend flow.
-- Achievement tracking now spans both browser and terminal flows, including reward previews, guided resume targets, tracking history, and a dedicated terminal achievement menu.
-- Narrative presentation has been refactored around episode quest grouping, direct NPC lines, voiced feed reactions, and localized presentation text for browser-facing content.
-- Isolated browser playtest tooling is available under `playtest-data/active/`, with a frontend-specific checklist and auto-generated session note templates.
-- Versioned release packaging, artifact checksums, runtime smoke checks, sign-off plumbing, and release smoke reports are in place for packaged distribution validation.
+- Browser frontend가 현재 primary playtest surface이며, quests, travel, market, combat, saves, logs, achievement routing을 one-screen workspace shell로 묶었습니다.
+- Frontend flow에는 smart resume, resume preview, preview commit feedback, blocked-action recovery, session planning, reward horizon, momentum tracking, stop-and-return UX가 모두 구현되어 있습니다.
+- Achievement tracking은 browser와 terminal 양쪽에 연결되어 있고, reward preview, guided resume target, tracking history, dedicated terminal achievement menu까지 포함합니다.
+- Narrative presentation은 episode quest grouping, direct NPC line, voiced feed reaction, localized presentation text 중심으로 리팩토링되어 있습니다.
+- `playtest-data/active/` 아래에 isolated browser playtest tooling이 있으며, frontend-specific checklist와 auto-generated session note template도 함께 제공합니다.
+- Versioned release packaging, artifact checksum, runtime smoke check, sign-off flow, release smoke report까지 packaged distribution validation 경로가 갖춰져 있습니다.
 
 ### Validation Snapshot
 
@@ -25,70 +25,70 @@ As of `2026-03-10`, the project is in a `release-candidate / frontend playtest-r
 - Automated tests: `53/53` suites, `285/285` tests PASS
 - Balance targets: baseline first clear `32.59h`, extended first clear `33.97h`, extended full completion `44.62h`
 
-### What Is Ready Now
+### 지금 바로 가능한 것 What Is Ready Now
 
-- Frontend/browser playtests with isolated saves, telemetry, logs, and notes
-- Packaged release bundle generation under `releases/`
-- Package-level smoke validation before external distribution
+- Frontend/browser playtest with isolated saves, telemetry, logs, notes
+- `releases/` 기준 packaged release bundle generation
+- External distribution 이전 package-level smoke validation
 
-### What Still Depends On Real Users
+### 실제 유저 검증이 필요한 것 What Still Depends On Real Users
 
 - Blind first-run comprehension
-- Mid-session fatigue and pacing perception
-- Resume / preview clarity under live player behavior
-- Long-session retention and actual completion-time feel
+- Mid-session fatigue와 pacing perception
+- Live player behavior 기준의 resume / preview clarity
+- Long-session retention과 actual completion-time feel
 
-## Features
+## 핵심 기능 Features
 
-- **Turn-based Combat System**: Strategic battles with damage calculation, critical hits, and elemental advantages
-- **5 Character Classes**: Warrior, Mage, Rogue, Cleric, Ranger - each with unique stats
-- **4 Difficulty Modes**: Story, Adventure, Challenge, Hardcore (permadeath)
-- **Prefix System**: Monster and item prefixes for varied encounters
-- **Element System**: Fire → Ice → Lightning → Poison → Dark element cycle with status effects
-- **Shop System**: Buy weapons, armor, and potions from 3 different shops
-- **Death Penalty System**: Mode-specific penalties on death
-- **Save/Load System**: Manual saves at save points, emergency saves with tokens
-- **Endgame Modifier Rotation**: Rotating abyss modifiers with risk/reward tuning per run
-- **Seasonal Live Events**: Quarterly event rotation with encounter/quest reward modifiers
-- **Telemetry-lite (Opt-in)**: Non-PII progression funnel events stored locally
-- **Prompt Pace Mode**: Switch between streamlined auto-continue flow and classic Enter-confirm flow, with snappy/balanced/cinematic presets
-- **Context Guide Hints**: Adaptive town/dungeon recommendations for safer progression and quest flow
-- **Adventure Focus Guide**: Surfaces the next objective, recommended destination, and boss approach progress so runs stay readable
-- **Episode Quest Board**: Groups quests into main story, character episodes, contracts, and seasonal runs with session-length previews
-- **Achievement Chase UX**: Reward previews, pinned tracking, resume routing, and browser/terminal achievement views keep the next unlock legible
-- **Dungeon Event Variety**: Non-combat exploration now produces supply caches, maintenance pockets, lore echoes, and shortcut scans instead of empty filler
-- **Smart Action Focus**: Town/dungeon menus preselect recommended next action so Enter can fast-track common loops
-- **First-Run Onboarding**: One-time quick-start guidance on first town entry for smoother early progression
-- **Browser Operations Frontend**: A responsive web dashboard for quest routing, travel, shopping, combat, and save/load control
-- **12 Unique Locations**: From Memory Forest to Corruption Space
+- **Turn-based Combat System**: damage calculation, critical hit, elemental advantage가 있는 전략 전투
+- **5 Character Classes**: Warrior, Mage, Rogue, Cleric, Ranger 각 클래스별 고유 stat 보유
+- **4 Difficulty Modes**: Story, Adventure, Challenge, Hardcore(permadeath)
+- **Prefix System**: monster/item prefix 기반의 varied encounter 구성
+- **Element System**: Fire → Ice → Lightning → Poison → Dark cycle + status effect
+- **Shop System**: 3개 상점에서 weapon, armor, potion 구매
+- **Death Penalty System**: mode별 death penalty 차등 적용
+- **Save/Load System**: save point manual save + token emergency save
+- **Endgame Modifier Rotation**: run마다 risk/reward가 달라지는 rotating abyss modifier
+- **Seasonal Live Events**: quarterly rotation 기반 encounter/quest reward modifier
+- **Telemetry-lite (Opt-in)**: non-PII progression funnel event 로컬 저장
+- **Prompt Pace Mode**: streamlined auto-continue와 classic Enter-confirm flow 전환 지원
+- **Context Guide Hints**: safer progression을 위한 adaptive town/dungeon recommendation
+- **Adventure Focus Guide**: next objective, recommended destination, boss approach progress를 가시화
+- **Episode Quest Board**: main story, character episode, contract, seasonal run을 session-length preview와 함께 그룹화
+- **Achievement Chase UX**: reward preview, pinned tracking, resume routing, browser/terminal achievement view 제공
+- **Dungeon Event Variety**: supply cache, maintenance pocket, lore echo, shortcut scan 등 non-combat event 추가
+- **Smart Action Focus**: 추천 action을 기본 선택으로 잡아 Enter 중심 플레이 가속
+- **First-Run Onboarding**: first town entry에서 one-time quick-start guidance 제공
+- **Browser Operations Frontend**: quest routing, travel, shopping, combat, save/load를 다루는 responsive web dashboard
+- **12 Unique Locations**: Memory Forest부터 Corruption Space까지 총 12개 지역
 
-## Game World
+## 게임 월드 Game World
 
 ### Act 1 - Foundation (Lv.1-12)
-- **Memory Forest** (Lv.1-5): Starting area with basic monsters
-- **Cache Cave** (Lv.5-8): Crystalline cavern
-- **Bit Plains** (Lv.8-12): Binary winds and data constructs
+- **Memory Forest** (Lv.1-5): 기본 monster를 상대하는 starting area
+- **Cache Cave** (Lv.5-8): crystalline cavern 스타일의 중간 지역
+- **Bit Plains** (Lv.8-12): binary wind와 data construct가 등장하는 평원
 
 ### Act 2-4
 - Registry Dungeon, Swap Swamp, Thread Forest
 - Stack Mountains, Heap Cave, Network Layer
 - Kernel Fortress, Root Directory, Corruption Space
 
-## Tech Stack
+## 기술 스택 Tech Stack
 
 - **Language**: TypeScript (ES2022)
 - **Runtime**: Node.js (v18+)
 - **CLI Libraries**:
-  - `inquirer`: Interactive command-line prompts
-  - `chalk`: Terminal string styling
+  - `inquirer`: interactive command-line prompt
+  - `chalk`: terminal string styling
   - `figlet`: ASCII art text
-  - `cli-table3`: Table rendering
-- **Testing**: Jest with ts-jest
+  - `cli-table3`: table rendering
+- **Testing**: Jest + ts-jest
 
-## Installation
+## 설치 Installation
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone <repository-url>
 cd terminal-quest
 
@@ -96,7 +96,7 @@ cd terminal-quest
 npm run play
 ```
 
-Manual flow is still available:
+Manual flow도 그대로 사용할 수 있습니다:
 
 ```bash
 npm install
@@ -104,18 +104,18 @@ npm run build
 npm start
 ```
 
-Browser frontend flow:
+Browser frontend 실행 flow:
 
 ```bash
 npm install
 npm run frontend:start
 ```
 
-Then open `http://localhost:4310`.
+그다음 `http://localhost:4310`을 열면 됩니다.
 
-## Playtest Environment
+## 플레이테스트 환경 Playtest Environment
 
-Use the isolated playtest profile when you want fresh saves, local telemetry capture, and separate crash logs:
+새 save, local telemetry capture, separate crash log가 필요한 경우 isolated playtest profile을 사용하세요:
 
 ```bash
 npm run playtest:setup
@@ -123,54 +123,54 @@ npm run playtest:start
 npm run playtest:report
 ```
 
-The playtest workspace lives under `playtest-data/active/`. Full operating notes are in `docs/playtest-runbook.md`, and the browser session checklist is in `docs/frontend-playtest-checklist.md`.
+Playtest workspace는 `playtest-data/active/` 아래에 생성됩니다. 운영 메모는 `docs/playtest-runbook.md`, browser session checklist는 `docs/frontend-playtest-checklist.md`를 보면 됩니다.
 
-## How to Play
+## 플레이 방법 How to Play
 
-### Starting the Game
-1. Run `npm run play` (or `npm start` if already built)
-2. Select **New Game** or **Load Game**
-3. Choose difficulty mode
-4. Create your character (name + class)
+### 게임 시작 Starting the Game
+1. `npm run play` 실행 (`already built` 상태면 `npm start`도 가능)
+2. **New Game** 또는 **Load Game** 선택
+3. Difficulty mode 선택
+4. Character 생성(name + class)
 
-### Starting the Browser Frontend
-1. Run `npm run frontend:start` for normal sessions, or `npm run playtest:start` for isolated playtests
-2. Open `http://localhost:4310`
-3. Create a new run or load an existing slot
-4. Use the dashboard panels for quests, travel, combat, and saves
+### 브라우저 프론트엔드 시작 Starting the Browser Frontend
+1. 일반 실행은 `npm run frontend:start`, isolated playtest는 `npm run playtest:start`
+2. `http://localhost:4310` 열기
+3. 새 run 생성 또는 기존 slot load
+4. Dashboard panel에서 quest, travel, combat, save를 진행
 
-### Controls
-- **Arrow Keys**: Navigate menus
-- **Enter**: Confirm selection
-- **Esc**: Cancel/Back (in some menus)
+### 조작 Controls
+- **Arrow Keys**: menu 이동
+- **Enter**: 선택 확정
+- **Esc**: 취소 / 뒤로 가기 (일부 메뉴)
 
-### Town Actions
+### 마을 액션 Town Actions
 | Action | Description |
 |--------|-------------|
-| Shop | Buy/sell items |
-| Inn | Restore HP/MP |
-| Save | Save your progress |
-| Travel | Move to another location |
+| Shop | item buy/sell |
+| Inn | HP/MP 회복 |
+| Save | 진행 상황 저장 |
+| Travel | 다른 location으로 이동 |
 
-### Dungeon Actions
+### 던전 액션 Dungeon Actions
 | Action | Description |
 |--------|-------------|
-| Explore | Move forward (60% monster encounter) |
-| Rest | Partial HP/MP recovery |
-| Travel | Return to town or other areas |
+| Explore | 전진 탐색 (`60%` monster encounter) |
+| Rest | 부분 HP/MP recovery |
+| Travel | town 또는 다른 area로 복귀 |
 
-### Combat Actions
+### 전투 액션 Combat Actions
 | Action | Description |
 |--------|-------------|
-| Attack | Basic physical attack |
-| Skill | Use special abilities (MP cost) |
-| Item | Use consumable items |
-| Defend | Reduce incoming damage |
-| Escape | Attempt to flee |
+| Attack | 기본 physical attack |
+| Skill | special ability 사용(MP cost) |
+| Item | consumable item 사용 |
+| Defend | incoming damage 감소 |
+| Escape | 도주 시도 |
 
-## Game Systems
+## 게임 시스템 Game Systems
 
-### Character Classes
+### 캐릭터 클래스 Character Classes
 
 | Class | HP | MP | ATK | DEF | SPD | Special |
 |-------|----|----|-----|-----|-----|---------|
@@ -180,16 +180,16 @@ The playtest workspace lives under `playtest-data/active/`. Full operating notes
 | Cleric | Med | High | Low | Med | Med | Healing |
 | Ranger | Med | Med | Med | Med | Med | Balanced |
 
-### Difficulty Modes
+### 난이도 Difficulty Modes
 
 | Mode | Death Penalty | Special |
 |------|---------------|---------|
-| Story | -10% Gold | Respawn at same location |
-| Adventure | -30% Gold, -10% EXP, -50% consumables | Respawn at save point |
-| Challenge | -50% Gold, -20% EXP, -100% consumables, 30% equipment loss | Level down possible |
-| Hardcore | Save deleted | Permadeath, Soul Essence meta-progression |
+| Story | -10% Gold | same location respawn |
+| Adventure | -30% Gold, -10% EXP, -50% consumables | save point respawn |
+| Challenge | -50% Gold, -20% EXP, -100% consumables, 30% equipment loss | level down 가능 |
+| Hardcore | Save deleted | permadeath, Soul Essence meta-progression |
 
-### Element System
+### 속성 시스템 Element System
 
 ```
 Fire → Ice → Lightning → Poison → Dark → Fire
@@ -204,7 +204,7 @@ Fire → Ice → Lightning → Poison → Dark → Fire
 | Poison | Poison (DoT) |
 | Dark | +15% crit chance |
 
-## Project Structure
+## 프로젝트 구조 Project Structure
 
 ```
 terminal-quest/
@@ -229,65 +229,65 @@ terminal-quest/
 └── README.md
 ```
 
-## Scripts
+## 스크립트 Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run build` | Compile TypeScript |
-| `npm start` | Run the game |
-| `npm run play` | One-command install/build/start launcher |
-| `npm run playtest:start` | Launch the browser frontend in isolated playtest mode |
-| `npm run playtest:start:terminal` | Launch the legacy terminal client in isolated playtest mode |
-| `npm run frontend:start` | Build + launch the browser frontend server on `http://localhost:4310` |
-| `npm run frontend:playtest` | Launch the browser frontend with isolated playtest saves/telemetry/logs |
-| `npm run dev` | Build and run |
-| `npm run watch` | Watch mode |
-| `npm test` | Run tests |
-| `npm run clean` | Remove dist folder |
-| `npm run validate:data` | Run data/quest/economy balance validations |
-| `npm run validate:economy` | Run economy balance validation only |
-| `npm run validate:playtime:extended` | Measure 30h+ first-clear / 44-50h full-completion target progress with anti-loose guardrails |
-| `npm run balance:notes` | Generate dated live-balance patch notes from validators |
-| `npm run verify:save-migration` | Run legacy save migration verification tests |
-| `npm run verify:package-launch` | Launch built package entry once, auto-select Exit, and validate graceful startup/shutdown |
-| `npm run verify:runtime-smoke` | Run focused runtime smoke scenario tests and write `releases/smoke-reports/runtime-smoke-latest.json` |
-| `npm run verify:release-artifacts` | Validate packaged archive checksum (`.sha256`) and release manifest integrity |
-| `npm run release:signoff -- --status` | Show current QA/Engineering/Release Manager sign-off state (`release-signoff-latest.json`) |
-| `npm run release:signoff:all -- --by "<name>"` | Approve all sign-off roles at once for small-team release flow |
-| `npm run release:check` | Run paid-release readiness gate (build/test/data + extended playtime checks) |
-| `npm run release:smoke` | Run release smoke flow and generate markdown + JSON summaries under `releases/smoke-reports/` |
-| `npm run release:candidate` | Final release candidate gate: run smoke + enforce version/commit/branch-matched sign-offs for current candidate |
-| `npm run release:package` | Build versioned release bundle + changelog sync + archive checksum (`.sha256`) |
+| `npm run build` | TypeScript compile |
+| `npm start` | 게임 실행 |
+| `npm run play` | install/build/start one-command launcher |
+| `npm run playtest:start` | isolated playtest mode로 browser frontend 실행 |
+| `npm run playtest:start:terminal` | legacy terminal client를 isolated mode로 실행 |
+| `npm run frontend:start` | browser frontend server를 `http://localhost:4310`에서 실행 |
+| `npm run frontend:playtest` | isolated save/telemetry/log 기반 browser frontend 실행 |
+| `npm run dev` | build + run |
+| `npm run watch` | watch mode |
+| `npm test` | test 실행 |
+| `npm run clean` | `dist` 제거 |
+| `npm run validate:data` | data/quest/economy balance validation 실행 |
+| `npm run validate:economy` | economy balance만 검증 |
+| `npm run validate:playtime:extended` | `30h+ first-clear / 44-50h full-completion` 목표 검증 |
+| `npm run balance:notes` | validator 기반 dated live-balance patch note 생성 |
+| `npm run verify:save-migration` | legacy save migration verification test 실행 |
+| `npm run verify:package-launch` | built package를 1회 실행해 graceful startup/shutdown 검증 |
+| `npm run verify:runtime-smoke` | focused runtime smoke test 후 JSON report 작성 |
+| `npm run verify:release-artifacts` | packaged archive checksum 및 manifest integrity 검증 |
+| `npm run release:signoff -- --status` | QA/Engineering/Release Manager sign-off 상태 출력 |
+| `npm run release:signoff:all -- --by "<name>"` | small-team flow용 전체 sign-off 승인 |
+| `npm run release:check` | paid-release readiness gate 실행 |
+| `npm run release:smoke` | release smoke 실행 후 markdown/JSON summary 생성 |
+| `npm run release:candidate` | final release candidate gate 실행 |
+| `npm run release:package` | versioned release bundle + changelog sync + checksum 생성 |
 
-## Testing
+## 테스트 Testing
 
 ```bash
-# Run all tests
+# 전체 테스트 실행
 npm test
 
-# Run with coverage
+# coverage 포함 실행
 npm test -- --coverage
 
-# Run specific test file
+# 특정 테스트 파일 실행
 npm test -- tests/combat.test.ts
 ```
 
-## Development
+## 개발 가이드 Development
 
-### Adding New Features
+### 새 기능 추가 Adding New Features
 
-1. **Types**: Define in `src/types/`
-2. **Logic**: Implement in `src/systems/`
-3. **UI**: Create in `src/ui/`
-4. **Data**: Add JSON in `data/`
+1. **Types**: `src/types/`에 정의
+2. **Logic**: `src/systems/`에 구현
+3. **UI**: `src/ui/` 또는 frontend layer에 추가
+4. **Data**: `data/`에 JSON 추가
 
-### Code Style
+### 코드 스타일 Code Style
 
-- TypeScript strict mode enabled
-- ES2022 modules with `.js` import extensions
-- Unused variables prefixed with `_`
+- TypeScript strict mode 사용
+- ES2022 module + `.js` import extension 유지
+- Unused variable은 `_` prefix 사용
 
-## Paid Release Track
+## 유료 릴리스 트랙 Paid Release Track
 
 - Roadmap: `docs/paid-release-roadmap.md`
 - Changelog: `CHANGELOG.md`
@@ -299,20 +299,20 @@ npm test -- tests/combat.test.ts
 - Balance cadence: `docs/live-balance-cadence.md` (`npm run balance:notes`)
 - Seasonal events: `docs/seasonal-events.md`
 - Prompt priority policy: `docs/prompt-priority-policy.md`
-- Telemetry event log path (when enabled): `telemetry/events.ndjson`
+- Telemetry event log path(활성화 시): `telemetry/events.ndjson`
 
-## Tips for Players
+## 플레이 팁 Tips for Players
 
-- Save frequently! Use save points in towns
-- Buy health potions before exploring dungeons
-- Check recommended levels before entering areas
-- Equipment > Gold (gold can be lost on death)
-- In Hardcore mode: when in doubt, flee!
+- 자주 저장하세요. town save point를 적극적으로 쓰는 편이 좋습니다.
+- 던전 진입 전 health potion을 먼저 확보하세요.
+- 지역 진입 전 recommended level을 확인하세요.
+- Equipment > Gold 입니다. Gold는 death penalty로 잃을 수 있습니다.
+- Hardcore mode에서는 애매하면 싸우지 말고 flee가 정답입니다.
 
 ## License
 
 MIT
 
-## Contributing
+## 기여 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contribution은 언제든 환영합니다. 자유롭게 Pull Request를 보내주세요.

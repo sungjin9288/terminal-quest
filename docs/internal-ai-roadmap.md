@@ -154,6 +154,9 @@ Terminal Quest 안에 `내부 AI 계층`을 추가해 아래 4가지를 동시�
 - 업적 추적 사용률, smart resume 수용률, 세션 종료 위치 분석
 - patch note 후보와 밸런스 경고 초안 생성
 - playtest note와 telemetry를 합쳐 관찰 우선순위 제안
+- backlog를 issue-ready `Linear draft` 묶음으로 정리
+- 기본 team/project/scope를 읽어 실제 Linear export 상태까지 추적
+- exported draft의 telemetry baseline과 현재 상태를 비교해 impact trend를 노출
 
 주요 연결 지점:
 
@@ -253,12 +256,14 @@ interface AiState {
 - `src/systems/aiNarrator.ts`로 intent/최근 순간 기반 companion line 생성
 - `src/frontend/runtime.ts`에서 주요 액션 후 companion voice와 `recentMoments` 기록
 - 브라우저 Action Rail의 `Companion Note` 카드로 narrative cue 노출
+- 같은 moment type 반복 시 변주 카피 선택과 최근 동일 companion line 중복 억제
+- 터미널 `추천 행동` 아래 동일 narrative cue를 `동행 브리프`로 노출
 
 남음:
 
 - 지역/보스/업적별 전용 카피 풀 확대
-- 같은 세션 안의 중복 문장 억제 규칙 강화
-- 터미널 로그/가이던스 쪽 companion surface 추가
+- 퀘스트 보드/상점/전투 결과까지 terminal-side moment 기록 확대
+- 같은 arc 안에서 장기 기억을 읽는 payoff line 강화
 
 범위:
 
@@ -274,6 +279,25 @@ interface AiState {
 
 ### Phase 3. Contract Composer 도입
 
+상태: 1차 확장 완료 (2026-03-10)
+
+구현됨:
+
+- `src/data/contractTemplates.ts`에 frontier 기반 동적 계약 템플릿 추가
+- `src/systems/aiContractComposer.ts`에서 `정찰` 고정 슬롯 + `소탕/회복/보급` 적응형 슬롯 생성
+- 세션 길이, 최근 AI moment, HP/MP, 인벤토리 압력을 읽어 `오프닝/중반/장기 세션`별 계약을 전환
+- `src/systems/quest.ts`가 `getAvailableQuests()`와 `acceptQuest()` 직전에 동적 계약을 자동 갱신
+- 브라우저/터미널 퀘스트 게시판이 같은 동적 계약을 그대로 수락/정산
+- 브라우저/터미널 퀘스트 카드에 `AI 계약`, directive, session window, Director rationale 노출
+- `quest_accepted` / `quest_completed` telemetry에 AI 계약 메타를 함께 기록
+- `src/systems/aiContractBalance.ts`, `scripts/validate-ai-contract-balance.js`로 Act/시나리오별 보상 guardrail 검증 추가
+
+남음:
+
+- 업적 추적, 시즌 이벤트, 엔드게임 상태까지 읽는 계약 템플릿 확대
+- 계약 전용 funnel 리포트와 patch note 추세 지표 추가
+- 시즌/엔드게임 전용 동적 계약 계층 추가
+
 범위:
 
 - 계약 템플릿 정의
@@ -287,6 +311,22 @@ interface AiState {
 - quest UI와 history에 정적 퀘스트처럼 자연스럽게 표시된다.
 
 ### Phase 4. Encounter Director 도입
+
+상태: 초기 구현 완료 (2026-03-10)
+
+구현됨:
+
+- `src/systems/aiEncounterDirector.ts`에서 던전 탐험 결과를 `steady/recovery/variety/pressure` 모드로 판정
+- HP/MP 저하, 연속 전투 피로, 보스 접근 구간을 읽어 전투 확률과 이벤트 선호도를 조절
+- `runDungeonEvent()`가 Director 선호 이벤트(`maintenance-niche`, `memory-echo`, `route-scan`)를 직접 받을 수 있게 확장
+- 브라우저 `frontend/runtime`와 터미널 `gameplayLoop`가 같은 판정을 사용해 반복 전투 시 이벤트로 우회
+- 휴식/이동/귀환 시 fatigue snapshot을 초기화해 다음 전선에서 패턴이 새로 시작되도록 정리
+- 브라우저 Action Rail과 HUD가 현재 encounter mode, 전투 확률, 우선 이벤트, 피로 신호를 `Encounter Director` 카드로 노출
+- `corruption-space` 심연 도전에서는 tier/streak/modifier를 읽어 일반 전선보다 더 날카로운 pressure/variety/recovery 규칙을 사용
+
+남음:
+
+- encounter telemetry/ops insight 리포트
 
 범위:
 
@@ -302,16 +342,35 @@ interface AiState {
 
 ### Phase 5. Ops Analyst 정착
 
+상태: 초기 구현 완료 (2026-03-11)
+
 범위:
 
 - telemetry 기반 인사이트 리포트
 - playtest note와 metrics 결합
 - balance note 초안 자동화
 
+구현됨:
+
+- `encounter_director_decision` telemetry가 browser/terminal 탐험 루프에서 공용 payload로 기록
+- `src/systems/aiOpsInsights.ts`가 recommendation/encounter/endgame telemetry를 요약해 finding과 recent signal을 생성
+- `scripts/generate-ai-insights-report.js`, `npm run ai:insights`, `npm run ai:insights:dry`로 markdown 리포트 생성
+- active playtest `notes/` markdown을 함께 읽어 `Playtest Priorities`와 top priority finding 생성
+- telemetry dismiss/follow 신호와 playtest note tag를 결합해 resume/recommendation friction을 우선순위화
+- `scripts/playtest-report.js`가 active note 파일 현황까지 같이 출력
+- `src/systems/aiOpsBacklog.ts`, `scripts/generate-ai-ops-backlog.js`, `npm run ai:backlog:dry`로 insight를 `P0/P1/P2` backlog 초안으로 정규화
+- playtest browser landing이 `AI Ops Pulse` 카드로 top finding, top backlog, dismiss rate, note/telemetry 규모를 바로 노출
+- playtest browser in-run workspace가 `Ops` 탭으로 backlog draft, observation note, recent AI signal을 한 화면에서 보여줌
+
+남음:
+
+- backlog 초안을 브라우저 운영 대시보드나 issue tracker 연동으로 내보내기
+
 완료 기준:
 
 - 플레이테스트 1회 후 즉시 확인 가능한 AI 리포트가 나온다.
 - 추천 무시율, 반복 루프, 조기 이탈 지점이 자동 요약된다.
+- telemetry만이 아니라 실제 관찰 note까지 합쳐 바로 볼 우선순위가 나온다.
 
 ## 성공 지표
 

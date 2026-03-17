@@ -11,6 +11,7 @@ export type TelemetryEventType =
   | 'ai_recommendation_shown'
   | 'ai_recommendation_followed'
   | 'ai_recommendation_dismissed'
+  | 'encounter_director_decision'
   | 'quest_accepted'
   | 'quest_completed'
   | 'boss_defeated'

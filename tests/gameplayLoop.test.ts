@@ -4,6 +4,7 @@ import * as travelUi from '../src/ui/travel';
 import * as locations from '../src/data/locations';
 import * as questUi from '../src/systems/questUi';
 import * as display from '../src/ui/display';
+import { ensureAiState } from '../src/systems/aiDirector';
 import { createTestGameState } from './helpers/gameStateFactory';
 import { createTestHubTown } from './helpers/dataFixtureFactory';
 import { mockDisplayPreset } from './helpers/uiMocks';
@@ -259,6 +260,7 @@ describe('Gameplay Loop', () => {
 
     const logs = (console.log as jest.Mock).mock.calls.map(args => String(args[0] ?? ''));
     expect(logs.some(line => line.includes('추천 행동'))).toBe(true);
+    expect(logs.some(line => line.includes('동행 브리프'))).toBe(true);
   });
 
   it('should show boss progress in adventure focus while exploring a dungeon', async () => {
@@ -420,5 +422,44 @@ describe('Gameplay Loop', () => {
     });
 
     expect(gameState.position.stepsTaken).toBe(9);
+  });
+
+  it('should bypass a repeated combat streak with a directed dungeon event', async () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        name: 'PacingTester',
+        level: 4,
+        currentLocation: 'memory-forest'
+      }
+    });
+    gameState.position.locationId = 'memory-forest';
+    gameState.position.stepsTaken = 8;
+    const aiState = ensureAiState(gameState);
+    aiState.fatigueSnapshot.consecutiveCombats = 3;
+    aiState.fatigueSnapshot.repeatActionCount = 3;
+    aiState.fatigueSnapshot.consecutiveNonProgressLoops = 3;
+    mockDisplayPreset('townLoop');
+
+    jest.spyOn(travelUi, 'showDungeonMenu')
+      .mockResolvedValueOnce('explore')
+      .mockResolvedValueOnce('menu');
+
+    const random = jest.fn()
+      .mockReturnValueOnce(0.9)
+      .mockReturnValueOnce(0.5);
+    const runEncounter = jest.fn(async () => 'victory' as const);
+
+    await dungeonLoop(gameState, {
+      runEncounter,
+      handlePlayerDeath: jest.fn(async () => true),
+      handleTravel: jest.fn(async () => ({ locationChanged: false })),
+      inGameMenuLoop: jest.fn(async () => false),
+      random
+    });
+
+    expect(runEncounter).not.toHaveBeenCalled();
+    expect(gameState.position.stepsTaken).toBe(10);
+    expect(aiState.fatigueSnapshot.consecutiveCombats).toBe(0);
+    expect(aiState.fatigueSnapshot.consecutiveNonProgressLoops).toBe(0);
   });
 });

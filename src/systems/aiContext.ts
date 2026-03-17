@@ -278,6 +278,12 @@ function buildTrackedAchievementContext(gameState: GameState): AiTrackedAchievem
   };
 }
 
+function countStrategicAvailableQuests(gameState: GameState): number {
+  return getAvailableQuests(gameState)
+    .filter(quest => quest.narrative?.arcId !== 'ai-contracts')
+    .length;
+}
+
 export function buildAiContext(gameState: GameState): AiContext {
   const frontier = getFrontierLocation(gameState);
   const hpRatio = gameState.player.stats.maxHp > 0
@@ -295,7 +301,7 @@ export function buildAiContext(gameState: GameState): AiContext {
     currentLocationId: gameState.player.currentLocation,
     isTown: isTownLocation(gameState.player.currentLocation),
     questFocus: getPrimaryQuestFocus(gameState),
-    availableQuestCount: getAvailableQuests(gameState).length,
+    availableQuestCount: countStrategicAvailableQuests(gameState),
     bossProgress: getLocationBossProgress(gameState),
     frontier,
     frontierLevelFit: frontier ? isLevelAppropriate(gameState.player.level, frontier.id) : null,

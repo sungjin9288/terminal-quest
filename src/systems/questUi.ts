@@ -146,6 +146,17 @@ function showQuestDetails(quest: Quest): void {
   if (quest.narrative?.storyBeat) {
     console.log(chalk.gray(`  이번 장면: ${quest.narrative.storyBeat}`));
   }
+  if (quest.aiContract) {
+    console.log(
+      chalk.cyan(
+        `  AI 계약: ${quest.aiContract.directiveLabel} / ${quest.aiContract.sessionWindowLabel}${quest.aiContract.adaptive ? ' / 적응형 슬롯' : ''}`
+      )
+    );
+    console.log(chalk.gray(`  Director 메모: ${quest.aiContract.rationale}`));
+    if (quest.aiContract.targetLabel) {
+      console.log(chalk.gray(`  목표 전선: ${quest.aiContract.targetLabel}`));
+    }
+  }
 
   for (const objective of quest.objectives) {
     const done = objective.currentAmount >= objective.requiredAmount;

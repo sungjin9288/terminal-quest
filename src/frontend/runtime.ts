@@ -8,7 +8,11 @@ import {
 } from '../types/index.js';
 import { SaveType, type SaveSlotMetadata } from '../types/save.js';
 import { type AchievementTrackingMode } from '../types/achievement.js';
-import { type AiDirectorMode, type AiNarrativeMode } from '../types/ai.js';
+import {
+  type AiDirectorMode,
+  type AiEncounterDirectorPreview,
+  type AiNarrativeMode
+} from '../types/ai.js';
 import { createNewGameState } from '../systems/newGameState.js';
 import {
   clearAchievementTracking,
@@ -35,6 +39,14 @@ import {
   trackAchievement
 } from '../systems/achievements.js';
 import { ensureAiState, syncAiState } from '../systems/aiDirector.js';
+import {
+  buildEncounterDirectorTelemetryPayload,
+  coerceEncounterDirectorEventId,
+  decideDungeonExploreOutcome,
+  getEncounterDirectorPreview,
+  recordEncounterDirectorExploreOutcome,
+  resetEncounterDirectorFatigue
+} from '../systems/aiEncounterDirector.js';
 import { recordAiMoment } from '../systems/aiMemory.js';
 import {
   buildAiNarrativeCue,
@@ -129,6 +141,7 @@ import {
   getPresentationSkillCopy
 } from './presentationText.js';
 import { trackTelemetryEvent } from '../systems/telemetry.js';
+import { buildAiOpsPreview } from '../systems/aiOpsPreview.js';
 import {
   type FeedVoiceLine,
   getActClearVoiceLine,
@@ -285,6 +298,7 @@ interface SerializedQuest {
   estimatedTimeLabel: string;
   sessionLabel: string;
   narrative: Quest['narrative'];
+  aiContract: Quest['aiContract'] | null;
   objectives: Array<{
     description: string;
     currentAmount: number;
@@ -304,6 +318,118 @@ export interface FrontendSnapshot {
   activeSaveDirectory: string;
   saves: SaveSlotMetadata[];
   feed: FeedEntry[];
+  ops?: {
+    telemetryEvents: number;
+    playtestNotes: number;
+    topFinding: string | null;
+    topObservation: {
+      severity: 'P0' | 'P1' | 'P2';
+      text: string;
+    } | null;
+    topBacklog: {
+      priority: 'P0' | 'P1' | 'P2';
+      title: string;
+      theme: string;
+    } | null;
+    backlogCounts: {
+      P0: number;
+      P1: number;
+      P2: number;
+    };
+    findings: string[];
+    observations: Array<{
+      severity: 'P0' | 'P1' | 'P2';
+      text: string;
+      noteLabel: string;
+      section: string;
+      tags: string[];
+    }>;
+    backlog: Array<{
+      id: string;
+      priority: 'P0' | 'P1' | 'P2';
+      theme: string;
+      title: string;
+      rationale: string;
+      evidence: string[];
+      suggestedActions: string[];
+    }>;
+    linearDrafts: Array<{
+      id: string;
+      priority: 'P0' | 'P1' | 'P2';
+      theme: string;
+      title: string;
+      labels: string[];
+      summary: string;
+      exportStatus: 'draft' | 'exported' | 'updated' | 'closed';
+      issueIdentifier: string | null;
+    issueUrl: string | null;
+    lastExportedAtIso: string | null;
+    linearStateName: string | null;
+    linearStateType: 'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled' | 'unknown';
+    lastSyncedAtIso: string | null;
+    lifecycleStatus: 'draft' | 'sync-needed' | 'live' | 'closed' | 'shipped';
+    staleSync: boolean;
+    impactTrend: 'improved' | 'flat' | 'regressed' | 'unknown';
+    impactSummary: string | null;
+  }>;
+    recentSignals: Array<{
+      isoTime: string;
+      eventType: string;
+      summary: string;
+    }>;
+    nextCommand: {
+      label: string;
+      command: string;
+      reason: string;
+      tone: 'recommended' | 'warning' | 'success';
+    } | null;
+    doctor: {
+      status: 'ok' | 'warn' | 'fail';
+      summaryPresent: boolean;
+      freshnessLabel: string;
+      reasons: string[];
+      recommendedCommand: string | null;
+      opsStatus: {
+        id: string;
+        label: string;
+        tone: 'recommended' | 'warning' | 'success';
+        actionRequired: boolean;
+        summary: string;
+      } | null;
+    };
+    status: {
+      id: string;
+      label: string;
+      tone: 'recommended' | 'warning' | 'success';
+      actionRequired: boolean;
+      summary: string;
+    };
+    latestCycleFollowUp: {
+      label: string;
+      command: string;
+      reason: string;
+      tone: 'recommended' | 'warning' | 'success';
+    } | null;
+    latestCycle: {
+      generatedAtIso: string;
+      mode: 'dry-run' | 'artifact' | 'apply-linear';
+      overallPass: boolean;
+      stepsPassed: number;
+      stepsTotal: number;
+      stale: boolean;
+      ageHours: number | null;
+      failedSteps: Array<{
+        label: string;
+        status: number;
+        outputFileName: string;
+      }>;
+      reportJsonPath: string;
+      bundleDir: string | null;
+      nextCommand: string | null;
+    } | null;
+    recommendationDismissRate: number | null;
+    encounterDecisionCount: number;
+  } | null;
   player?: {
     name: string;
     class: CharacterClass;
@@ -517,6 +643,7 @@ export interface FrontendSnapshot {
       beats: string[];
       tone: string;
     } | null;
+    encounterDirector: AiEncounterDirectorPreview | null;
     recentMoments: Array<{
       type: string;
       label: string;
@@ -589,6 +716,15 @@ function appendVoiceFeed(
   appendFeed(session, tone, line.text, line.speaker, category);
 }
 
+function isRecentNarrativeFeedDuplicate(
+  session: FrontendSession,
+  line: { speaker: string; text: string }
+): boolean {
+  return session.feed
+    .slice(0, 4)
+    .some(entry => entry.speaker === line.speaker && entry.text === line.text);
+}
+
 function appendAiNarrativeVoiceFeed(
   session: FrontendSession,
   tone: FeedTone,
@@ -611,6 +747,10 @@ function appendAiNarrativeVoiceFeed(
   }
 
   const line = buildAiNarrativeVoiceLine(session.gameState, event, session.now());
+  if (!line || isRecentNarrativeFeedDuplicate(session, line)) {
+    return;
+  }
+
   appendVoiceFeed(session, tone, line, category);
 }
 
@@ -906,6 +1046,11 @@ function serializeQuest(quest: Quest): SerializedQuest {
     estimatedTimeLabel: getQuestEstimatedTimeLabel(quest),
     sessionLabel: getQuestSessionLabel(quest),
     narrative: quest.narrative,
+    aiContract: quest.aiContract
+      ? {
+          ...quest.aiContract
+        }
+      : null,
     objectives: quest.objectives.map(objective => ({
       description: objective.description,
       currentAmount: objective.currentAmount,
@@ -1320,6 +1465,7 @@ function handlePlayerDefeat(session: FrontendSession): void {
   gameState.player.currentLocation = 'bit-town';
   gameState.position.locationId = 'bit-town';
   gameState.position.stepsTaken = 0;
+  resetEncounterDirectorFatigue(gameState, 'town');
   gameState.player.deaths += 1;
   gameState.statistics.deaths += 1;
   closeRunSummary(gameState, session.now());
@@ -1357,6 +1503,9 @@ function travelTo(session: FrontendSession, destinationId: string): void {
   gameState.player.currentLocation = destinationId;
   gameState.position.locationId = destinationId;
   gameState.position.stepsTaken = 0;
+  if (destinationId !== previousLocationId) {
+    resetEncounterDirectorFatigue(gameState, 'travel');
+  }
 
   if (isTownLocation(destinationId)) {
     closeRunSummary(gameState, session.now());
@@ -1418,6 +1567,7 @@ function restAtInn(session: FrontendSession): void {
   recordRunGoldSpent(gameState, cost, session.now());
   gameState.player.stats.hp = gameState.player.stats.maxHp;
   gameState.player.stats.mp = gameState.player.stats.maxMp;
+  resetEncounterDirectorFatigue(gameState, 'town');
   appendFeed(session, 'success', `여관에서 휴식했습니다. HP/MP 완전 회복 (-${cost} 골드)`, undefined, 'hub');
 
   const updates = updateQuestProgressOnTalk(gameState, 'innkeeper');
@@ -1456,13 +1606,26 @@ function exploreDungeon(session: FrontendSession): void {
   gameState.position.locationId = gameState.player.currentLocation;
   gameState.position.stepsTaken += 1;
 
-  if (session.random() < 0.6) {
+  const decision = decideDungeonExploreOutcome(gameState, session.random);
+  trackTelemetryEvent(
+    'encounter_director_decision',
+    gameState,
+    buildEncounterDirectorTelemetryPayload(decision, 'frontend-runtime')
+  );
+  if (decision.outcome === 'combat') {
+    recordEncounterDirectorExploreOutcome(gameState, { outcome: 'combat' });
     const monster = selectEncounterMonster(gameState, session.random);
     startBattle(session, monster);
     return;
   }
 
-  const eventResult = runDungeonEvent(gameState, session.random);
+  const eventResult = runDungeonEvent(gameState, session.random, {
+    preferredEventId: coerceEncounterDirectorEventId(decision.preferredEventId)
+  });
+  recordEncounterDirectorExploreOutcome(gameState, {
+    outcome: 'event',
+    eventId: eventResult.id
+  });
   for (const message of eventResult.messages) {
     appendFeed(session, message.tone, message.text, undefined, 'travel');
   }
@@ -1485,6 +1648,7 @@ function restInDungeon(session: FrontendSession): void {
     gameState.player.stats.maxMp,
     gameState.player.stats.mp + mpRestore
   );
+  resetEncounterDirectorFatigue(gameState, 'rest');
   appendFeed(session, 'success', `짧은 휴식. HP +${hpRestore}, MP +${mpRestore}`, undefined, 'travel');
 }
 
@@ -2058,6 +2222,9 @@ function buildAchievementPerkSnapshot(
 function buildAiSnapshot(gameState: GameState): FrontendSnapshot['ai'] {
   const aiState = ensureAiState(gameState);
   const narrativeCue = buildAiNarrativeCue(gameState);
+  const encounterDirector = isTownLocation(gameState.position.locationId)
+    ? null
+    : getEncounterDirectorPreview(gameState);
 
   return {
     directorMode: aiState.directorMode,
@@ -2076,6 +2243,7 @@ function buildAiSnapshot(gameState: GameState): FrontendSnapshot['ai'] {
         }
       : null,
     narrativeCue,
+    encounterDirector,
     recentMoments: aiState.memory.recentMoments.slice(0, 4).map(moment => ({
       type: moment.type,
       label: moment.label,
@@ -2129,13 +2297,16 @@ function trackAiFeedback(session: FrontendSession, action: Extract<FrontendActio
 }
 
 export function getFrontendSnapshot(session: FrontendSession): FrontendSnapshot {
+  const opsPreview = buildAiOpsPreview();
+
   if (!session.gameState) {
     return {
       scene: 'landing',
       hasGame: false,
       activeSaveDirectory: getSaveDirectoryPath(),
       saves: listSaves(),
-      feed: session.feed
+      feed: session.feed,
+      ops: opsPreview
     };
   }
 
@@ -2157,6 +2328,7 @@ export function getFrontendSnapshot(session: FrontendSession): FrontendSnapshot 
     activeSaveDirectory: getSaveDirectoryPath(),
     saves: listSaves(),
     feed: session.feed,
+    ops: opsPreview,
     player: {
       name: gameState.player.name,
       class: gameState.player.class,

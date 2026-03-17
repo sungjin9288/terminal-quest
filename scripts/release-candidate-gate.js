@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
+import {
+  buildReleaseOpsFailureMessage,
+  normalizeReleaseOpsDoctorSnapshot
+} from './release-ops-common.js';
 
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
@@ -79,6 +83,7 @@ function getPendingRoles(signoffSummary) {
 
 function main() {
   const skipSmoke = hasFlag('--skip-smoke');
+  const withOpsDoctor = hasFlag('--with-ops-doctor');
   const reportDirArg = readArg('--report-dir');
   const reportDir = reportDirArg
     ? path.resolve(process.cwd(), reportDirArg)
@@ -90,7 +95,11 @@ function main() {
   const currentCommit = safeGitValue(['rev-parse', '--short', 'HEAD']);
 
   if (!skipSmoke) {
-    runCommand('Run smoke flow', npmCommand, ['run', 'release:smoke']);
+    runCommand(
+      withOpsDoctor ? 'Run smoke flow with Ops doctor' : 'Run smoke flow',
+      npmCommand,
+      ['run', withOpsDoctor ? 'release:smoke:ops' : 'release:smoke']
+    );
   }
 
   const smokeSummary = readJsonOrNull(releaseSmokeLatestSummaryPath);
@@ -101,8 +110,20 @@ function main() {
     return;
   }
 
+  const opsDoctor = normalizeReleaseOpsDoctorSnapshot(smokeSummary.opsDoctor ?? null);
+
   if (!smokeSummary.overallPass) {
-    exitWithError('release smoke summary reports overallPass=false');
+    exitWithError(buildReleaseOpsFailureMessage('release smoke summary reports overallPass=false', opsDoctor));
+    return;
+  }
+
+  if (withOpsDoctor && !smokeSummary.opsDoctorGate) {
+    exitWithError(
+      buildReleaseOpsFailureMessage(
+        'release smoke summary was not generated with ops doctor gate enabled',
+        opsDoctor
+      )
+    );
     return;
   }
 

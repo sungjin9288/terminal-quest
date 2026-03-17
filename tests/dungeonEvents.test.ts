@@ -57,4 +57,22 @@ describe('Dungeon events', () => {
     expect(gameState.position.stepsTaken).toBe(9);
     expect(result.messages.some(message => message.text.includes('1회 남았습니다'))).toBe(true);
   });
+
+  it('should honor a preferred event id from the encounter director', () => {
+    const gameState = createTestGameState({
+      playerOptions: {
+        currentLocation: 'memory-forest',
+        level: 5
+      }
+    });
+    gameState.position.locationId = 'memory-forest';
+    gameState.position.stepsTaken = 8;
+
+    const result = runDungeonEvent(gameState, jest.fn(() => 0.4), {
+      preferredEventId: 'route-scan'
+    });
+
+    expect(result.id).toBe('route-scan');
+    expect(gameState.position.stepsTaken).toBeGreaterThan(8);
+  });
 });

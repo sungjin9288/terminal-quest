@@ -32,7 +32,17 @@ import { canAffordCost, getInnRestCost } from './economy.js';
 import { getActiveSeasonalEvent } from './seasonalEvents.js';
 import { getAdventureFocusSummary, getRecommendedTravelDestination } from './adventureFocus.js';
 import { getAiIntent } from './aiDirector.js';
+import { recordAiMoment } from './aiMemory.js';
+import { buildAiNarrativeCue } from './aiNarrator.js';
 import { runDungeonEvent } from './dungeonEvents.js';
+import {
+  buildEncounterDirectorTelemetryPayload,
+  coerceEncounterDirectorEventId,
+  decideDungeonExploreOutcome,
+  recordEncounterDirectorExploreOutcome,
+  resetEncounterDirectorFatigue
+} from './aiEncounterDirector.js';
+import { trackTelemetryEvent } from './telemetry.js';
 import { getRuntimeSettings } from '../runtime/settings.js';
 import {
   formatAchievementRewardMessage,
@@ -167,6 +177,18 @@ function showContextGuidance(
     console.log(chalk.gray(`   • ${hint}`));
   });
 
+  const narrativeCue = buildAiNarrativeCue(gameState);
+  if (narrativeCue) {
+    const cueTitle = narrativeCue.tone === 'warning'
+      ? chalk.yellow.bold('🎙 동행 브리프')
+      : narrativeCue.tone === 'success'
+        ? chalk.green.bold('🎙 동행 브리프')
+        : chalk.cyan.bold('🎙 동행 브리프');
+    console.log(cueTitle);
+    console.log(chalk.gray(`   ${narrativeCue.speaker} · ${narrativeCue.title}`));
+    console.log(chalk.gray(`   ${narrativeCue.summary}`));
+  }
+
   return { recommendedAction };
 }
 
@@ -249,6 +271,11 @@ export async function townLoop(
           await showLoading('휴식 중', 1500);
           gameState.player.stats.hp = gameState.player.stats.maxHp;
           gameState.player.stats.mp = gameState.player.stats.maxMp;
+          resetEncounterDirectorFatigue(gameState, 'town');
+          recordAiMoment(gameState, {
+            type: 'rest',
+            label: '여관 정비 완료'
+          });
           showMessage(`HP와 MP가 완전히 회복되었습니다! (잔액: ${gameState.player.gold} 골드)`, 'success');
           showAchievementUnlocks(gameState);
           await pressEnterToContinue('important');
@@ -277,6 +304,13 @@ export async function townLoop(
         {
           const recommendedDestinationId = getRecommendedTravelDestination(gameState);
           const travelResult = await dependencies.handleTravel(gameState, recommendedDestinationId);
+          if (travelResult.locationChanged) {
+            resetEncounterDirectorFatigue(gameState, 'travel');
+            recordAiMoment(gameState, {
+              type: 'travel',
+              label: `${getLocationDisplayName(gameState.player.currentLocation)} 진입`
+            });
+          }
           if (travelResult.locationChanged && !isTownLocation(gameState.player.currentLocation)) {
             return true;
           }
@@ -333,18 +367,38 @@ export async function dungeonLoop(
         gameState.position.locationId = gameState.player.currentLocation;
         gameState.position.stepsTaken += 1;
 
-        if (random() < 0.6) {
+        const decision = decideDungeonExploreOutcome(gameState, random);
+        trackTelemetryEvent(
+          'encounter_director_decision',
+          gameState,
+          buildEncounterDirectorTelemetryPayload(decision, 'terminal-runtime')
+        );
+        if (decision.mode !== 'steady') {
+          showMessage(decision.reason, decision.mode === 'pressure' ? 'warning' : 'info');
+        }
+
+        if (decision.outcome === 'combat') {
+          recordEncounterDirectorExploreOutcome(gameState, { outcome: 'combat' });
           const result = await dependencies.runEncounter(gameState);
 
           if (result === 'defeat') {
             const continueGame = await dependencies.handlePlayerDeath(gameState);
             if (!continueGame) return false;
             if (isTownLocation(gameState.player.currentLocation)) {
+              resetEncounterDirectorFatigue(gameState, 'town');
+            }
+            if (isTownLocation(gameState.player.currentLocation)) {
               return true;
             }
           }
         } else {
-          const eventResult = runDungeonEvent(gameState, random);
+          const eventResult = runDungeonEvent(gameState, random, {
+            preferredEventId: coerceEncounterDirectorEventId(decision.preferredEventId)
+          });
+          recordEncounterDirectorExploreOutcome(gameState, {
+            outcome: 'event',
+            eventId: eventResult.id
+          });
           for (const message of eventResult.messages) {
             showMessage(message.text, message.tone);
           }
@@ -368,6 +422,11 @@ export async function dungeonLoop(
             gameState.player.stats.mp + mpRestore,
             gameState.player.stats.maxMp
           );
+          resetEncounterDirectorFatigue(gameState, 'rest');
+          recordAiMoment(gameState, {
+            type: 'rest',
+            label: '현장 휴식 완료'
+          });
           showMessage(`HP ${hpRestore}, MP ${mpRestore} 회복!`, 'success');
         }
         await pressEnterToContinue('important');
@@ -377,6 +436,15 @@ export async function dungeonLoop(
         {
           const recommendedDestinationId = getRecommendedTravelDestination(gameState);
           const travelResult = await dependencies.handleTravel(gameState, recommendedDestinationId);
+          if (travelResult.locationChanged) {
+            recordAiMoment(gameState, {
+              type: 'travel',
+              label: `${getLocationDisplayName(gameState.player.currentLocation)} 진입`
+            });
+            if (isTownLocation(gameState.player.currentLocation)) {
+              resetEncounterDirectorFatigue(gameState, 'travel');
+            }
+          }
           if (travelResult.locationChanged && isTownLocation(gameState.player.currentLocation)) {
             return true;
           }

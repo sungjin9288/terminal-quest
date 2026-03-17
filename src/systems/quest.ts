@@ -17,6 +17,7 @@ import {
   buildSeasonalQuestBonus,
   isSeasonalQuestActive
 } from './seasonalEvents.js';
+import { refreshAiContracts } from './aiContractComposer.js';
 
 export interface QuestActionResult {
   success: boolean;
@@ -166,6 +167,7 @@ export function initializeQuestState(existingQuests: Record<string, Quest> = {})
  */
 export function ensureQuestState(gameState: GameState): void {
   gameState.quests = initializeQuestState(gameState.quests);
+  refreshAiContracts(gameState);
 
   const activeSet = new Set(gameState.player.activeQuests);
   const completedSet = new Set(gameState.player.completedQuests);
@@ -216,6 +218,7 @@ export function ensureQuestState(gameState: GameState): void {
  * Get quests that player can currently accept
  */
 export function getAvailableQuests(gameState: GameState): Quest[] {
+  refreshAiContracts(gameState);
   return Object.values(gameState.quests)
     .filter(quest =>
       quest.status === QuestStatus.NotStarted &&
@@ -257,6 +260,7 @@ export function getCompletableQuests(gameState: GameState): Quest[] {
  * Accept a quest from board
  */
 export function acceptQuest(gameState: GameState, questId: string): QuestActionResult {
+  refreshAiContracts(gameState);
   const quest = gameState.quests[questId];
   if (!quest) {
     return {
@@ -311,7 +315,8 @@ export function acceptQuest(gameState: GameState, questId: string): QuestActionR
   trackTelemetryEvent('quest_accepted', gameState, {
     questId: quest.id,
     requiredLevel: quest.requiredLevel,
-    isMainQuest: quest.isMainQuest
+    isMainQuest: quest.isMainQuest,
+    ...buildAiContractTelemetryPayload(quest)
   });
 
   return {
@@ -405,6 +410,22 @@ export function updateQuestProgressOnTalk(
   targetId: string
 ): QuestProgressUpdate[] {
   return updateQuestProgress(gameState, QuestObjectiveType.Talk, targetId, 1);
+}
+
+function buildAiContractTelemetryPayload(quest: Quest): Record<string, string | boolean> {
+  if (!quest.aiContract) {
+    return {
+      isAiContract: false
+    };
+  }
+
+  return {
+    isAiContract: true,
+    aiContractTemplateId: quest.aiContract.templateId,
+    aiContractDirective: quest.aiContract.directive,
+    aiContractSessionWindow: quest.aiContract.sessionWindow,
+    aiContractAdaptive: quest.aiContract.adaptive
+  };
 }
 
 /**
@@ -536,7 +557,8 @@ export function completeQuest(gameState: GameState, questId: string): QuestCompl
     rewardExp: totalExp,
     levelsGained: levelResult.levelsGained,
     repeatable: repeatableReset,
-    seasonalEventId: seasonalBonus?.eventId ?? 'none'
+    seasonalEventId: seasonalBonus?.eventId ?? 'none',
+    ...buildAiContractTelemetryPayload(quest)
   });
 
   return {

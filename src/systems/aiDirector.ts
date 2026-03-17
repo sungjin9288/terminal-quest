@@ -344,6 +344,17 @@ export function ensureAiState(gameState: GameState): AiState {
   }
 
   const raw = legacyGameState.aiState as unknown as Record<string, unknown>;
+  const hasNormalizedShape =
+    (raw.directorMode === 'off' || raw.directorMode === 'light' || raw.directorMode === 'full') &&
+    (raw.narrativeMode === 'off' || raw.narrativeMode === 'light' || raw.narrativeMode === 'full') &&
+    typeof raw.fatigueSnapshot === 'object' &&
+    raw.fatigueSnapshot !== null &&
+    typeof raw.memory === 'object' &&
+    raw.memory !== null;
+  if (hasNormalizedShape) {
+    return raw as unknown as AiState;
+  }
+
   const rawFatigue = typeof raw.fatigueSnapshot === 'object' && raw.fatigueSnapshot !== null
     ? raw.fatigueSnapshot as Record<string, unknown>
     : null;
@@ -388,7 +399,7 @@ export function ensureAiState(gameState: GameState): AiState {
 }
 
 export function syncAiState(gameState: GameState, now: number = Date.now()): AiState {
-  const aiState = ensureAiState(gameState);
+  let aiState = ensureAiState(gameState);
   ensureAchievementTrackingState(gameState);
 
   if (aiState.directorMode === 'off') {
@@ -396,7 +407,9 @@ export function syncAiState(gameState: GameState, now: number = Date.now()): AiS
     return aiState;
   }
 
-  const nextIntent = buildPrimaryIntent(buildAiContext(gameState), now);
+  const context = buildAiContext(gameState);
+  aiState = ensureAiState(gameState);
+  const nextIntent = buildPrimaryIntent(context, now);
   const previousIntent = aiState.currentIntent;
 
   if (

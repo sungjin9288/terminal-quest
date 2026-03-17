@@ -1,0 +1,17 @@
+[ai-linear] dry-run mode
+- report-json: /Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122/playtest-report.json
+- telemetry: /Users/sungjin/dev/personal/terminal-quest/telemetry/events.ndjson
+- notes: /Users/sungjin/dev/personal/terminal-quest/playtest-data/active/notes
+- drafts: 0
+
+--- preview ---
+
+# AI Ops Linear Drafts
+
+Generated at: 2026-03-16T08:11:22.821Z
+Telemetry file: /Users/sungjin/dev/personal/terminal-quest/telemetry/events.ndjson
+Playtest notes: 7
+Drafts: 0
+
+## Drafts
+- none

@@ -8,6 +8,12 @@ import {
   trackTelemetryEvent
 } from '../src/systems/telemetry';
 import {
+  acceptQuest,
+  completeQuest,
+  ensureQuestState,
+  updateQuestProgressOnTalk
+} from '../src/systems/quest';
+import {
   createFrontendSession,
   getFrontendSnapshot,
   performFrontendAction
@@ -131,6 +137,102 @@ describe('Telemetry', () => {
       record.eventType === 'ai_recommendation_dismissed' &&
       record.payload.intentId === 'new-quest:town' &&
       record.payload.source === 'ai-card'
+    )).toBe(true);
+  });
+
+  it('should record adaptive ai contract metadata on quest accept and completion', () => {
+    updateRuntimeSettings({ telemetryOptIn: true });
+    const state = createTestGameState({
+      playerOptions: {
+        level: 5,
+        currentLocation: 'bit-town',
+        unlockedLocations: ['bit-town', 'memory-forest', 'cache-cave']
+      }
+    });
+    state.statistics.totalPlayTime = 45 * 60;
+    state.player.inventory = Array.from({ length: 14 }, () => 'health-potion');
+
+    ensureQuestState(state);
+
+    const accepted = acceptQuest(state, 'ai-contract-frontier-supply');
+    expect(accepted.success).toBe(true);
+
+    const updates = updateQuestProgressOnTalk(state, 'merchant');
+    expect(updates.some(update => update.questId === 'ai-contract-frontier-supply')).toBe(true);
+
+    const completed = completeQuest(state, 'ai-contract-frontier-supply');
+    expect(completed.success).toBe(true);
+
+    const lines = fs.readFileSync(getTelemetryFilePath(), 'utf-8')
+      .trim()
+      .split('\n')
+      .map(line => JSON.parse(line) as {
+        eventType: string;
+        payload: Record<string, unknown>;
+      });
+
+    expect(lines.some(record =>
+      record.eventType === 'quest_accepted' &&
+      record.payload.questId === 'ai-contract-frontier-supply' &&
+      record.payload.isAiContract === true &&
+      record.payload.aiContractTemplateId === 'frontier-supply' &&
+      record.payload.aiContractDirective === 'supply' &&
+      record.payload.aiContractSessionWindow === 'extended' &&
+      record.payload.aiContractAdaptive === true
+    )).toBe(true);
+    expect(lines.some(record =>
+      record.eventType === 'quest_completed' &&
+      record.payload.questId === 'ai-contract-frontier-supply' &&
+      record.payload.isAiContract === true &&
+      record.payload.aiContractTemplateId === 'frontier-supply' &&
+      record.payload.aiContractDirective === 'supply' &&
+      record.payload.aiContractSessionWindow === 'extended' &&
+      record.payload.aiContractAdaptive === true
+    )).toBe(true);
+  });
+
+  it('should record encounter director decisions through frontend dungeon explore', () => {
+    updateRuntimeSettings({ telemetryOptIn: true });
+    const session = createFrontendSession({
+      random: () => 0.95
+    });
+
+    performFrontendAction(session, {
+      type: 'new-game',
+      name: 'TelemetryScout',
+      characterClass: CharacterClass.Cleric,
+      gameMode: GameMode.Adventure
+    });
+    performFrontendAction(session, {
+      type: 'travel',
+      destinationId: 'memory-forest'
+    });
+
+    if (!session.gameState) {
+      throw new Error('game state missing');
+    }
+
+    session.gameState.player.stats.hp = Math.floor(session.gameState.player.stats.maxHp * 0.35);
+    session.gameState.player.stats.mp = Math.floor(session.gameState.player.stats.maxMp * 0.25);
+
+    performFrontendAction(session, {
+      type: 'dungeon-explore'
+    });
+
+    const lines = fs.readFileSync(getTelemetryFilePath(), 'utf-8')
+      .trim()
+      .split('\n')
+      .map(line => JSON.parse(line) as {
+        eventType: string;
+        payload: Record<string, unknown>;
+      });
+
+    expect(lines.some(record =>
+      record.eventType === 'encounter_director_decision' &&
+      record.payload.mode === 'recovery' &&
+      record.payload.outcome === 'event' &&
+      record.payload.preferredEventId === 'maintenance-niche' &&
+      record.payload.source === 'frontend-runtime'
     )).toBe(true);
   });
 });

@@ -59,4 +59,43 @@ describe('AI Narrator', () => {
     expect(line?.text).toContain('비트 타운 후퇴');
     expect(line?.text).toContain('분기점');
   });
+
+  it('should vary companion copy when the same moment type repeats', () => {
+    const baselineState = createTestGameState({
+      playerOptions: {
+        level: 3,
+        currentLocation: 'bit-town'
+      }
+    });
+    const baseline = buildAiNarrativeVoiceLine(baselineState, {
+      type: 'travel',
+      label: '메모리 숲 진입'
+    }, 1700000000000);
+
+    const repeatedState = createTestGameState({
+      playerOptions: {
+        level: 3,
+        currentLocation: 'bit-town'
+      }
+    });
+    recordAiMoment(repeatedState, {
+      type: 'travel',
+      label: '비트 타운 복귀',
+      timestamp: 1699999999000
+    });
+    recordAiMoment(repeatedState, {
+      type: 'travel',
+      label: '메모리 숲 진입',
+      timestamp: 1700000000000
+    });
+
+    const repeated = buildAiNarrativeVoiceLine(repeatedState, {
+      type: 'travel',
+      label: '메모리 숲 진입'
+    }, 1700000001000);
+
+    expect(baseline?.speaker).toBe('동행 기록관');
+    expect(repeated?.speaker).toBe('동행 기록관');
+    expect(repeated?.text).not.toBe(baseline?.text);
+  });
 });

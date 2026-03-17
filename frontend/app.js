@@ -60,6 +60,19 @@ const SESSION_WINDOW_OPTIONS = [
   { id: 'standard', label: '40분', summary: '표준 플레이', minutes: 40 },
   { id: 'long', label: '60분+', summary: '길게 몰입', minutes: 999 }
 ];
+const OPS_EXPORT_FILTER_OPTIONS = [
+  { id: 'all', label: '전체', predicate: () => true },
+  { id: 'pending', label: '미수출/갱신 필요', predicate: draft => draft.lifecycleStatus === 'draft' || draft.lifecycleStatus === 'sync-needed' },
+  { id: 'synced', label: '동기화 완료', predicate: draft => draft.lifecycleStatus === 'live' || draft.lifecycleStatus === 'closed' || draft.lifecycleStatus === 'shipped' },
+  { id: 'stale', label: '동기화 오래됨', predicate: draft => draft.staleSync }
+];
+const OPS_IMPACT_FILTER_OPTIONS = [
+  { id: 'all', label: '전체 추세', predicate: () => true },
+  { id: 'regressed', label: '악화', predicate: draft => draft.impactTrend === 'regressed' },
+  { id: 'improved', label: '개선', predicate: draft => draft.impactTrend === 'improved' },
+  { id: 'flat', label: '유지', predicate: draft => draft.impactTrend === 'flat' },
+  { id: 'unknown', label: '미측정', predicate: draft => draft.impactTrend === 'unknown' }
+];
 
 const appRoot = document.querySelector('#app');
 const statusLine = document.querySelector('#status-line');
@@ -88,6 +101,8 @@ const uiState = {
   feedFilterId: FEED_FILTER_ALL,
   achievementCategoryId: ACHIEVEMENT_CATEGORY_ALL,
   achievementSortId: ACHIEVEMENT_SORT_OPTIONS[0].id,
+  opsExportFilterId: OPS_EXPORT_FILTER_OPTIONS[0].id,
+  opsImpactFilterId: OPS_IMPACT_FILTER_OPTIONS[0].id,
   paceMode: 'steady',
   sessionWindowId: 'short'
 };
@@ -293,6 +308,216 @@ function getAiRecommendedActionBadge(intent) {
   return action ? `권고 ${labelMap[action] ?? action}` : '권고 경로';
 }
 
+function formatOpsPercent(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? `${Math.round(value * 100)}%`
+    : 'n/a';
+}
+
+function getOpsExportBadgeTone(status) {
+  if (status === 'live' || status === 'shipped') {
+    return 'success';
+  }
+  if (status === 'sync-needed') {
+    return 'warning';
+  }
+  if (status === 'closed') {
+    return 'default';
+  }
+  return 'recommended';
+}
+
+function getOpsExportLabel(draft) {
+  if (!draft) {
+    return 'draft';
+  }
+
+  if (draft.lifecycleStatus === 'sync-needed') {
+    return 'sync needed';
+  }
+  if (draft.lifecycleStatus === 'live') {
+    return 'live';
+  }
+
+  return draft.lifecycleStatus;
+}
+
+function getOpsImpactBadgeTone(trend) {
+  if (trend === 'improved') {
+    return 'success';
+  }
+  if (trend === 'regressed') {
+    return 'warning';
+  }
+  if (trend === 'flat') {
+    return 'recommended';
+  }
+  return 'default';
+}
+
+function renderOpsCommandAction(command, reason, label = '명령 보기', buttonClass = 'ghost-button') {
+  if (!command) {
+    return '';
+  }
+
+  return `
+    <div class="slot-actions">
+      <button
+        class="${buttonClass}"
+        type="button"
+        data-client-action="show-ops-command"
+        data-command="${escapeHtml(command)}"
+        data-command-reason="${escapeHtml(reason ?? '')}"
+      >
+        ${escapeHtml(label)}
+      </button>
+    </div>
+  `;
+}
+
+function formatOpsCycleFailureSummary(latestCycle) {
+  if (!latestCycle || !Array.isArray(latestCycle.failedSteps) || latestCycle.failedSteps.length === 0) {
+    return null;
+  }
+
+  const [firstFailedStep] = latestCycle.failedSteps;
+  const extraCount = Math.max(latestCycle.failedSteps.length - 1, 0);
+  return `${firstFailedStep.label} · status ${firstFailedStep.status}${extraCount > 0 ? ` 외 ${extraCount}건` : ''}`;
+}
+
+function formatOpsCycleFreshness(latestCycle) {
+  if (!latestCycle) {
+    return 'n/a';
+  }
+
+  const ageLabel = typeof latestCycle.ageHours === 'number' ? `${latestCycle.ageHours}h` : 'age unknown';
+  return `${latestCycle.stale ? 'stale' : 'fresh'} · ${ageLabel}`;
+}
+
+function getOpsDraftFilterState(ops) {
+  const drafts = Array.isArray(ops?.linearDrafts) ? ops.linearDrafts : [];
+  const activeExportFilter = OPS_EXPORT_FILTER_OPTIONS.find(option => option.id === uiState.opsExportFilterId) ?? OPS_EXPORT_FILTER_OPTIONS[0];
+  const activeImpactFilter = OPS_IMPACT_FILTER_OPTIONS.find(option => option.id === uiState.opsImpactFilterId) ?? OPS_IMPACT_FILTER_OPTIONS[0];
+  uiState.opsExportFilterId = activeExportFilter.id;
+  uiState.opsImpactFilterId = activeImpactFilter.id;
+
+  const filteredDrafts = drafts.filter(draft =>
+    activeExportFilter.predicate(draft) &&
+    activeImpactFilter.predicate(draft)
+  );
+
+  return {
+    drafts,
+    filteredDrafts,
+    activeExportFilter,
+    activeImpactFilter
+  };
+}
+
+function renderLandingOpsPulse(snapshot) {
+  const ops = snapshot?.ops ?? null;
+  if (!ops) {
+    return '';
+  }
+  const opsDoctor = ops.doctor ?? null;
+  const opsStatus = ops.status ?? null;
+  const nextCommandAction = renderOpsCommandAction(
+    ops.nextCommand?.command ?? '',
+    ops.nextCommand?.reason ?? '',
+    '명령 보기'
+  );
+  const doctorAction = renderOpsCommandAction(
+    opsDoctor?.recommendedCommand ?? '',
+    Array.isArray(opsDoctor?.reasons) ? opsDoctor.reasons[0] ?? '' : '',
+    'Doctor command'
+  );
+
+  const backlogBadge = ops.backlogCounts.P0 > 0
+    ? renderBadge(`P0 ${formatNumber(ops.backlogCounts.P0)}`, 'warning')
+    : ops.backlogCounts.P1 > 0
+      ? renderBadge(`P1 ${formatNumber(ops.backlogCounts.P1)}`, 'recommended')
+      : renderBadge('안정', 'success');
+  const topFinding = ops.topFinding ?? '아직 긴급한 AI friction 신호가 없습니다.';
+  const topAction = ops.topBacklog
+    ? `${ops.topBacklog.priority} · ${ops.topBacklog.title}`
+    : '지금은 추가 backlog draft가 없습니다.';
+  const linearDraftCount = Array.isArray(ops.linearDrafts) ? ops.linearDrafts.length : 0;
+  const pendingLinearCount = Array.isArray(ops.linearDrafts)
+    ? ops.linearDrafts.filter(draft => draft.lifecycleStatus === 'draft' || draft.lifecycleStatus === 'sync-needed').length
+    : 0;
+  const shippedLinearCount = Array.isArray(ops.linearDrafts)
+    ? ops.linearDrafts.filter(draft => draft.lifecycleStatus === 'shipped').length
+    : 0;
+  const staleLinearCount = Array.isArray(ops.linearDrafts)
+    ? ops.linearDrafts.filter(draft => draft.staleSync).length
+    : 0;
+  const latestCycle = ops.latestCycle ?? null;
+  const topObservation = ops.topObservation
+    ? `[${ops.topObservation.severity}] ${ops.topObservation.text}`
+    : '관찰 note 우선순위가 아직 없습니다.';
+  const latestCycleStatus = latestCycle
+    ? `${latestCycle.overallPass ? 'PASS' : 'FAIL'} · ${latestCycle.stepsPassed}/${latestCycle.stepsTotal} · ${formatDate(latestCycle.generatedAtIso)}`
+    : '아직 persisted cycle이 없습니다.';
+  const latestCycleCommand = latestCycle?.nextCommand ?? '최근 cycle snapshot command가 없습니다.';
+  const latestCycleFreshness = formatOpsCycleFreshness(latestCycle);
+  const latestCycleFailureSummary = formatOpsCycleFailureSummary(latestCycle);
+  const latestCycleFollowUp = ops.latestCycleFollowUp ?? null;
+  const latestCycleFollowUpAction = renderOpsCommandAction(
+    latestCycleFollowUp?.command ?? '',
+    latestCycleFollowUp?.reason ?? '',
+    'Cycle follow-up'
+  );
+
+  return `
+    <article class="info-card ops-pulse-card">
+      <div class="badge-row">
+        ${renderBadge('AI Ops Pulse', 'recommended')}
+        ${backlogBadge}
+        ${opsDoctor ? renderBadge(`Doctor ${opsDoctor.status.toUpperCase()}`, opsDoctor.status === 'fail' ? 'warning' : opsDoctor.status === 'warn' ? 'warning' : 'success') : ''}
+        ${opsStatus ? renderBadge(opsStatus.label, opsStatus.tone) : ''}
+      </div>
+      ${nextCommandAction}
+      ${doctorAction}
+      <strong class="quest-title">플레이테스트 운영 프리뷰</strong>
+      <p class="detail-copy">${escapeHtml(topFinding)}</p>
+      <p class="detail-copy"><strong>Doctor Verdict:</strong> ${escapeHtml(opsDoctor ? `${opsDoctor.status.toUpperCase()} · ${Array.isArray(opsDoctor.reasons) ? opsDoctor.reasons[0] ?? 'reason 없음' : 'reason 없음'}` : '판정 정보가 없습니다.')}</p>
+      <p class="detail-copy">${escapeHtml(opsDoctor?.recommendedCommand ? `doctor command · ${opsDoctor.recommendedCommand}` : 'doctor command가 필요하지 않습니다.')}</p>
+      <p class="detail-copy"><strong>Ops Status:</strong> ${escapeHtml(opsStatus ? `${opsStatus.label} · ${opsStatus.summary}` : '상태를 계산하지 못했습니다.')}</p>
+      <p class="detail-copy"><strong>Next Draft:</strong> ${escapeHtml(topAction)}</p>
+      <p class="detail-copy"><strong>Observation:</strong> ${escapeHtml(topObservation)}</p>
+      <p class="detail-copy"><strong>Next Command:</strong> ${escapeHtml(ops.nextCommand ? `${ops.nextCommand.label} · ${ops.nextCommand.command}` : '지금은 추가 명령이 필요하지 않습니다.')}</p>
+      <p class="detail-copy">${escapeHtml(ops.nextCommand?.reason ?? '추가 telemetry가 쌓이면 다음 운영 명령을 제안합니다.')}</p>
+      <p class="detail-copy"><strong>Last Cycle:</strong> ${escapeHtml(latestCycleStatus)}</p>
+      <p class="detail-copy"><strong>Cycle Freshness:</strong> ${escapeHtml(latestCycleFreshness)}</p>
+      <p class="detail-copy">${escapeHtml(latestCycleCommand)}</p>
+      ${latestCycleFailureSummary
+        ? `<p class="detail-copy"><strong>Failed Step:</strong> ${escapeHtml(latestCycleFailureSummary)}</p>`
+        : ''}
+      ${latestCycleFollowUp
+        ? `
+          <p class="detail-copy"><strong>Cycle Follow-up:</strong> ${escapeHtml(`${latestCycleFollowUp.label} · ${latestCycleFollowUp.command}`)}</p>
+          <p class="detail-copy">${escapeHtml(latestCycleFollowUp.reason)}</p>
+          ${latestCycleFollowUpAction}
+        `
+        : ''}
+      <div class="badge-row">
+        ${renderBadge(`Telemetry ${formatNumber(ops.telemetryEvents)}`)}
+        ${renderBadge(`Notes ${formatNumber(ops.playtestNotes)}`)}
+        ${renderBadge(`Linear ${formatNumber(linearDraftCount)}`)}
+        ${renderBadge(`Pending ${formatNumber(pendingLinearCount)}`)}
+        ${renderBadge(`Shipped ${formatNumber(shippedLinearCount)}`)}
+        ${renderBadge(`Stale ${formatNumber(staleLinearCount)}`, staleLinearCount > 0 ? 'warning' : 'default')}
+        ${latestCycle ? renderBadge(`Cycle ${latestCycle.overallPass ? 'PASS' : 'FAIL'}`, latestCycle.overallPass ? 'success' : 'warning') : ''}
+        ${latestCycle?.stale ? renderBadge('Cycle stale', 'warning') : latestCycle ? renderBadge('Cycle fresh', 'success') : ''}
+        ${latestCycleFollowUp ? renderBadge(latestCycleFollowUp.label, latestCycleFollowUp.tone) : ''}
+        ${opsDoctor ? renderBadge(`Doctor ${opsDoctor.status.toUpperCase()}`, opsDoctor.status === 'fail' ? 'warning' : opsDoctor.status === 'warn' ? 'warning' : 'success') : ''}
+        ${renderBadge(`Dismiss ${formatOpsPercent(ops.recommendationDismissRate)}`)}
+        ${renderBadge(`Encounter ${formatNumber(ops.encounterDecisionCount)}`)}
+      </div>
+    </article>
+  `;
+}
+
 function getAiIntentActionLabel(snapshot, intent, target) {
   if (!intent || !target) {
     return '추천 경로 열기';
@@ -324,6 +549,149 @@ function getAiIntentActionLabel(snapshot, intent, target) {
   }
 
   return '추천 경로 열기';
+}
+
+function getEncounterDirectorToneClass(encounterDirector) {
+  if (!encounterDirector) {
+    return 'recommended';
+  }
+
+  if (encounterDirector.mode === 'pressure') {
+    return 'warning';
+  }
+
+  return encounterDirector.mode === 'recovery'
+    ? 'success'
+    : 'recommended';
+}
+
+function getEncounterDirectorModeLabel(encounterDirector) {
+  if (!encounterDirector) {
+    return '기본 리듬';
+  }
+
+  const labelMap = {
+    steady: '기본 리듬',
+    recovery: '회복 창구',
+    variety: '리듬 전환',
+    pressure: '압박 상승'
+  };
+
+  return labelMap[encounterDirector.mode] ?? encounterDirector.mode;
+}
+
+function getEncounterDirectorTitle(encounterDirector) {
+  if (!encounterDirector) {
+    return '탐험 리듬 안정';
+  }
+
+  const titleMap = {
+    steady: '기본 탐험 리듬',
+    recovery: '회복 창구 유도',
+    variety: '패턴 전환 구간',
+    pressure: '전투 압박 구간'
+  };
+
+  return titleMap[encounterDirector.mode] ?? '탐험 리듬';
+}
+
+function getEncounterDirectorEventLabel(encounterDirector) {
+  if (!encounterDirector?.preferredEventId) {
+    return null;
+  }
+
+  const labelMap = {
+    'supply-cache': '보급 은닉처',
+    'maintenance-niche': '유지보수 포켓',
+    'memory-echo': '기억 잔향',
+    'route-scan': '우회 동선'
+  };
+
+  return labelMap[encounterDirector.preferredEventId] ?? encounterDirector.preferredEventId;
+}
+
+function getEncounterDirectorChallengeLabel(encounterDirector) {
+  const challengeContext = encounterDirector?.challengeContext ?? null;
+  if (!challengeContext) {
+    return null;
+  }
+
+  return `심연 T${challengeContext.tier}`;
+}
+
+function getEncounterDirectorLines(encounterDirector) {
+  if (!encounterDirector) {
+    return [];
+  }
+
+  const fatigue = encounterDirector.fatigueSnapshot ?? {
+    repeatActionCount: 0,
+    consecutiveCombats: 0,
+    consecutiveNonProgressLoops: 0
+  };
+  const lines = [`전투 확률 ${Math.round((encounterDirector.encounterChance ?? 0) * 100)}%`];
+  const preferredEventLabel = getEncounterDirectorEventLabel(encounterDirector);
+  const challengeContext = encounterDirector.challengeContext ?? null;
+
+  if (preferredEventLabel) {
+    lines.push(`우선 이벤트: ${preferredEventLabel}`);
+  }
+
+  if (challengeContext) {
+    lines.push(`연승 ${challengeContext.streak} · ${challengeContext.modifierName ?? '모디파이어 없음'}`);
+  }
+
+  if (
+    fatigue.consecutiveCombats > 0 ||
+    fatigue.repeatActionCount > 0 ||
+    fatigue.consecutiveNonProgressLoops > 0
+  ) {
+    lines.push(
+      `전투 연속 ${fatigue.consecutiveCombats} · 반복 ${fatigue.repeatActionCount} · 정체 ${fatigue.consecutiveNonProgressLoops}`
+    );
+  } else {
+    lines.push('누적 피로 신호 없음');
+  }
+
+  return lines;
+}
+
+function renderEncounterDirectorCard(snapshot, variant = 'panel') {
+  const encounterDirector = snapshot?.ai?.encounterDirector ?? null;
+  if (!encounterDirector || snapshot?.scene === 'combat' || snapshot?.location?.isTown) {
+    return '';
+  }
+
+  const lines = getEncounterDirectorLines(encounterDirector);
+  const badgeTone = getEncounterDirectorToneClass(encounterDirector);
+  const preferredEventLabel = getEncounterDirectorEventLabel(encounterDirector);
+  const challengeLabel = getEncounterDirectorChallengeLabel(encounterDirector);
+  const modifierName = encounterDirector.challengeContext?.modifierName ?? null;
+  const className = variant === 'hud'
+    ? 'ai-encounter-card hud-focus-card'
+    : 'ai-encounter-card';
+
+  return `
+    <article class="${className}" data-mode="${escapeHtml(encounterDirector.mode)}">
+      <div class="ai-encounter-head">
+        <div class="ai-encounter-copy">
+          <p class="eyebrow">Encounter Director</p>
+          <strong class="ai-encounter-title">${escapeHtml(getEncounterDirectorTitle(encounterDirector))}</strong>
+          <p class="ai-encounter-reason">${escapeHtml(encounterDirector.reason)}</p>
+        </div>
+        <div class="badge-row">
+          ${challengeLabel ? renderBadge(challengeLabel, 'warning') : ''}
+          ${renderBadge(getEncounterDirectorModeLabel(encounterDirector), badgeTone)}
+          ${modifierName ? renderBadge(modifierName) : ''}
+          ${renderBadge(`전투 ${Math.round((encounterDirector.encounterChance ?? 0) * 100)}%`)}
+          ${preferredEventLabel ? renderBadge(preferredEventLabel, 'recommended') : ''}
+        </div>
+      </div>
+      <div class="ai-encounter-lines">
+        ${lines.map(line => `<p class="ai-encounter-line">${escapeHtml(line)}</p>`).join('')}
+      </div>
+    </article>
+  `;
 }
 
 function getAiIntentTarget(snapshot, intent) {
@@ -385,6 +753,7 @@ const WORKSPACE_META = {
   market: { label: 'Market', hint: '상점 재고를 비교하고 바로 구매합니다.' },
   inventory: { label: 'Pack', hint: '보유 장비와 소모품을 빠르게 훑습니다.' },
   achievements: { label: 'Achievements', hint: '해금 기록과 남은 업적 진행률을 확인합니다.' },
+  ops: { label: 'Ops', hint: 'playtest telemetry와 backlog draft를 바로 점검합니다.' },
   save: { label: 'Save', hint: '세이브 상태를 확인하고 즉시 저장/불러오기 합니다.' },
   feed: { label: 'Log', hint: '최근 진행 로그를 집중해서 확인합니다.' }
 };
@@ -401,6 +770,7 @@ function getAvailableWorkspaces(snapshot) {
     'market',
     'inventory',
     'achievements',
+    ...(snapshot.ops ? ['ops'] : []),
     'save',
     'feed'
   ];
@@ -3988,6 +4358,7 @@ function renderLanding(snapshot) {
             ${achievementRecordDetail ? `<p class="detail-copy">${escapeHtml(achievementRecordDetail)}</p>` : ''}
             ${achievementRecordAction}
           </article>
+          ${renderLandingOpsPulse(snapshot)}
         </div>
       </section>
 
@@ -4207,6 +4578,7 @@ function renderActionRail(snapshot) {
   const aiIntent = getVisibleAiIntent(snapshot);
   const aiIntentTarget = getAiIntentTarget(snapshot, aiIntent);
   const aiNarrativeCue = snapshot.ai?.narrativeCue ?? null;
+  const encounterDirectorCard = renderEncounterDirectorCard(snapshot);
   const primaryAction = getPrimaryActionDescriptor(snapshot);
   const sessionWindow = getSessionWindowMeta();
   const primarySessionFit = primaryAction ? getSessionFitMeta(snapshot, primaryAction) : null;
@@ -4324,6 +4696,7 @@ function renderActionRail(snapshot) {
       ${isCombat ? '' : renderPaceModeRail()}
       ${isCombat ? '' : renderSessionWindowRail()}
       ${isCombat ? '' : aiDirectorCard}
+      ${isCombat ? '' : encounterDirectorCard}
       ${isCombat ? '' : aiCompanionCard}
       ${uiState.resumeRoute ? renderResumeRoute(snapshot) : ''}
       ${sessionPlan ? renderSessionPlan(sessionPlan, resumeContextLabel) : ''}
@@ -4681,11 +5054,21 @@ function renderQuestCard(quest, options = {}) {
   const rewardExp = quest.rewards?.exp ?? 0;
   const rewardGold = quest.rewards?.gold ?? 0;
   const objectives = Array.isArray(quest.objectives) ? quest.objectives : [];
+  const aiContract = quest.aiContract ?? null;
+  const aiDirectiveBadgeClass = aiContract?.directive === 'recovery'
+    ? 'warning'
+    : aiContract?.directive === 'supply'
+      ? 'success'
+      : 'recommended';
   return `
     <article class="quest-card ${highlight ? 'completable' : ''} ${resumeTarget ? 'resume-target-card' : ''} ${resumePreview ? 'preview-target-card' : ''}">
       <div class="badge-row">
         ${resumePreview ? renderResumePreviewBadge() : resumeTarget ? renderResumeTargetBadge() : ''}
         ${achievementTarget ? renderBadge('업적 목표 카드', 'recommended') : ''}
+        ${aiContract ? renderBadge('AI 계약', 'recommended') : ''}
+        ${aiContract?.directiveLabel ? renderBadge(aiContract.directiveLabel, aiDirectiveBadgeClass) : ''}
+        ${aiContract?.sessionWindowLabel ? renderBadge(aiContract.sessionWindowLabel) : ''}
+        ${aiContract?.adaptive ? renderBadge('적응형 슬롯', 'success') : ''}
         ${renderBadge(`${categoryIcon} ${categoryLabel}`, 'recommended')}
         ${renderBadge(estimatedTimeLabel)}
         ${renderBadge(sessionLabel)}
@@ -4694,6 +5077,14 @@ function renderQuestCard(quest, options = {}) {
       ${resumePreview ? renderResumePreviewCallout(uiState.snapshot, 'quests') : resumeTarget ? renderResumeTargetCallout(uiState.snapshot, 'quests') : ''}
       ${achievementTarget
         ? `<p class="detail-copy achievement-target-note">현재 추적 업적 ${escapeHtml(achievementTarget.label)} 목표 카드입니다. ${escapeHtml(achievementTarget.focus.hint)}</p>`
+        : ''}
+      ${aiContract
+        ? `
+          <p class="detail-copy quest-ai-note">
+            <span class="hook-label">AI Director · ${escapeHtml(aiContract.directiveLabel)}</span>
+            ${escapeHtml(aiContract.rationale)}${aiContract.targetLabel ? ` 목표 전선 · ${escapeHtml(aiContract.targetLabel)}` : ''}
+          </p>
+        `
         : ''}
       <strong class="quest-title">${escapeHtml(quest.name ?? '이름 없는 의뢰')}</strong>
       <p class="quest-hook">
@@ -5820,6 +6211,272 @@ function renderAchievements(snapshot) {
   `;
 }
 
+function renderOpsWorkspace(snapshot) {
+  const ops = snapshot?.ops ?? null;
+  if (!ops) {
+    return renderEmptyCopy('playtest 운영 데이터가 아직 없습니다.');
+  }
+  const opsDoctor = ops.doctor ?? null;
+  const opsStatus = ops.status ?? null;
+  const { drafts: linearDrafts, filteredDrafts, activeExportFilter, activeImpactFilter } = getOpsDraftFilterState(ops);
+  const latestCycle = ops.latestCycle ?? null;
+  const latestCycleFreshness = formatOpsCycleFreshness(latestCycle);
+  const latestCycleFailureSummary = formatOpsCycleFailureSummary(latestCycle);
+  const latestCycleFollowUp = ops.latestCycleFollowUp ?? null;
+
+  return `
+    <section class="panel deck-panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Ops Analyst</p>
+          <h2 class="panel-title">AI Ops Dashboard</h2>
+          <p class="panel-subtitle">playtest telemetry와 observation note를 한 화면에서 바로 backlog 초안으로 연결합니다.</p>
+        </div>
+      </div>
+      <div class="deck-layout">
+        ${renderDeckSummaryCard(
+          '운영 우선순위',
+          ops.topFinding ?? '아직 긴급한 AI friction 신호가 없습니다.',
+          [
+            {
+              label: 'Telemetry',
+              value: formatNumber(ops.telemetryEvents)
+            },
+            {
+              label: 'Notes',
+              value: formatNumber(ops.playtestNotes)
+            },
+            {
+              label: 'Dismiss',
+              value: formatOpsPercent(ops.recommendationDismissRate)
+            },
+            {
+              label: 'Encounter',
+              value: formatNumber(ops.encounterDecisionCount)
+            },
+            {
+              label: 'Status',
+              value: opsStatus?.label ?? '없음'
+            },
+            {
+              label: 'Doctor',
+              value: opsDoctor?.status?.toUpperCase() ?? '없음'
+            },
+            {
+              label: 'Backlog',
+              value: `P0 ${formatNumber(ops.backlogCounts.P0)} · P1 ${formatNumber(ops.backlogCounts.P1)} · P2 ${formatNumber(ops.backlogCounts.P2)}`
+            },
+            {
+              label: 'Top Draft',
+              value: ops.topBacklog ? `${ops.topBacklog.priority} · ${ops.topBacklog.title}` : '없음'
+            },
+            {
+              label: 'Visible',
+              value: `${formatNumber(filteredDrafts.length)} / ${formatNumber(linearDrafts.length)}`
+            },
+            {
+              label: 'Last Cycle',
+              value: latestCycle ? `${latestCycle.overallPass ? 'PASS' : 'FAIL'} · ${formatDate(latestCycle.generatedAtIso)}` : '없음'
+            },
+            {
+              label: 'Cycle Steps',
+              value: latestCycle ? `${formatNumber(latestCycle.stepsPassed)} / ${formatNumber(latestCycle.stepsTotal)}` : '없음'
+            },
+            {
+              label: 'Cycle Freshness',
+              value: latestCycleFreshness
+            },
+            {
+              label: 'Failed Step',
+              value: latestCycleFailureSummary ?? '없음'
+            }
+          ]
+        )}
+        <div class="deck-main">
+          <div class="deck-filter-stack">
+            <div class="deck-filter-group">
+              <span class="filter-label">Export</span>
+              ${renderChipButtons(
+                OPS_EXPORT_FILTER_OPTIONS.map(option => ({
+                  id: option.id,
+                  label: option.label
+                })),
+                activeExportFilter.id,
+                {
+                  actionName: 'select-ops-export-filter',
+                  ariaLabel: 'Ops export filter'
+                }
+              )}
+            </div>
+            <div class="deck-filter-group">
+              <span class="filter-label">Impact</span>
+              ${renderChipButtons(
+                OPS_IMPACT_FILTER_OPTIONS.map(option => ({
+                  id: option.id,
+                  label: option.label
+                })),
+                activeImpactFilter.id,
+                {
+                  actionName: 'select-ops-impact-filter',
+                  ariaLabel: 'Ops impact filter'
+                }
+              )}
+            </div>
+          </div>
+          <div class="feature-grid">
+            <article class="info-card">
+              <p class="eyebrow">Ops Doctor</p>
+              <strong class="quest-title">${escapeHtml(opsDoctor ? opsDoctor.status.toUpperCase() : '판정 없음')}</strong>
+              <p class="detail-copy">${escapeHtml(Array.isArray(opsDoctor?.reasons) ? opsDoctor.reasons[0] ?? '아직 doctor reason이 없습니다.' : '아직 doctor reason이 없습니다.')}</p>
+              <p class="detail-copy">${escapeHtml(`freshness · ${opsDoctor?.freshnessLabel ?? 'age unknown'}`)}</p>
+              <p class="detail-copy">${escapeHtml(`summary present · ${opsDoctor?.summaryPresent ? 'yes' : 'no'}`)}</p>
+              <p class="detail-copy">${escapeHtml(opsDoctor?.recommendedCommand ?? '권장 명령이 없습니다.')}</p>
+              ${renderOpsCommandAction(
+                opsDoctor?.recommendedCommand ?? '',
+                Array.isArray(opsDoctor?.reasons) ? opsDoctor.reasons[0] ?? '' : '',
+                'Doctor command'
+              )}
+            </article>
+            <article class="info-card">
+              <p class="eyebrow">Ops Status</p>
+              <strong class="quest-title">${escapeHtml(opsStatus?.label ?? '상태 없음')}</strong>
+              <p class="detail-copy">${escapeHtml(opsStatus?.summary ?? '아직 공용 ops status를 계산하지 못했습니다.')}</p>
+              <p class="detail-copy">${escapeHtml(`action required · ${opsStatus?.actionRequired ? 'yes' : 'no'}`)}</p>
+            </article>
+            <article class="info-card">
+              <p class="eyebrow">Top Finding</p>
+              <strong class="quest-title">${escapeHtml(ops.topFinding ?? '없음')}</strong>
+              <p class="detail-copy">${escapeHtml(ops.topObservation ? `[${ops.topObservation.severity}] ${ops.topObservation.text}` : '관찰 note 우선순위가 아직 없습니다.')}</p>
+            </article>
+            <article class="info-card">
+              <p class="eyebrow">Backlog Lead</p>
+              <strong class="quest-title">${escapeHtml(ops.topBacklog ? `${ops.topBacklog.priority} · ${ops.topBacklog.title}` : '현재 draft 없음')}</strong>
+              <p class="detail-copy">${escapeHtml(ops.topBacklog ? `${ops.topBacklog.theme} theme` : '추가 telemetry와 note가 쌓이면 자동으로 초안이 생성됩니다.')}</p>
+            </article>
+            <article class="info-card">
+              <p class="eyebrow">Linear Drafts</p>
+              <strong class="quest-title">${escapeHtml(linearDrafts[0]?.title ?? '현재 issue draft 없음')}</strong>
+              <p class="detail-copy">${escapeHtml(linearDrafts[0]?.summary ?? 'backlog priority가 쌓이면 Linear용 issue 초안이 자동 생성됩니다.')}</p>
+              <p class="detail-copy">${escapeHtml(linearDrafts[0] ? `${getOpsExportLabel(linearDrafts[0])}${linearDrafts[0].issueIdentifier ? ` · ${linearDrafts[0].issueIdentifier}` : ''}` : 'export 상태가 아직 없습니다.')}</p>
+              <p class="detail-copy">${escapeHtml(linearDrafts[0]?.staleSync ? '원격 issue 상태 동기화가 오래됐습니다.' : '원격 issue 동기화 상태가 최신입니다.')}</p>
+              <p class="detail-copy">${escapeHtml(linearDrafts[0]?.impactSummary ?? '효과 baseline이 아직 없습니다.')}</p>
+            </article>
+            <article class="info-card">
+              <p class="eyebrow">Latest Cycle</p>
+              <strong class="quest-title">${escapeHtml(latestCycle ? `${latestCycle.overallPass ? 'PASS' : 'FAIL'} · ${latestCycle.mode}` : 'persisted cycle 없음')}</strong>
+              <p class="detail-copy">${escapeHtml(latestCycle ? `${formatDate(latestCycle.generatedAtIso)} · ${latestCycle.stepsPassed}/${latestCycle.stepsTotal} step 통과` : '아직 저장된 cycle summary가 없습니다. `npm run ai:ops:cycle`을 먼저 실행하세요.')}</p>
+              <p class="detail-copy">${escapeHtml(`freshness · ${latestCycleFreshness}`)}</p>
+              <p class="detail-copy">${escapeHtml(latestCycle?.nextCommand ?? 'snapshot command가 아직 없습니다.')}</p>
+              <p class="detail-copy">${escapeHtml(latestCycleFailureSummary ? `failed step · ${latestCycleFailureSummary}` : '실패 단계가 없습니다.')}</p>
+              <p class="detail-copy">${escapeHtml(latestCycle?.reportJsonPath ?? 'cycle report path가 아직 없습니다.')}</p>
+              ${latestCycleFollowUp
+                ? `
+                  <p class="detail-copy"><strong>Cycle Follow-up:</strong> ${escapeHtml(`${latestCycleFollowUp.label} · ${latestCycleFollowUp.command}`)}</p>
+                  <p class="detail-copy">${escapeHtml(latestCycleFollowUp.reason)}</p>
+                  ${renderOpsCommandAction(
+                    latestCycleFollowUp.command,
+                    latestCycleFollowUp.reason,
+                    'Cycle follow-up'
+                  )}
+                `
+                : ''}
+            </article>
+            <article class="info-card">
+              <p class="eyebrow">Next Command</p>
+              <strong class="quest-title">${escapeHtml(ops.nextCommand?.label ?? '추가 조치 없음')}</strong>
+              <p class="detail-copy">${escapeHtml(ops.nextCommand?.command ?? '지금은 추가 terminal 명령이 필요하지 않습니다.')}</p>
+              <p class="detail-copy">${escapeHtml(ops.nextCommand?.reason ?? '새 telemetry나 note가 쌓이면 다음 운영 명령을 제안합니다.')}</p>
+              ${renderOpsCommandAction(
+                ops.nextCommand?.command ?? '',
+                ops.nextCommand?.reason ?? '',
+                '명령 보기'
+              )}
+            </article>
+          </div>
+          <div class="achievement-grid">
+            ${filteredDrafts.length
+              ? filteredDrafts.map(draft => `
+                <article class="quest-card">
+                  <div class="achievement-head">
+                    <p class="eyebrow">${escapeHtml(`Linear Draft · ${draft.theme}`)}</p>
+                    <div class="badge-row">
+                      ${renderBadge(draft.priority, draft.priority === 'P0' ? 'warning' : draft.priority === 'P1' ? 'recommended' : 'success')}
+                      ${renderBadge(getOpsExportLabel(draft), getOpsExportBadgeTone(draft.lifecycleStatus))}
+                      ${draft.staleSync ? renderBadge('stale sync', 'warning') : ''}
+                      ${renderBadge(draft.impactTrend, getOpsImpactBadgeTone(draft.impactTrend))}
+                    </div>
+                  </div>
+                  <strong class="quest-title">${escapeHtml(draft.title)}</strong>
+                  <p class="detail-copy">${escapeHtml(draft.summary)}</p>
+                  <p class="detail-copy">${escapeHtml(`labels · ${draft.labels.join(', ')}`)}</p>
+                  <p class="detail-copy">${escapeHtml(
+                    draft.issueIdentifier
+                      ? `issue · ${draft.issueIdentifier}${draft.lastExportedAtIso ? ` · ${draft.lastExportedAtIso}` : ''}`
+                      : '아직 Linear export가 실행되지 않았습니다.'
+                  )}</p>
+                  <p class="detail-copy">${escapeHtml(
+                    draft.linearStateName
+                      ? `state · ${draft.linearStateName} (${draft.linearStateType})${draft.lastSyncedAtIso ? ` · ${draft.lastSyncedAtIso}` : ''}${draft.staleSync ? ' · stale sync' : ''}`
+                      : 'remote issue state가 아직 동기화되지 않았습니다.'
+                  )}</p>
+                  <p class="detail-copy">${escapeHtml(draft.staleSync ? '마지막 동기화가 오래됐습니다. `npm run ai:linear:sync`로 상태를 다시 읽으세요.' : '원격 상태가 최근 동기화 기준으로 유지되고 있습니다.')}</p>
+                  <p class="detail-copy">${escapeHtml(draft.impactSummary ?? '효과 baseline이 아직 없습니다.')}</p>
+                </article>
+              `).join('')
+              : renderEmptyCopy('현재 필터에 맞는 Linear issue draft가 없습니다.')}
+          </div>
+          <div class="achievement-grid">
+            ${ops.backlog.length
+              ? ops.backlog.map(item => `
+                <article class="quest-card">
+                  <div class="achievement-head">
+                    <p class="eyebrow">${escapeHtml(`Backlog · ${item.theme}`)}</p>
+                    <div class="badge-row">
+                      ${renderBadge(item.priority, item.priority === 'P0' ? 'warning' : item.priority === 'P1' ? 'recommended' : 'success')}
+                    </div>
+                  </div>
+                  <strong class="quest-title">${escapeHtml(item.title)}</strong>
+                  <p class="detail-copy">${escapeHtml(item.rationale)}</p>
+                  <ul class="focus-lines">
+                    ${item.evidence.slice(0, 2).map(line => `<li>${escapeHtml(line)}</li>`).join('')}
+                  </ul>
+                  <p class="detail-copy">${escapeHtml(item.suggestedActions[0] ?? '후속 조치 없음')}</p>
+                </article>
+              `).join('')
+              : renderEmptyCopy('아직 backlog draft가 없습니다.')}
+          </div>
+          <div class="feature-grid">
+            <article class="info-card detail-card">
+              <p class="eyebrow">Observations</p>
+              ${ops.observations.length
+                ? `
+                  <ul class="focus-lines">
+                    ${ops.observations.map(entry => `
+                      <li>${escapeHtml(`[${entry.severity}] ${entry.text} · ${entry.noteLabel} · ${entry.section}${entry.tags.length ? ` · ${entry.tags.join(', ')}` : ''}`)}</li>
+                    `).join('')}
+                  </ul>
+                `
+                : '<p class="detail-copy">아직 우선 관찰 note가 없습니다.</p>'}
+            </article>
+            <article class="info-card detail-card">
+              <p class="eyebrow">Recent Signals</p>
+              ${ops.recentSignals.length
+                ? `
+                  <ul class="focus-lines">
+                    ${ops.recentSignals.map(signal => `
+                      <li>${escapeHtml(`${signal.isoTime} · ${signal.eventType} · ${signal.summary}`)}</li>
+                    `).join('')}
+                  </ul>
+                `
+                : '<p class="detail-copy">최근 AI signal이 아직 없습니다.</p>'}
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderSaveSlot(slot, options) {
   const {
     canSave,
@@ -6594,6 +7251,7 @@ function renderSidebarHud(snapshot) {
   const player = snapshot.player;
   const location = snapshot.location;
   const contextLabel = uiState.resumeRoute?.contextLabel ?? null;
+  const encounterDirectorCard = renderEncounterDirectorCard(snapshot, 'hud');
   if (!player || !location) {
     return '';
   }
@@ -6675,6 +7333,7 @@ function renderSidebarHud(snapshot) {
       </article>
 
       <div class="hud-focus-stack">
+        ${encounterDirectorCard}
         ${renderTrackedAchievementHudCard(snapshot)}
         ${focus}
         ${tracker}
@@ -7174,6 +7833,8 @@ function renderWorkspaceContent(snapshot) {
       return renderInventory(snapshot);
     case 'achievements':
       return renderAchievements(snapshot);
+    case 'ops':
+      return renderOpsWorkspace(snapshot);
     case 'save':
       return renderSavePanel(snapshot);
     case 'feed':
@@ -7399,6 +8060,16 @@ function handleUiAction(target) {
         ? uiValue
         : uiState.achievementSortId;
       break;
+    case 'select-ops-export-filter':
+      uiState.opsExportFilterId = OPS_EXPORT_FILTER_OPTIONS.some(option => option.id === uiValue)
+        ? uiValue
+        : uiState.opsExportFilterId;
+      break;
+    case 'select-ops-impact-filter':
+      uiState.opsImpactFilterId = OPS_IMPACT_FILTER_OPTIONS.some(option => option.id === uiValue)
+        ? uiValue
+        : uiState.opsImpactFilterId;
+      break;
     case 'focus-achievement-target':
       focusAchievementTarget(uiValue ?? '', snapshot);
       break;
@@ -7485,6 +8156,17 @@ function handleClientAction(target) {
 
     uiState.resumeBrief = null;
     render();
+    return true;
+  }
+
+  if (target.dataset.clientAction === 'show-ops-command') {
+    const command = target.dataset.command?.trim();
+    const reason = target.dataset.commandReason?.trim();
+    if (!command) {
+      return false;
+    }
+
+    showToast(reason ? `${command} · ${reason}` : command);
     return true;
   }
 

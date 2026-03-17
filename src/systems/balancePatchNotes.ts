@@ -1,6 +1,7 @@
 export interface BalanceValidationOutputs {
   questOutput: string;
   economyOutput: string;
+  aiContractOutput: string;
   playtimeOutput: string;
 }
 
@@ -9,11 +10,13 @@ export interface BalancePatchMetrics {
   branchRoots: number | null;
   multiObjectiveQuestCount: number | null;
   economyActSnapshots: string[];
+  aiContractScenarioCount: number | null;
   firstClearAverageMinutes: number | null;
   firstClearAverageHours: number | null;
   warnings: {
     quest: number;
     economy: number;
+    aiContracts: number;
     playtime: number;
   };
 }
@@ -87,6 +90,7 @@ export function extractBalancePatchMetrics(
       /- multi-objective quests:\s*(\d+)/
     ),
     economyActSnapshots: parseEconomyActSnapshots(outputs.economyOutput),
+    aiContractScenarioCount: parseInteger(outputs.aiContractOutput, /- scenarios:\s*(\d+)/),
     firstClearAverageMinutes: parseFloatNumber(
       outputs.playtimeOutput,
       /firstClearAverage=([0-9.]+)분/
@@ -98,6 +102,7 @@ export function extractBalancePatchMetrics(
     warnings: {
       quest: parseWarningCount(outputs.questOutput, 'Quest balance warnings'),
       economy: parseWarningCount(outputs.economyOutput, 'Economy balance warnings'),
+      aiContracts: parseWarningCount(outputs.aiContractOutput, 'AI contract balance warnings'),
       playtime: parseWarningCount(outputs.playtimeOutput, 'Playtime balance warnings')
     }
   };
@@ -124,12 +129,14 @@ export function buildBalancePatchNotesContent(
       `(${formatNumber(metrics.firstClearAverageHours, 2)}시간)`,
     '- Economy per act:',
     economySnapshotLines,
+    `- AI contract scenarios: ${formatNumber(metrics.aiContractScenarioCount)}`,
     `- Validation warnings: quest=${metrics.warnings.quest}, ` +
-      `economy=${metrics.warnings.economy}, playtime=${metrics.warnings.playtime}`,
+      `economy=${metrics.warnings.economy}, aiContracts=${metrics.warnings.aiContracts}, playtime=${metrics.warnings.playtime}`,
     '',
     '## Validation Commands',
     '- `node scripts/validate-quest-balance.js`',
     '- `node scripts/validate-economy-balance.js`',
+    '- `node scripts/validate-ai-contract-balance.js`',
     '- `node scripts/validate-playtime-balance.js`',
     '',
     '## Raw Outputs',
@@ -138,6 +145,9 @@ export function buildBalancePatchNotesContent(
     '',
     '### Economy Balance',
     toCodeBlock(outputs.economyOutput),
+    '',
+    '### AI Contract Balance',
+    toCodeBlock(outputs.aiContractOutput),
     '',
     '### Playtime Balance',
     toCodeBlock(outputs.playtimeOutput),

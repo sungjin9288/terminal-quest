@@ -1,0 +1,73 @@
+{
+  "generatedAtIso": "2026-03-16T08:11:22.355Z",
+  "mode": "artifact",
+  "overallPass": true,
+  "bundleDir": "/Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122",
+  "reportJsonPath": "/Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122/playtest-report.json",
+  "latestSummaryPath": "/Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/latest.json",
+  "latestReportJsonPath": "/Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/latest-playtest-report.json",
+  "report": {
+    "telemetryFilePath": "/Users/sungjin/dev/personal/terminal-quest/playtest-data/active/telemetry/events.ndjson",
+    "notesDir": "/Users/sungjin/dev/personal/terminal-quest/playtest-data/active/notes",
+    "totalEvents": 0,
+    "totalNotes": 7,
+    "status": {
+      "id": "backlog-seed",
+      "label": "Backlog 준비",
+      "tone": "recommended",
+      "actionRequired": true,
+      "summary": "아직 Linear draft가 없으므로 backlog 초안부터 생성합니다."
+    },
+    "nextCommand": "npm run ai:backlog:dry"
+  },
+  "steps": [
+    {
+      "id": "playtest-report",
+      "label": "Playtest report JSON",
+      "command": "/Users/sungjin/.local/share/mise/installs/node/24.13.1/bin/node scripts/playtest-report.js --json",
+      "ok": true,
+      "status": 0,
+      "outputFileName": "playtest-report.json"
+    },
+    {
+      "id": "ai-insights",
+      "label": "AI insights",
+      "command": "/Users/sungjin/.local/share/mise/installs/node/24.13.1/bin/node scripts/generate-ai-insights-report.js --dry-run --report-json /Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122/playtest-report.json",
+      "ok": true,
+      "status": 0,
+      "outputFileName": "ai-insights.txt"
+    },
+    {
+      "id": "ai-backlog",
+      "label": "AI backlog",
+      "command": "/Users/sungjin/.local/share/mise/installs/node/24.13.1/bin/node scripts/generate-ai-ops-backlog.js --dry-run --report-json /Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122/playtest-report.json",
+      "ok": true,
+      "status": 0,
+      "outputFileName": "ai-backlog.txt"
+    },
+    {
+      "id": "ai-linear-drafts",
+      "label": "AI linear drafts",
+      "command": "/Users/sungjin/.local/share/mise/installs/node/24.13.1/bin/node scripts/generate-ai-ops-linear-drafts.js --dry-run --report-json /Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122/playtest-report.json",
+      "ok": true,
+      "status": 0,
+      "outputFileName": "ai-linear-drafts.txt"
+    },
+    {
+      "id": "ai-linear-export",
+      "label": "AI linear export preview",
+      "command": "/Users/sungjin/.local/share/mise/installs/node/24.13.1/bin/node scripts/export-ai-ops-linear.js --dry-run --report-json /Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122/playtest-report.json",
+      "ok": true,
+      "status": 0,
+      "outputFileName": "ai-linear-export.txt"
+    },
+    {
+      "id": "ai-linear-sync",
+      "label": "AI linear sync preview",
+      "command": "/Users/sungjin/.local/share/mise/installs/node/24.13.1/bin/node scripts/sync-ai-ops-linear-status.js --dry-run",
+      "ok": true,
+      "status": 0,
+      "outputFileName": "ai-linear-sync.txt"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+[ai-linear-export] dry-run mode
+- report-json: /Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122/playtest-report.json
+- telemetry: /Users/sungjin/dev/personal/terminal-quest/telemetry/events.ndjson
+- notes: /Users/sungjin/dev/personal/terminal-quest/playtest-data/active/notes
+- team: Sungjin-an
+- project: none
+- scope: P0
+- state entries: 0
+- selected drafts: 0

@@ -17,6 +17,9 @@ describe('Distribution Scripts', () => {
       'node scripts/start-playtest.js'
     );
     expect(packageJson.scripts?.['playtest:report']).toBe('node scripts/playtest-report.js');
+    expect(packageJson.scripts?.['playtest:report:json']).toBe(
+      'node scripts/playtest-report.js --json'
+    );
     expect(packageJson.scripts?.['playtest:reset']).toBe('node scripts/reset-playtest-env.js');
     expect(packageJson.scripts?.['frontend:start']).toBe('node scripts/start-frontend.js');
     expect(packageJson.scripts?.['frontend:playtest']).toBe(
@@ -60,11 +63,51 @@ describe('Distribution Scripts', () => {
     expect(packageJson.scripts?.['validate:playtime:extended']).toBe(
       'npm run build && node scripts/validate-playtime-balance.js --profile extended'
     );
+    expect(packageJson.scripts?.['validate:ai-contracts']).toBe(
+      'npm run build && node scripts/validate-ai-contract-balance.js'
+    );
+    expect(packageJson.scripts?.['validate:data']).toContain('node scripts/validate-ai-contract-balance.js');
     expect(packageJson.scripts?.['release:signoff']).toBe(
       'node scripts/release-signoff.js'
     );
     expect(packageJson.scripts?.['release:signoff:all']).toBe(
       'node scripts/release-signoff-all.js'
+    );
+    expect(packageJson.scripts?.['release:check:ops']).toBe(
+      'node scripts/release-readiness-check.js --with-ops-doctor'
+    );
+    expect(packageJson.scripts?.['release:smoke:ops']).toBe(
+      'node scripts/release-smoke-report.js --with-ops-doctor'
+    );
+    expect(packageJson.scripts?.['release:smoke:latest']).toBe(
+      'node scripts/show-release-smoke-latest.js'
+    );
+    expect(packageJson.scripts?.['release:smoke:latest:json']).toBe(
+      'node scripts/show-release-smoke-latest.js --json'
+    );
+    expect(packageJson.scripts?.['release:doctor']).toBe(
+      'node scripts/release-doctor.js'
+    );
+    expect(packageJson.scripts?.['release:doctor:json']).toBe(
+      'node scripts/release-doctor.js --json'
+    );
+    expect(packageJson.scripts?.['release:doctor:strict']).toBe(
+      'node scripts/release-doctor.js --fail-on-warn'
+    );
+    expect(packageJson.scripts?.['release:doctor:latest']).toBe(
+      'node scripts/show-release-doctor-latest.js'
+    );
+    expect(packageJson.scripts?.['release:doctor:latest:json']).toBe(
+      'node scripts/show-release-doctor-latest.js --json'
+    );
+    expect(packageJson.scripts?.['release:status']).toBe(
+      'node scripts/show-release-status.js'
+    );
+    expect(packageJson.scripts?.['release:status:json']).toBe(
+      'node scripts/show-release-status.js --json'
+    );
+    expect(packageJson.scripts?.['release:candidate:ops']).toBe(
+      'node scripts/release-candidate-gate.js --with-ops-doctor'
     );
     expect(packageJson.scripts?.['release:smoke']).toBe(
       'node scripts/release-smoke-report.js'
@@ -80,6 +123,66 @@ describe('Distribution Scripts', () => {
     );
     expect(packageJson.scripts?.['balance:notes:dry']).toBe(
       'npm run build && node scripts/generate-balance-patch-notes.js --dry-run'
+    );
+    expect(packageJson.scripts?.['ai:insights']).toBe(
+      'npm run build && node scripts/generate-ai-insights-report.js'
+    );
+    expect(packageJson.scripts?.['ai:insights:dry']).toBe(
+      'npm run build && node scripts/generate-ai-insights-report.js --dry-run'
+    );
+    expect(packageJson.scripts?.['ai:backlog']).toBe(
+      'npm run build && node scripts/generate-ai-ops-backlog.js'
+    );
+    expect(packageJson.scripts?.['ai:backlog:dry']).toBe(
+      'npm run build && node scripts/generate-ai-ops-backlog.js --dry-run'
+    );
+    expect(packageJson.scripts?.['ai:linear']).toBe(
+      'npm run build && node scripts/generate-ai-ops-linear-drafts.js'
+    );
+    expect(packageJson.scripts?.['ai:linear:dry']).toBe(
+      'npm run build && node scripts/generate-ai-ops-linear-drafts.js --dry-run'
+    );
+    expect(packageJson.scripts?.['ai:linear:export']).toBe(
+      'npm run build && node scripts/export-ai-ops-linear.js --apply'
+    );
+    expect(packageJson.scripts?.['ai:linear:export:dry']).toBe(
+      'npm run build && node scripts/export-ai-ops-linear.js --dry-run'
+    );
+    expect(packageJson.scripts?.['ai:linear:sync']).toBe(
+      'npm run build && node scripts/sync-ai-ops-linear-status.js --apply'
+    );
+    expect(packageJson.scripts?.['ai:linear:sync:dry']).toBe(
+      'npm run build && node scripts/sync-ai-ops-linear-status.js --dry-run'
+    );
+    expect(packageJson.scripts?.['ai:ops:cycle']).toBe(
+      'npm run build && node scripts/run-ai-ops-cycle.js'
+    );
+    expect(packageJson.scripts?.['ai:ops:cycle:dry']).toBe(
+      'npm run build && node scripts/run-ai-ops-cycle.js --dry-run'
+    );
+    expect(packageJson.scripts?.['ai:ops:cycle:apply']).toBe(
+      'npm run build && node scripts/run-ai-ops-cycle.js --apply-linear'
+    );
+    expect(packageJson.scripts?.['ai:ops:cycle:gate']).toBe(
+      'npm run build && node scripts/run-ai-ops-cycle.js --doctor-gate'
+    );
+    expect(packageJson.scripts?.['ai:ops:cycle:gate:strict']).toBe(
+      'npm run build && node scripts/run-ai-ops-cycle.js --doctor-gate --doctor-fail-on-warn'
+    );
+    expect(packageJson.scripts?.['ai:ops:cycle:latest']).toBe(
+      'npm run build && node scripts/show-ai-ops-cycle-latest.js'
+    );
+    expect(packageJson.scripts?.['ai:ops:cycle:latest:json']).toBe(
+      'npm run build && node scripts/show-ai-ops-cycle-latest.js --json'
+    );
+    expect(packageJson.scripts?.['ai:ops:doctor']).toBe(
+      'npm run build && node scripts/ai-ops-doctor.js'
+    );
+    expect(packageJson.scripts?.['ai:ops:doctor:json']).toBe(
+      'npm run build && node scripts/ai-ops-doctor.js --json'
+    );
+    expect(packageJson.scripts?.['ai:ops:doctor:strict']).toBe(
+      'npm run build && node scripts/ai-ops-doctor.js --fail-on-warn'
     );
   });
 
@@ -149,6 +252,10 @@ describe('Distribution Scripts', () => {
   it('should include release smoke report script on disk', () => {
     const smokeScriptPath = path.join(process.cwd(), 'scripts', 'release-smoke-report.js');
     expect(fs.existsSync(smokeScriptPath)).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'show-release-smoke-latest.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'release-doctor.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'show-release-doctor-latest.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'show-release-status.js'))).toBe(true);
   });
 
   it('should include release candidate gate script on disk', () => {
@@ -161,8 +268,37 @@ describe('Distribution Scripts', () => {
     expect(fs.existsSync(balanceScriptPath)).toBe(true);
   });
 
+  it('should include ai insights generator script on disk', () => {
+    const insightsScriptPath = path.join(process.cwd(), 'scripts', 'generate-ai-insights-report.js');
+    expect(fs.existsSync(insightsScriptPath)).toBe(true);
+  });
+
+  it('should include ai backlog generator script on disk', () => {
+    const backlogScriptPath = path.join(process.cwd(), 'scripts', 'generate-ai-ops-backlog.js');
+    expect(fs.existsSync(backlogScriptPath)).toBe(true);
+  });
+
+  it('should include ai linear draft generator script on disk', () => {
+    const linearScriptPath = path.join(process.cwd(), 'scripts', 'generate-ai-ops-linear-drafts.js');
+    expect(fs.existsSync(linearScriptPath)).toBe(true);
+  });
+
+  it('should include ai linear export script and config on disk', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'export-ai-ops-linear.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'sync-ai-ops-linear-status.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'run-ai-ops-cycle.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'show-ai-ops-cycle-latest.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'scripts', 'ai-ops-doctor.js'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'config', 'ai-ops-linear.json'))).toBe(true);
+  });
+
   it('should include prompt priority validator script on disk', () => {
     const validatorScriptPath = path.join(process.cwd(), 'scripts', 'validate-prompt-priority.js');
+    expect(fs.existsSync(validatorScriptPath)).toBe(true);
+  });
+
+  it('should include ai contract balance validator script on disk', () => {
+    const validatorScriptPath = path.join(process.cwd(), 'scripts', 'validate-ai-contract-balance.js');
     expect(fs.existsSync(validatorScriptPath)).toBe(true);
   });
 

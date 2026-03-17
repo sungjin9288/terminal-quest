@@ -1,0 +1,43 @@
+[ai-insights] dry-run mode
+- report-json: /Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/20260316-171122/playtest-report.json
+- telemetry: /Users/sungjin/dev/personal/terminal-quest/telemetry/events.ndjson
+- records: 0
+- notes: /Users/sungjin/dev/personal/terminal-quest/playtest-data/active/notes
+- notes read: 7
+
+--- preview ---
+
+# AI Ops Insights
+
+Generated at: 2026-03-16T08:11:22.626Z
+Telemetry file: /Users/sungjin/dev/personal/terminal-quest/telemetry/events.ndjson
+
+## Snapshot
+- Total telemetry events: 0
+- Session starts: 0
+- AI recommendation follow rate: n/a (0/0)
+- AI recommendation dismiss rate: n/a (0/0)
+- Encounter Director decisions: 0
+- Encounter modes: steady=0, recovery=0, variety=0, pressure=0
+- Average encounter chance: n/a
+- Variety route-scan pivots: 0
+- Endgame encounter decisions: 0
+- Endgame pressure decisions: 0
+- Player deaths: 0
+- Endgame clears: 0
+- Playtest notes read: 7
+
+## Hotspots
+- Top encounter locations:
+- n/a
+- Top endgame modifiers:
+- n/a
+
+## Findings
+- Encounter Director telemetry가 아직 없습니다. telemetry opt-in 상태로 탐험 세션을 먼저 수집하세요.
+
+## Playtest Priorities
+- n/a
+
+## Recent AI Signals
+- n/a

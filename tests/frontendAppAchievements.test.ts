@@ -188,11 +188,140 @@ type FrontendSnapshot = {
       beats: string[];
       tone: string;
     };
+    encounterDirector?: null | {
+      mode: 'steady' | 'recovery' | 'variety' | 'pressure';
+      encounterChance: number;
+      preferredEventId: string | null;
+      reason: string;
+      challengeContext?: {
+        tier: number;
+        streak: number;
+        modifierId: string | null;
+        modifierName: string | null;
+      } | null;
+      fatigueSnapshot: {
+        repeatActionCount: number;
+        consecutiveCombats: number;
+        consecutiveNonProgressLoops: number;
+      };
+    };
     recentMoments: Array<{
       type: string;
       label: string;
       timestamp: number;
     }>;
+  };
+  ops?: null | {
+    telemetryEvents: number;
+    playtestNotes: number;
+    topFinding: string | null;
+    topObservation: null | {
+      severity: 'P0' | 'P1' | 'P2';
+      text: string;
+    };
+    topBacklog: null | {
+      priority: 'P0' | 'P1' | 'P2';
+      title: string;
+      theme: string;
+    };
+    backlogCounts: {
+      P0: number;
+      P1: number;
+      P2: number;
+    };
+    findings: string[];
+    observations: Array<{
+      severity: 'P0' | 'P1' | 'P2';
+      text: string;
+      noteLabel: string;
+      section: string;
+      tags: string[];
+    }>;
+    backlog: Array<{
+      id: string;
+      priority: 'P0' | 'P1' | 'P2';
+      theme: string;
+      title: string;
+      rationale: string;
+      evidence: string[];
+      suggestedActions: string[];
+    }>;
+    linearDrafts: Array<{
+      id: string;
+      priority: 'P0' | 'P1' | 'P2';
+      theme: string;
+      title: string;
+      labels: string[];
+      summary: string;
+      exportStatus: 'draft' | 'exported' | 'updated' | 'closed';
+      issueIdentifier: string | null;
+      issueUrl: string | null;
+      lastExportedAtIso: string | null;
+      linearStateName: string | null;
+      linearStateType: 'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled' | 'unknown';
+      lastSyncedAtIso: string | null;
+      lifecycleStatus: 'draft' | 'sync-needed' | 'live' | 'closed' | 'shipped';
+      staleSync: boolean;
+      impactTrend: 'improved' | 'flat' | 'regressed' | 'unknown';
+      impactSummary: string | null;
+    }>;
+    nextCommand: {
+      label: string;
+      command: string;
+      reason: string;
+      tone: 'recommended' | 'warning' | 'success';
+    } | null;
+    doctor?: null | {
+      status: 'ok' | 'warn' | 'fail';
+      summaryPresent: boolean;
+      freshnessLabel: string;
+      reasons: string[];
+      recommendedCommand: string | null;
+      opsStatus: null | {
+        id: string;
+        label: string;
+        tone: 'recommended' | 'warning' | 'success';
+        actionRequired: boolean;
+        summary: string;
+      };
+    };
+    status?: null | {
+      id: string;
+      label: string;
+      tone: 'recommended' | 'warning' | 'success';
+      actionRequired: boolean;
+      summary: string;
+    };
+    latestCycleFollowUp?: null | {
+      label: string;
+      command: string;
+      reason: string;
+      tone: 'recommended' | 'warning' | 'success';
+    };
+    latestCycle?: null | {
+      generatedAtIso: string;
+      mode: 'dry-run' | 'artifact' | 'apply-linear';
+      overallPass: boolean;
+      stepsPassed: number;
+      stepsTotal: number;
+      stale: boolean;
+      ageHours: number | null;
+      failedSteps: Array<{
+        label: string;
+        status: number;
+        outputFileName: string;
+      }>;
+      reportJsonPath: string;
+      bundleDir: string | null;
+      nextCommand: string | null;
+    };
+    recentSignals: Array<{
+      isoTime: string;
+      eventType: string;
+      summary: string;
+    }>;
+    recommendationDismissRate: number | null;
+    encounterDecisionCount: number;
   };
 };
 
@@ -236,6 +365,8 @@ type FrontendExports = {
     feedCategoryId: string;
     feedFilterId: string;
     feedIndex: number;
+    opsExportFilterId: string;
+    opsImpactFilterId: string;
   };
   renderAchievements: (snapshot: FrontendSnapshot) => string;
   renderFeed: (snapshot: FrontendSnapshot) => string;
@@ -244,6 +375,7 @@ type FrontendExports = {
   renderWorkspaceTabs: (snapshot: FrontendSnapshot) => string;
   renderRewardHorizon: (snapshot: FrontendSnapshot) => string;
   renderMarket: (snapshot: FrontendSnapshot) => string;
+  renderOpsWorkspace: (snapshot: FrontendSnapshot) => string;
   renderSavePanel: (snapshot: FrontendSnapshot) => string;
   renderMomentumPanel: (snapshot: FrontendSnapshot) => string;
   renderSidebarAlerts: (snapshot: FrontendSnapshot) => string;
@@ -439,8 +571,10 @@ function createSnapshot(
       narrativeMode: 'light',
       currentIntent: null,
       narrativeCue: null,
+      encounterDirector: null,
       recentMoments: []
     },
+    ops: null,
     ...overrides
   };
 }
@@ -523,6 +657,7 @@ return {
   renderWorkspaceTabs,
   renderRewardHorizon,
   renderMarket,
+  renderOpsWorkspace,
   renderSavePanel,
   renderMomentumPanel,
   renderSidebarAlerts,
@@ -1777,6 +1912,55 @@ describe('Frontend smart resume routing', () => {
     expect(html).toContain('data-ai-follow-intent-id="new-quest:town"');
   });
 
+  it('should render an Encounter Director card in the action rail for dungeon pacing', async () => {
+    const snapshot = createSnapshot({
+      scene: 'dungeon',
+      location: {
+        id: 'memory-forest',
+        name: '메모리 숲',
+        description: '반복 전투가 누적된 현장',
+        isTown: false,
+        recommendedDestinationId: null,
+        firstClearRewardPreview: '구급 패치'
+      },
+      ai: {
+        directorMode: 'full',
+        narrativeMode: 'light',
+        currentIntent: null,
+        narrativeCue: null,
+        encounterDirector: {
+          mode: 'variety',
+          encounterChance: 0.3,
+          preferredEventId: 'route-scan',
+          reason: '연속 동일 패턴을 끊기 위해 비전투 이벤트 비중을 올립니다.',
+          challengeContext: {
+            tier: 3,
+            streak: 4,
+            modifierId: 'berserker-protocol',
+            modifierName: '광폭 프로토콜'
+          },
+          fatigueSnapshot: {
+            repeatActionCount: 3,
+            consecutiveCombats: 3,
+            consecutiveNonProgressLoops: 3
+          }
+        },
+        recentMoments: []
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    const html = frontend.renderActionRail(snapshot);
+
+    expect(html).toContain('Encounter Director');
+    expect(html).toContain('패턴 전환 구간');
+    expect(html).toContain('전투 30%');
+    expect(html).toContain('우회 동선');
+    expect(html).toContain('심연 T3');
+    expect(html).toContain('광폭 프로토콜');
+    expect(html).toContain('전투 연속 3');
+  });
+
   it('should render a Companion Note card from AI narrative memory', async () => {
     const snapshot = createSnapshot({
       ai: {
@@ -1827,6 +2011,62 @@ describe('Frontend smart resume routing', () => {
     expect(html).toContain('비트 타운 도착');
   });
 
+  it('should render an Encounter Director card in the sidebar HUD for dungeon pacing', async () => {
+    const snapshot = createSnapshot({
+      scene: 'dungeon',
+      location: {
+        id: 'memory-forest',
+        name: '메모리 숲',
+        description: '보스 접근 구간',
+        isTown: false,
+        recommendedDestinationId: null,
+        firstClearRewardPreview: '구급 패치',
+        bossProgress: {
+          text: '보스 2 / 3',
+          bossName: '트레이스 울프',
+          current: 2,
+          target: 3,
+          remaining: 1,
+          ready: false
+        }
+      },
+      ai: {
+        directorMode: 'full',
+        narrativeMode: 'light',
+        currentIntent: null,
+        narrativeCue: null,
+        encounterDirector: {
+          mode: 'pressure',
+          encounterChance: 0.72,
+          preferredEventId: 'route-scan',
+          reason: '트레이스 울프 접근 구간이라 긴장감을 높이되, 우회 동선이 나오면 결전선까지 빠르게 당깁니다.',
+          challengeContext: {
+            tier: 2,
+            streak: 3,
+            modifierId: 'arcane-overclock',
+            modifierName: '아케인 오버클럭'
+          },
+          fatigueSnapshot: {
+            repeatActionCount: 1,
+            consecutiveCombats: 1,
+            consecutiveNonProgressLoops: 1
+          }
+        },
+        recentMoments: []
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    const html = frontend.renderSidebarHud(snapshot);
+
+    expect(html).toContain('Encounter Director');
+    expect(html).toContain('전투 압박 구간');
+    expect(html).toContain('압박 상승');
+    expect(html).toContain('전투 72%');
+    expect(html).toContain('심연 T2');
+    expect(html).toContain('아케인 오버클럭');
+  });
+
   it('should dismiss the AI Director card and report feedback telemetry', async () => {
     const snapshot = createSnapshot({
       ai: {
@@ -1847,6 +2087,7 @@ describe('Frontend smart resume routing', () => {
           ]
         },
         narrativeCue: null,
+        encounterDirector: null,
         recentMoments: []
       }
     });
@@ -2500,6 +2741,741 @@ describe('Frontend smart resume routing', () => {
     expect(html).toContain('가방 +6칸 / 상점 할인 8%');
     expect(html).toContain('현재 세이브에 누적된 업적 특전입니다.');
     expect(html).toContain('누적 업적 특전이 이 세이브에 적용되어 있습니다.');
+  });
+
+  it('should render AI Ops Pulse on landing when playtest ops data exists', async () => {
+    const landingSnapshot = createSnapshot({
+      scene: 'landing',
+      hasGame: false,
+      ops: {
+        telemetryEvents: 12,
+        playtestNotes: 2,
+        topFinding: 'AI recommendation dismiss 비중이 높습니다. 노출 빈도 또는 카드 우선순위가 과한지 검토가 필요합니다.',
+        topObservation: {
+          severity: 'P0',
+          text: 'Resume panel felt unclear and the AI recommendation was dismissed twice.'
+        },
+        topBacklog: {
+          priority: 'P0',
+          title: 'Resume clarity pass for AI-guided surfaces',
+          theme: 'resume'
+        },
+        backlogCounts: {
+          P0: 1,
+          P1: 2,
+          P2: 0
+        },
+        findings: [
+          'AI recommendation dismiss 비중이 높습니다. 노출 빈도 또는 카드 우선순위가 과한지 검토가 필요합니다.'
+        ],
+        observations: [
+          {
+            severity: 'P0',
+            text: 'Resume panel felt unclear and the AI recommendation was dismissed twice.',
+            noteLabel: 'session-20260312-010000.md',
+            section: 'Follow-ups',
+            tags: ['resume', 'clarity']
+          }
+        ],
+        backlog: [
+          {
+            id: 'playtest-resume-p0',
+            priority: 'P0',
+            theme: 'resume',
+            title: 'Resume clarity pass for AI-guided surfaces',
+            rationale: '재개 surface가 목표 이해를 놓치고 있습니다.',
+            evidence: ['AI dismiss rate 50% (1/2)'],
+            suggestedActions: ['Resume Brief와 CTA를 같은 목표 문장으로 정렬합니다.']
+          }
+        ],
+        linearDrafts: [
+          {
+            id: 'linear-playtest-resume-p0',
+            priority: 'P0',
+            theme: 'resume',
+            title: '[AI Ops][P0] Resume clarity pass for AI-guided surfaces',
+            labels: ['ai-ops', 'p0', 'resume', 'ux'],
+            summary: 'Resume Brief와 CTA를 같은 목표 문장으로 정렬합니다.',
+            exportStatus: 'draft',
+            issueIdentifier: null,
+            issueUrl: null,
+            lastExportedAtIso: null,
+            linearStateName: null,
+            linearStateType: 'unknown',
+            lastSyncedAtIso: null,
+            lifecycleStatus: 'draft',
+            staleSync: false,
+            impactTrend: 'unknown',
+            impactSummary: '효과 baseline이 아직 없습니다.'
+          }
+        ],
+        nextCommand: {
+          label: 'export 대상 점검',
+          command: 'npm run ai:linear:export:dry',
+          reason: '미수출 또는 갱신 필요 draft 1건이 있습니다.',
+          tone: 'recommended'
+        },
+        doctor: {
+          status: 'warn',
+          summaryPresent: true,
+          freshnessLabel: 'fresh · 4h',
+          reasons: ['Ops status Export 대기: 미수출 또는 갱신 필요 draft 1건이 있습니다.'],
+          recommendedCommand: 'npm run ai:linear:export:dry',
+          opsStatus: {
+            id: 'export-pending',
+            label: 'Export 대기',
+            tone: 'recommended',
+            actionRequired: true,
+            summary: '미수출 또는 갱신 필요 draft 1건이 있습니다.'
+          }
+        },
+        status: {
+          id: 'export-pending',
+          label: 'Export 대기',
+          tone: 'recommended',
+          actionRequired: true,
+          summary: '미수출 또는 갱신 필요 draft 1건이 있습니다.'
+        },
+        latestCycle: {
+          generatedAtIso: '2026-03-16T05:21:10.000Z',
+          mode: 'artifact',
+          overallPass: true,
+          stepsPassed: 6,
+          stepsTotal: 6,
+          stale: false,
+          ageHours: 4,
+          failedSteps: [],
+          reportJsonPath: '/tmp/terminal-quest-ai-ops-cycle/20260316-142110/playtest-report.json',
+          bundleDir: '/tmp/terminal-quest-ai-ops-cycle/20260316-142110',
+          nextCommand: 'npm run ai:backlog:dry'
+        },
+        recentSignals: [
+          {
+            isoTime: '2026-03-12T01:00:00.000Z',
+            eventType: 'ai_recommendation_dismissed',
+            summary: 'ai_recommendation_dismissed frontier:memory-forest via ai-card'
+          }
+        ],
+        recommendationDismissRate: 0.5,
+        encounterDecisionCount: 4
+      }
+    });
+    const frontend = await createFrontendHarness(landingSnapshot);
+
+    const html = frontend.getAppHtml();
+
+    expect(html).toContain('AI Ops Pulse');
+    expect(html).toContain('플레이테스트 운영 프리뷰');
+    expect(html).toContain('Doctor Verdict:');
+    expect(html).toContain('WARN');
+    expect(html).toContain('doctor command · npm run ai:linear:export:dry');
+    expect(html).toContain('Ops Status:');
+    expect(html).toContain('Export 대기');
+    expect(html).toContain('Resume clarity pass for AI-guided surfaces');
+    expect(html).toContain('Telemetry 12');
+    expect(html).toContain('Last Cycle:');
+    expect(html).toContain('PASS · 6/6');
+    expect(html).toContain('npm run ai:backlog:dry');
+    expect(html).toContain('Dismiss 50%');
+    expect(html).toContain('Encounter 4');
+  });
+
+  it('should render an Ops workspace when playtest ops data exists', async () => {
+    const recentSyncIso = new Date(Date.now()).toISOString();
+    const snapshot = createSnapshot({
+      ops: {
+        telemetryEvents: 12,
+        playtestNotes: 2,
+        topFinding: 'AI recommendation dismiss 비중이 높습니다. 노출 빈도 또는 카드 우선순위가 과한지 검토가 필요합니다.',
+        topObservation: {
+          severity: 'P0',
+          text: 'Resume panel felt unclear and the AI recommendation was dismissed twice.'
+        },
+        topBacklog: {
+          priority: 'P0',
+          title: 'Resume clarity pass for AI-guided surfaces',
+          theme: 'resume'
+        },
+        backlogCounts: {
+          P0: 1,
+          P1: 1,
+          P2: 0
+        },
+        findings: [
+          'AI recommendation dismiss 비중이 높습니다. 노출 빈도 또는 카드 우선순위가 과한지 검토가 필요합니다.'
+        ],
+        observations: [
+          {
+            severity: 'P0',
+            text: 'Resume panel felt unclear and the AI recommendation was dismissed twice.',
+            noteLabel: 'session-20260312-010000.md',
+            section: 'Follow-ups',
+            tags: ['resume', 'clarity']
+          }
+        ],
+        backlog: [
+          {
+            id: 'playtest-resume-p0',
+            priority: 'P0',
+            theme: 'resume',
+            title: 'Resume clarity pass for AI-guided surfaces',
+            rationale: '재개 surface가 목표 이해를 놓치고 있습니다.',
+            evidence: ['AI dismiss rate 50% (1/2)'],
+            suggestedActions: ['Resume Brief와 CTA를 같은 목표 문장으로 정렬합니다.']
+          }
+        ],
+        linearDrafts: [
+          {
+            id: 'linear-playtest-resume-p0',
+            priority: 'P0',
+            theme: 'resume',
+            title: '[AI Ops][P0] Resume clarity pass for AI-guided surfaces',
+            labels: ['ai-ops', 'p0', 'resume', 'ux'],
+            summary: 'Resume Brief와 CTA를 같은 목표 문장으로 정렬합니다.',
+            exportStatus: 'updated',
+            issueIdentifier: 'SUN-101',
+            issueUrl: 'https://linear.app/example/issue/SUN-101',
+            lastExportedAtIso: '2026-03-12T05:00:00.000Z',
+            linearStateName: 'In Progress',
+            linearStateType: 'started',
+            lastSyncedAtIso: recentSyncIso,
+            lifecycleStatus: 'sync-needed',
+            staleSync: false,
+            impactTrend: 'improved',
+            impactSummary: 'Dismiss 70% -> 30%'
+          }
+        ],
+        nextCommand: {
+          label: 'export 대상 점검',
+          command: 'npm run ai:linear:export:dry',
+          reason: '미수출 또는 갱신 필요 draft 1건이 있습니다.',
+          tone: 'recommended'
+        },
+        doctor: {
+          status: 'warn',
+          summaryPresent: true,
+          freshnessLabel: 'fresh · 4h',
+          reasons: ['Ops status Export 대기: 미수출 또는 갱신 필요 draft 1건이 있습니다.'],
+          recommendedCommand: 'npm run ai:linear:export:dry',
+          opsStatus: {
+            id: 'export-pending',
+            label: 'Export 대기',
+            tone: 'recommended',
+            actionRequired: true,
+            summary: '미수출 또는 갱신 필요 draft 1건이 있습니다.'
+          }
+        },
+        status: {
+          id: 'export-pending',
+          label: 'Export 대기',
+          tone: 'recommended',
+          actionRequired: true,
+          summary: '미수출 또는 갱신 필요 draft 1건이 있습니다.'
+        },
+        latestCycle: {
+          generatedAtIso: '2026-03-16T05:21:10.000Z',
+          mode: 'artifact',
+          overallPass: true,
+          stepsPassed: 6,
+          stepsTotal: 6,
+          stale: false,
+          ageHours: 4,
+          failedSteps: [],
+          reportJsonPath: '/tmp/terminal-quest-ai-ops-cycle/20260316-142110/playtest-report.json',
+          bundleDir: '/tmp/terminal-quest-ai-ops-cycle/20260316-142110',
+          nextCommand: 'npm run ai:backlog:dry'
+        },
+        recentSignals: [
+          {
+            isoTime: '2026-03-12T01:00:00.000Z',
+            eventType: 'ai_recommendation_dismissed',
+            summary: 'ai_recommendation_dismissed frontier:memory-forest via ai-card'
+          }
+        ],
+        recommendationDismissRate: 0.5,
+        encounterDecisionCount: 4
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    const tabsHtml = frontend.renderWorkspaceTabs(snapshot);
+    const opsHtml = frontend.renderOpsWorkspace(snapshot);
+
+    expect(tabsHtml).toContain('>Ops<');
+    expect(opsHtml).toContain('AI Ops Dashboard');
+    expect(opsHtml).toContain('Ops Doctor');
+    expect(opsHtml).toContain('WARN');
+    expect(opsHtml).toContain('summary present · yes');
+    expect(opsHtml).toContain('Ops Status');
+    expect(opsHtml).toContain('action required · yes');
+    expect(opsHtml).toContain('Export 대기');
+    expect(opsHtml).toContain('Linear Drafts');
+    expect(opsHtml).toContain('[AI Ops][P0] Resume clarity pass for AI-guided surfaces');
+    expect(opsHtml).toContain('sync needed');
+    expect(opsHtml).toContain('SUN-101');
+    expect(opsHtml).toContain('In Progress (started)');
+    expect(opsHtml).toContain('원격 issue 동기화 상태가 최신입니다.');
+    expect(opsHtml).toContain('Dismiss 70% -&gt; 30%');
+    expect(opsHtml).toContain('improved');
+    expect(opsHtml).toContain('Next Command');
+    expect(opsHtml).toContain('Latest Cycle');
+    expect(opsHtml).toContain('PASS · artifact');
+    expect(opsHtml).toContain('6 step 통과');
+    expect(opsHtml).toContain('npm run ai:linear:export:dry');
+    expect(opsHtml).toContain('npm run ai:backlog:dry');
+    expect(opsHtml).toContain('Resume clarity pass for AI-guided surfaces');
+    expect(opsHtml).toContain('session-20260312-010000.md');
+    expect(opsHtml).toContain('ai_recommendation_dismissed');
+  });
+
+  it('should filter Ops drafts by export state and impact trend', async () => {
+    const recentSyncIso = new Date(Date.now()).toISOString();
+    const snapshot = createSnapshot({
+      ops: {
+        telemetryEvents: 16,
+        playtestNotes: 2,
+        topFinding: '최근 exported draft의 개선 추세를 점검하세요.',
+        topObservation: null,
+        topBacklog: {
+          priority: 'P0',
+          title: 'Resume clarity pass for AI-guided surfaces',
+          theme: 'resume'
+        },
+        backlogCounts: {
+          P0: 1,
+          P1: 1,
+          P2: 0
+        },
+        findings: [],
+        observations: [],
+        backlog: [],
+        linearDrafts: [
+          {
+            id: 'linear-resume',
+            priority: 'P0',
+            theme: 'resume',
+            title: '[AI Ops][P0] Resume clarity pass for AI-guided surfaces',
+            labels: ['ai-ops', 'p0', 'resume', 'ux'],
+            summary: 'Resume Brief와 CTA를 같은 목표 문장으로 정렬합니다.',
+            exportStatus: 'updated',
+            issueIdentifier: 'SUN-101',
+            issueUrl: 'https://linear.app/example/issue/SUN-101',
+            lastExportedAtIso: '2026-03-12T05:00:00.000Z',
+            linearStateName: 'In Progress',
+            linearStateType: 'started',
+            lastSyncedAtIso: recentSyncIso,
+            lifecycleStatus: 'sync-needed',
+            staleSync: false,
+            impactTrend: 'regressed',
+            impactSummary: 'Dismiss 30% -> 60%'
+          },
+          {
+            id: 'linear-combat',
+            priority: 'P1',
+            theme: 'combat',
+            title: '[AI Ops][P1] Inspect repeated route-scan pivots in frontier pacing',
+            labels: ['ai-ops', 'p1', 'combat', 'pacing'],
+            summary: '반복 전투가 몰리는 전선을 다시 조정합니다.',
+            exportStatus: 'exported',
+            issueIdentifier: 'SUN-102',
+            issueUrl: 'https://linear.app/example/issue/SUN-102',
+            lastExportedAtIso: '2026-03-12T05:05:00.000Z',
+            linearStateName: 'Done',
+            linearStateType: 'completed',
+            lastSyncedAtIso: recentSyncIso,
+            lifecycleStatus: 'shipped',
+            staleSync: false,
+            impactTrend: 'improved',
+            impactSummary: 'Route-scan 4 -> 1 · Deaths 1 -> 0'
+          }
+        ],
+        nextCommand: {
+          label: 'export 대상 점검',
+          command: 'npm run ai:linear:export:dry',
+          reason: '미수출 또는 갱신 필요 draft 1건이 있습니다.',
+          tone: 'recommended'
+        },
+        recentSignals: [],
+        recommendationDismissRate: 0.6,
+        encounterDecisionCount: 8
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    frontend.uiState.snapshot = snapshot;
+    frontend.uiState.activeWorkspace = 'ops';
+
+    frontend.handleUiAction({
+      dataset: {
+        uiAction: 'select-ops-export-filter',
+        uiValue: 'pending'
+      }
+    });
+    frontend.handleUiAction({
+      dataset: {
+        uiAction: 'select-ops-impact-filter',
+        uiValue: 'regressed'
+      }
+    });
+
+    const opsHtml = frontend.renderOpsWorkspace(snapshot);
+
+    expect(frontend.uiState.opsExportFilterId).toBe('pending');
+    expect(frontend.uiState.opsImpactFilterId).toBe('regressed');
+    expect(opsHtml).toContain('Visible');
+    expect(opsHtml).toContain('Dismiss 30% -&gt; 60%');
+    expect(opsHtml).toContain('SUN-101');
+    expect(opsHtml).not.toContain('SUN-102');
+  });
+
+  it('should surface shipped and stale-sync indicators in the ops workspace', async () => {
+    const ops = {
+      telemetryEvents: 18,
+      playtestNotes: 1,
+      topFinding: '완료된 이슈와 오래된 sync를 함께 확인하세요.',
+      topObservation: null,
+      topBacklog: {
+        priority: 'P1',
+        title: 'Inspect repeated route-scan pivots in frontier pacing',
+        theme: 'combat'
+      },
+      backlogCounts: {
+        P0: 0,
+        P1: 1,
+        P2: 0
+      },
+      findings: [],
+      observations: [],
+      backlog: [],
+      linearDrafts: [
+        {
+          id: 'linear-combat',
+          priority: 'P1',
+          theme: 'combat',
+          title: '[AI Ops][P1] Inspect repeated route-scan pivots in frontier pacing',
+          labels: ['ai-ops', 'p1', 'combat', 'pacing'],
+          summary: '반복 전투가 몰리는 전선을 다시 조정합니다.',
+          exportStatus: 'closed',
+          issueIdentifier: 'SUN-102',
+          issueUrl: 'https://linear.app/example/issue/SUN-102',
+          lastExportedAtIso: '2026-03-12T05:05:00.000Z',
+          linearStateName: 'Done',
+          linearStateType: 'completed',
+          lastSyncedAtIso: '2026-03-01T05:20:00.000Z',
+          lifecycleStatus: 'shipped',
+          staleSync: true,
+          impactTrend: 'improved',
+          impactSummary: 'Route-scan 4 -> 1 · Deaths 1 -> 0'
+        }
+      ],
+      nextCommand: {
+        label: '원격 상태 재동기화',
+        command: 'LINEAR_API_KEY=... npm run ai:linear:sync',
+        reason: 'stale sync 1건이 있어 원격 상태를 다시 읽어야 합니다.',
+        tone: 'warning'
+      },
+      recentSignals: [],
+      recommendationDismissRate: 0.2,
+      encounterDecisionCount: 6
+    } satisfies NonNullable<FrontendSnapshot['ops']>;
+    const snapshot = createSnapshot({
+      ops
+    });
+    const landingSnapshot = createSnapshot({
+      scene: 'landing',
+      hasGame: false,
+      ops: {
+        ...ops
+      }
+    });
+    const frontend = await createFrontendHarness(landingSnapshot);
+
+    const landingHtml = frontend.getAppHtml();
+    const opsHtml = frontend.renderOpsWorkspace(snapshot);
+
+    expect(landingHtml).toContain('Shipped 1');
+    expect(landingHtml).toContain('Stale 1');
+    expect(landingHtml).toContain('LINEAR_API_KEY=... npm run ai:linear:sync');
+    expect(opsHtml).toContain('shipped');
+    expect(opsHtml).toContain('stale sync');
+    expect(opsHtml).toContain('원격 상태 재동기화');
+    expect(opsHtml).toContain('마지막 동기화가 오래됐습니다.');
+  });
+
+  it('should surface a latest-cycle follow-up command when the persisted cycle failed', async () => {
+    const ops = {
+      telemetryEvents: 9,
+      playtestNotes: 1,
+      topFinding: '최근 persisted cycle이 실패했습니다.',
+      topObservation: null,
+      topBacklog: {
+        priority: 'P0',
+        title: 'Re-run failed AI ops cycle after inspecting the snapshot',
+        theme: 'ops'
+      },
+      backlogCounts: {
+        P0: 1,
+        P1: 0,
+        P2: 0
+      },
+      findings: [],
+      observations: [],
+      backlog: [],
+      linearDrafts: [],
+      nextCommand: {
+        label: 'backlog 생성',
+        command: 'npm run ai:backlog:dry',
+        reason: '아직 Linear draft가 없으므로 backlog 초안부터 생성합니다.',
+        tone: 'recommended'
+      },
+      doctor: {
+        status: 'fail',
+        summaryPresent: true,
+        freshnessLabel: 'stale · 30h',
+        reasons: ['실패 단계: AI insights (status=1)'],
+        recommendedCommand: 'npm run ai:ops:cycle:latest',
+        opsStatus: {
+          id: 'cycle-failed',
+          label: 'Cycle 실패',
+          tone: 'warning',
+          actionRequired: true,
+          summary: '가장 최근 persisted ops cycle이 실패했습니다.'
+        }
+      },
+      status: {
+        id: 'cycle-failed',
+        label: 'Cycle 실패',
+        tone: 'warning',
+        actionRequired: true,
+        summary: '가장 최근 persisted ops cycle이 실패했습니다.'
+      },
+      latestCycleFollowUp: {
+        label: 'cycle 실패 조치',
+        command: 'npm run ai:ops:cycle:latest',
+        reason: '가장 최근 persisted cycle이 FAIL 상태입니다. snapshot command부터 다시 확인하세요.',
+        tone: 'warning'
+      },
+      latestCycle: {
+        generatedAtIso: '2026-03-16T05:30:00.000Z',
+        mode: 'artifact',
+        overallPass: false,
+        stepsPassed: 1,
+        stepsTotal: 2,
+        stale: true,
+        ageHours: 30,
+        failedSteps: [
+          {
+            label: 'AI insights',
+            status: 1,
+            outputFileName: 'ai-insights.txt'
+          }
+        ],
+        reportJsonPath: '/tmp/terminal-quest-ai-ops-cycle/20260316-143000/playtest-report.json',
+        bundleDir: '/tmp/terminal-quest-ai-ops-cycle/20260316-143000',
+        nextCommand: 'npm run ai:ops:cycle:latest'
+      },
+      recentSignals: [],
+      recommendationDismissRate: 0.1,
+      encounterDecisionCount: 2
+    } satisfies NonNullable<FrontendSnapshot['ops']>;
+    const landingSnapshot = createSnapshot({
+      scene: 'landing',
+      hasGame: false,
+      ops: {
+        ...ops
+      }
+    });
+    const snapshot = createSnapshot({
+      ops
+    });
+    const frontend = await createFrontendHarness(landingSnapshot);
+
+    const landingHtml = frontend.getAppHtml();
+    const opsHtml = frontend.renderOpsWorkspace(snapshot);
+
+    expect(landingHtml).toContain('Cycle FAIL');
+    expect(landingHtml).toContain('Cycle 실패');
+    expect(landingHtml).toContain('Doctor Verdict:');
+    expect(landingHtml).toContain('AI insights (status=1)');
+    expect(landingHtml).toContain('Failed Step:');
+    expect(landingHtml).toContain('AI insights · status 1');
+    expect(landingHtml).toContain('Cycle Follow-up:');
+    expect(landingHtml).toContain('npm run ai:ops:cycle:latest');
+    expect(opsHtml).toContain('Latest Cycle');
+    expect(opsHtml).toContain('Ops Doctor');
+    expect(opsHtml).toContain('summary present · yes');
+    expect(opsHtml).toContain('Cycle 실패');
+    expect(opsHtml).toContain('FAIL · artifact');
+    expect(opsHtml).toContain('Failed Step');
+    expect(opsHtml).toContain('failed step · AI insights · status 1');
+    expect(opsHtml).toContain('playtest-report.json');
+    expect(opsHtml).toContain('Cycle Follow-up:');
+    expect(opsHtml).toContain('cycle 실패 조치');
+    expect(opsHtml).toContain('npm run ai:ops:cycle:latest');
+  });
+
+  it('should warn when the latest persisted cycle is stale and suggest rerunning it', async () => {
+    const ops = {
+      telemetryEvents: 11,
+      playtestNotes: 1,
+      topFinding: '최근 persisted cycle이 오래됐습니다.',
+      topObservation: null,
+      topBacklog: {
+        priority: 'P1',
+        title: 'Refresh the persisted AI ops cycle before reviewing backlog',
+        theme: 'ops'
+      },
+      backlogCounts: {
+        P0: 0,
+        P1: 1,
+        P2: 0
+      },
+      findings: [],
+      observations: [],
+      backlog: [],
+      linearDrafts: [],
+      nextCommand: {
+        label: 'backlog 생성',
+        command: 'npm run ai:backlog:dry',
+        reason: '아직 Linear draft가 없으므로 backlog 초안부터 생성합니다.',
+        tone: 'recommended'
+      },
+      doctor: {
+        status: 'warn',
+        summaryPresent: true,
+        freshnessLabel: 'stale · 30h',
+        reasons: ['latest cycle이 stale 상태입니다 (stale · 30h).'],
+        recommendedCommand: 'npm run ai:ops:cycle',
+        opsStatus: {
+          id: 'cycle-stale',
+          label: 'Cycle stale',
+          tone: 'warning',
+          actionRequired: true,
+          summary: '마지막 persisted cycle이 30h 전에 생성됐습니다.'
+        }
+      },
+      status: {
+        id: 'cycle-stale',
+        label: 'Cycle stale',
+        tone: 'warning',
+        actionRequired: true,
+        summary: '마지막 persisted cycle이 30h 전에 생성됐습니다.'
+      },
+      latestCycleFollowUp: {
+        label: 'cycle 갱신',
+        command: 'npm run ai:ops:cycle',
+        reason: '마지막 persisted cycle이 30h 전에 생성되어 오래됐습니다. 최신 artifact를 다시 생성하세요.',
+        tone: 'warning'
+      },
+      latestCycle: {
+        generatedAtIso: '2026-03-15T00:00:00.000Z',
+        mode: 'artifact',
+        overallPass: true,
+        stepsPassed: 6,
+        stepsTotal: 6,
+        stale: true,
+        ageHours: 30,
+        failedSteps: [],
+        reportJsonPath: '/tmp/terminal-quest-ai-ops-cycle/20260315-000000/playtest-report.json',
+        bundleDir: '/tmp/terminal-quest-ai-ops-cycle/20260315-000000',
+        nextCommand: 'npm run ai:linear:export:dry'
+      },
+      recentSignals: [],
+      recommendationDismissRate: 0.1,
+      encounterDecisionCount: 2
+    } satisfies NonNullable<FrontendSnapshot['ops']>;
+    const landingSnapshot = createSnapshot({
+      scene: 'landing',
+      hasGame: false,
+      ops: {
+        ...ops
+      }
+    });
+    const snapshot = createSnapshot({
+      ops
+    });
+    const frontend = await createFrontendHarness(landingSnapshot);
+
+    const landingHtml = frontend.getAppHtml();
+    const opsHtml = frontend.renderOpsWorkspace(snapshot);
+
+    expect(landingHtml).toContain('Cycle Freshness:');
+    expect(landingHtml).toContain('Doctor Verdict:');
+    expect(landingHtml).toContain('stale · 30h');
+    expect(landingHtml).toContain('Cycle stale');
+    expect(landingHtml).toContain('cycle 갱신');
+    expect(landingHtml).toContain('npm run ai:ops:cycle');
+    expect(opsHtml).toContain('Cycle Freshness');
+    expect(opsHtml).toContain('freshness · stale · 30h');
+    expect(opsHtml).toContain('cycle 갱신');
+    expect(opsHtml).toContain('npm run ai:ops:cycle');
+  });
+
+  it('should toast the recommended ops command when requested from the UI', async () => {
+    const snapshot = createSnapshot({
+      ops: {
+        telemetryEvents: 12,
+        playtestNotes: 2,
+        topFinding: 'AI recommendation dismiss 비중이 높습니다.',
+        topObservation: null,
+        topBacklog: {
+          priority: 'P0',
+          title: 'Resume clarity pass for AI-guided surfaces',
+          theme: 'resume'
+        },
+        backlogCounts: {
+          P0: 1,
+          P1: 0,
+          P2: 0
+        },
+        findings: [],
+        observations: [],
+        backlog: [],
+        linearDrafts: [
+          {
+            id: 'linear-playtest-resume-p0',
+            priority: 'P0',
+            theme: 'resume',
+            title: '[AI Ops][P0] Resume clarity pass for AI-guided surfaces',
+            labels: ['ai-ops', 'p0', 'resume', 'ux'],
+            summary: 'Resume Brief와 CTA를 같은 목표 문장으로 정렬합니다.',
+            exportStatus: 'draft',
+            issueIdentifier: null,
+            issueUrl: null,
+            lastExportedAtIso: null,
+            linearStateName: null,
+            linearStateType: 'unknown',
+            lastSyncedAtIso: null,
+            lifecycleStatus: 'draft',
+            staleSync: false,
+            impactTrend: 'unknown',
+            impactSummary: '효과 baseline이 아직 없습니다.'
+          }
+        ],
+        nextCommand: {
+          label: 'export 대상 점검',
+          command: 'npm run ai:linear:export:dry',
+          reason: '미수출 또는 갱신 필요 draft 1건이 있습니다.',
+          tone: 'recommended'
+        },
+        recentSignals: [],
+        recommendationDismissRate: 0.5,
+        encounterDecisionCount: 4
+      }
+    });
+    const frontend = await createFrontendHarness(snapshot);
+
+    const handled = frontend.handleClientAction({
+      dataset: {
+        clientAction: 'show-ops-command',
+        command: 'npm run ai:linear:export:dry',
+        commandReason: '미수출 또는 갱신 필요 draft 1건이 있습니다.'
+      }
+    });
+
+    expect(handled).toBe(true);
+    expect(frontend.getToastText()).toContain('npm run ai:linear:export:dry');
+    expect(frontend.getToastText()).toContain('미수출 또는 갱신 필요 draft 1건이 있습니다.');
   });
 
   it('should clear the resume brief after the next non-load action', async () => {

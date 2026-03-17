@@ -1,0 +1,3 @@
+[ai-linear-sync] dry-run mode
+- state entries: 0
+- sync candidates: 0

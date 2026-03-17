@@ -16,6 +16,10 @@ export interface DungeonEventResult {
   messages: DungeonEventMessage[];
 }
 
+export interface DungeonEventOptions {
+  preferredEventId?: DungeonEventResult['id'] | null;
+}
+
 function getLocationFlavor(locationId: string): {
   name: string;
   description: string;
@@ -210,8 +214,22 @@ function runRouteScanEvent(gameState: GameState, random: () => number): DungeonE
 
 export function runDungeonEvent(
   gameState: GameState,
-  random: () => number = Math.random
+  random: () => number = Math.random,
+  options: DungeonEventOptions = {}
 ): DungeonEventResult {
+  if (options.preferredEventId === 'supply-cache') {
+    return runSupplyCacheEvent(gameState, random);
+  }
+  if (options.preferredEventId === 'maintenance-niche') {
+    return runMaintenanceNicheEvent(gameState);
+  }
+  if (options.preferredEventId === 'memory-echo') {
+    return runMemoryEchoEvent(gameState, random);
+  }
+  if (options.preferredEventId === 'route-scan') {
+    return runRouteScanEvent(gameState, random);
+  }
+
   const roll = random();
 
   if (roll < 0.25) {

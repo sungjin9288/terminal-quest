@@ -3,19 +3,31 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const WITH_OPS_DOCTOR = process.argv.includes('--with-ops-doctor');
 
-const steps = [
-  { label: 'TypeScript build', command: [npmCommand, ['run', 'build']] },
-  { label: 'Test suite', command: [npmCommand, ['test', '--', '--runInBand']] },
-  { label: 'Vercel static verification', command: [npmCommand, ['run', 'verify:vercel-static']] },
-  { label: 'Prompt priority validation', command: [npmCommand, ['run', 'validate:prompt-priority']] },
-  { label: 'Save migration verification', command: [npmCommand, ['run', 'verify:save-migration']] },
-  { label: 'Data validation', command: [npmCommand, ['run', 'validate:data']] },
-  {
-    label: 'Extended playtime validation',
-    command: [npmCommand, ['run', 'validate:playtime:extended']]
+function getSteps() {
+  const steps = [
+    { label: 'TypeScript build', command: [npmCommand, ['run', 'build']] },
+    { label: 'Test suite', command: [npmCommand, ['test', '--', '--runInBand']] },
+    { label: 'Vercel static verification', command: [npmCommand, ['run', 'verify:vercel-static']] },
+    { label: 'Prompt priority validation', command: [npmCommand, ['run', 'validate:prompt-priority']] },
+    { label: 'Save migration verification', command: [npmCommand, ['run', 'verify:save-migration']] },
+    { label: 'Data validation', command: [npmCommand, ['run', 'validate:data']] },
+    {
+      label: 'Extended playtime validation',
+      command: [npmCommand, ['run', 'validate:playtime:extended']]
+    }
+  ];
+
+  if (WITH_OPS_DOCTOR) {
+    steps.unshift({
+      label: 'Ops doctor strict gate',
+      command: [npmCommand, ['run', 'ai:ops:doctor:strict']]
+    });
   }
-];
+
+  return steps;
+}
 
 const requiredDocs = [
   'docs/paid-release-roadmap.md',
@@ -54,7 +66,7 @@ function checkRequiredDocs() {
 function main() {
   checkRequiredDocs();
 
-  for (const step of steps) {
+  for (const step of getSteps()) {
     const [command, args] = step.command;
     runStep(step.label, command, args);
   }

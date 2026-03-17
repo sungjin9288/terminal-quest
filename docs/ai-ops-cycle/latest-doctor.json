@@ -1,0 +1,17 @@
+{
+  "status": "warn",
+  "filePath": "/Users/sungjin/dev/personal/terminal-quest/docs/ai-ops-cycle/latest.json",
+  "summaryPresent": true,
+  "freshnessLabel": "fresh · 0h",
+  "opsStatus": {
+    "id": "backlog-seed",
+    "label": "Backlog 준비",
+    "tone": "recommended",
+    "actionRequired": true,
+    "summary": "아직 Linear draft가 없으므로 backlog 초안부터 생성합니다."
+  },
+  "reasons": [
+    "Ops status Backlog 준비: 아직 Linear draft가 없으므로 backlog 초안부터 생성합니다."
+  ],
+  "recommendedCommand": "npm run ai:backlog:dry"
+}

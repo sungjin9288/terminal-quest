@@ -2295,6 +2295,67 @@ body::before {
     background 150ms ease;
 }
 
+.ai-encounter-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(117, 169, 255, 0.24);
+  background:
+    linear-gradient(180deg, rgba(117, 169, 255, 0.14), rgba(255, 255, 255, 0.03));
+}
+
+.ai-encounter-card[data-mode="recovery"] {
+  border-color: rgba(95, 219, 196, 0.24);
+  background:
+    linear-gradient(180deg, rgba(95, 219, 196, 0.14), rgba(255, 255, 255, 0.03));
+}
+
+.ai-encounter-card[data-mode="pressure"] {
+  border-color: rgba(239, 197, 111, 0.3);
+  background:
+    linear-gradient(180deg, rgba(239, 197, 111, 0.14), rgba(255, 255, 255, 0.03));
+}
+
+.ai-encounter-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-encounter-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-encounter-title,
+.ai-encounter-reason,
+.ai-encounter-line {
+  margin: 0;
+}
+
+.ai-encounter-title {
+  font-family: var(--heading-font);
+  letter-spacing: 0.04em;
+}
+
+.ai-encounter-reason {
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.ai-encounter-lines {
+  display: grid;
+  gap: 6px;
+}
+
+.ai-encounter-line {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .ai-companion-card {
   display: grid;
   gap: 12px;
@@ -2440,6 +2501,18 @@ body::before {
   border-left: 2px solid rgba(239, 197, 111, 0.4);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
+}
+
+.quest-ai-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(95, 219, 196, 0.18);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(95, 219, 196, 0.1), rgba(255, 255, 255, 0.03));
+}
+
+.quest-ai-note .hook-label {
+  margin-bottom: 4px;
 }
 
 .ghost-button,

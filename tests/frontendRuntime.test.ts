@@ -10,18 +10,34 @@ import {
   getFrontendSnapshot,
   performFrontendAction
 } from '../src/frontend/runtime';
+import { ensureAiState } from '../src/systems/aiDirector';
 
 describe('Frontend runtime', () => {
   let saveDir: string;
+  let telemetryDir: string;
+  let notesDir: string;
+  let cycleDir: string;
 
   beforeEach(() => {
     saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'terminal-quest-frontend-'));
+    telemetryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'terminal-quest-frontend-telemetry-'));
+    notesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'terminal-quest-frontend-notes-'));
+    cycleDir = fs.mkdtempSync(path.join(os.tmpdir(), 'terminal-quest-frontend-cycle-'));
     process.env.TERMINAL_QUEST_SAVE_DIR = saveDir;
+    process.env.TERMINAL_QUEST_TELEMETRY_DIR = telemetryDir;
+    process.env.TERMINAL_QUEST_PLAYTEST_NOTES_DIR = notesDir;
+    process.env.TERMINAL_QUEST_AI_OPS_CYCLE_DIR = cycleDir;
   });
 
   afterEach(() => {
     delete process.env.TERMINAL_QUEST_SAVE_DIR;
+    delete process.env.TERMINAL_QUEST_TELEMETRY_DIR;
+    delete process.env.TERMINAL_QUEST_PLAYTEST_NOTES_DIR;
+    delete process.env.TERMINAL_QUEST_AI_OPS_CYCLE_DIR;
     fs.rmSync(saveDir, { recursive: true, force: true });
+    fs.rmSync(telemetryDir, { recursive: true, force: true });
+    fs.rmSync(notesDir, { recursive: true, force: true });
+    fs.rmSync(cycleDir, { recursive: true, force: true });
   });
 
   it('should expose landing state before a run starts', () => {
@@ -32,6 +48,299 @@ describe('Frontend runtime', () => {
     expect(snapshot.hasGame).toBe(false);
     expect(snapshot.activeSaveDirectory).toBe(saveDir);
     expect(snapshot.saves).toHaveLength(3);
+    expect(snapshot.ops).toMatchObject({
+      telemetryEvents: 0,
+      playtestNotes: 0,
+      topFinding: 'Encounter Director telemetry가 아직 없습니다. telemetry opt-in 상태로 탐험 세션을 먼저 수집하세요.',
+      linearDrafts: []
+    });
+  });
+
+  it('should expose ai ops preview from playtest telemetry and notes on landing', () => {
+    fs.writeFileSync(
+      path.join(telemetryDir, 'events.ndjson'),
+      [
+        JSON.stringify({
+          eventType: 'ai_recommendation_shown',
+          isoTime: '2026-03-12T01:00:00.000Z',
+          context: { locationId: 'bit-town' },
+          payload: {}
+        }),
+        JSON.stringify({
+          eventType: 'ai_recommendation_dismissed',
+          isoTime: '2026-03-12T01:00:05.000Z',
+          context: { locationId: 'bit-town' },
+          payload: { intentId: 'frontier:memory-forest', source: 'ai-card' }
+        })
+      ].join('\n'),
+      'utf-8'
+    );
+    fs.writeFileSync(
+      path.join(notesDir, 'session-20260312-010000.md'),
+      [
+        '# Session',
+        '',
+        '## Follow-ups',
+        '- P0: Resume panel felt unclear and the AI recommendation was dismissed twice.',
+        ''
+      ].join('\n'),
+      'utf-8'
+    );
+
+    const session = createFrontendSession();
+    const snapshot = getFrontendSnapshot(session);
+
+    expect(snapshot.ops).toMatchObject({
+      telemetryEvents: 2,
+      playtestNotes: 1,
+      doctor: {
+        status: 'warn',
+        recommendedCommand: 'npm run ai:ops:cycle'
+      },
+      status: {
+        id: 'export-pending',
+        label: 'Export 대기'
+      },
+      topObservation: {
+        severity: 'P0',
+        text: 'Resume panel felt unclear and the AI recommendation was dismissed twice.'
+      },
+      topBacklog: {
+        priority: 'P0',
+        title: 'Resume clarity pass for AI-guided surfaces',
+        theme: 'resume'
+      },
+      backlogCounts: {
+        P0: 1,
+        P1: 0,
+        P2: 0
+      },
+      linearDrafts: [{
+        priority: 'P0',
+        theme: 'resume',
+        title: '[AI Ops][P0] Resume clarity pass for AI-guided surfaces',
+        exportStatus: 'draft',
+        issueIdentifier: null,
+        issueUrl: null,
+        lastExportedAtIso: null,
+        linearStateName: null,
+        linearStateType: 'unknown',
+        lastSyncedAtIso: null,
+        lifecycleStatus: 'draft',
+        staleSync: false,
+        impactTrend: 'unknown',
+        impactSummary: '효과 baseline이 아직 없습니다.'
+      }],
+      nextCommand: {
+        label: 'export 대상 점검',
+        command: 'npm run ai:linear:export:dry',
+        reason: '미수출 또는 갱신 필요 draft 1건이 있습니다.',
+        tone: 'recommended'
+      },
+      encounterDecisionCount: 0
+    });
+    expect(snapshot.ops?.recommendationDismissRate).toBe(1);
+  });
+
+  it('should expose the latest persisted ai ops cycle summary in ops preview', () => {
+    const nowMs = Date.now();
+    const generatedAtIso = new Date(nowMs - 4 * 60 * 60 * 1000).toISOString();
+    fs.writeFileSync(
+      path.join(cycleDir, 'latest.json'),
+      `${JSON.stringify({
+        generatedAtIso,
+        mode: 'artifact',
+        overallPass: true,
+        bundleDir: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-142110',
+        reportJsonPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-142110/playtest-report.json',
+        latestSummaryPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/latest.json',
+        latestReportJsonPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/latest-playtest-report.json',
+        report: {
+          telemetryFilePath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-142110/playtest-report.json',
+          notesDir: notesDir,
+          totalEvents: 0,
+          totalNotes: 7,
+          nextCommand: 'npm run ai:backlog:dry'
+        },
+        steps: [
+          {
+            id: 'playtest-report',
+            label: 'Playtest report JSON',
+            command: 'node scripts/playtest-report.js --json',
+            ok: true,
+            status: 0,
+            outputFileName: 'playtest-report.json'
+          },
+          {
+            id: 'ai-insights',
+            label: 'AI insights',
+            command: 'node scripts/generate-ai-insights-report.js --dry-run',
+            ok: true,
+            status: 0,
+            outputFileName: 'ai-insights.txt'
+          }
+        ]
+      }, null, 2)}\n`,
+      'utf-8'
+    );
+
+    const session = createFrontendSession();
+    const snapshot = getFrontendSnapshot(session);
+
+    expect(snapshot.ops?.latestCycle).toMatchObject({
+      overallPass: true,
+      mode: 'artifact',
+      stepsPassed: 2,
+      stepsTotal: 2,
+      stale: false,
+      ageHours: 4,
+      failedSteps: [],
+      nextCommand: 'npm run ai:backlog:dry'
+    });
+    expect(snapshot.ops?.status).toMatchObject({
+      id: 'backlog-seed',
+      label: 'Backlog 준비'
+    });
+  });
+
+  it('should expose a follow-up command when the latest persisted ai ops cycle failed', () => {
+    const nowMs = Date.now();
+    const generatedAtIso = new Date(nowMs - 30 * 60 * 60 * 1000).toISOString();
+    fs.writeFileSync(
+      path.join(cycleDir, 'latest.json'),
+      `${JSON.stringify({
+        generatedAtIso,
+        mode: 'artifact',
+        overallPass: false,
+        bundleDir: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-143000',
+        reportJsonPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-143000/playtest-report.json',
+        latestSummaryPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/latest.json',
+        latestReportJsonPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/latest-playtest-report.json',
+        report: {
+          telemetryFilePath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-143000/playtest-report.json',
+          notesDir: notesDir,
+          totalEvents: 0,
+          totalNotes: 2,
+          nextCommand: 'npm run ai:ops:cycle:latest'
+        },
+        steps: [
+          {
+            id: 'playtest-report',
+            label: 'Playtest report JSON',
+            command: 'node scripts/playtest-report.js --json',
+            ok: true,
+            status: 0,
+            outputFileName: 'playtest-report.json'
+          },
+          {
+            id: 'ai-insights',
+            label: 'AI insights',
+            command: 'node scripts/generate-ai-insights-report.js --dry-run',
+            ok: false,
+            status: 1,
+            outputFileName: 'ai-insights.txt'
+          }
+        ]
+      }, null, 2)}\n`,
+      'utf-8'
+    );
+
+    const session = createFrontendSession();
+    const snapshot = getFrontendSnapshot(session);
+
+    expect(snapshot.ops?.latestCycle).toMatchObject({
+      overallPass: false,
+      stepsPassed: 1,
+      stepsTotal: 2,
+      stale: true,
+      ageHours: 30,
+      failedSteps: [
+        {
+          label: 'AI insights',
+          status: 1,
+          outputFileName: 'ai-insights.txt'
+        }
+      ]
+    });
+    expect(snapshot.ops?.latestCycleFollowUp).toMatchObject({
+      label: 'cycle 실패 조치',
+      command: 'npm run ai:ops:cycle:latest',
+      tone: 'warning'
+    });
+    expect(snapshot.ops?.doctor).toMatchObject({
+      status: 'fail',
+      recommendedCommand: 'npm run ai:ops:cycle:latest'
+    });
+    expect(snapshot.ops?.status).toMatchObject({
+      id: 'cycle-failed',
+      label: 'Cycle 실패'
+    });
+  });
+
+  it('should recommend rerunning the ops cycle when the latest persisted cycle is stale', () => {
+    const nowMs = Date.now();
+    const generatedAtIso = new Date(nowMs - 30 * 60 * 60 * 1000).toISOString();
+    fs.writeFileSync(
+      path.join(cycleDir, 'latest.json'),
+      `${JSON.stringify({
+        generatedAtIso,
+        mode: 'artifact',
+        overallPass: true,
+        bundleDir: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-143000',
+        reportJsonPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-143000/playtest-report.json',
+        latestSummaryPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/latest.json',
+        latestReportJsonPath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/latest-playtest-report.json',
+        report: {
+          telemetryFilePath: '/tmp/terminal-quest-ai-ops-cycle-latest-view/20260316-143000/playtest-report.json',
+          notesDir: notesDir,
+          totalEvents: 0,
+          totalNotes: 2,
+          nextCommand: 'npm run ai:linear:export:dry'
+        },
+        steps: [
+          {
+            id: 'playtest-report',
+            label: 'Playtest report JSON',
+            command: 'node scripts/playtest-report.js --json',
+            ok: true,
+            status: 0,
+            outputFileName: 'playtest-report.json'
+          },
+          {
+            id: 'ai-insights',
+            label: 'AI insights',
+            command: 'node scripts/generate-ai-insights-report.js --dry-run',
+            ok: true,
+            status: 0,
+            outputFileName: 'ai-insights.txt'
+          }
+        ]
+      }, null, 2)}\n`,
+      'utf-8'
+    );
+
+    const session = createFrontendSession();
+    const snapshot = getFrontendSnapshot(session);
+
+    expect(snapshot.ops?.latestCycle).toMatchObject({
+      overallPass: true,
+      stale: true,
+      ageHours: 30,
+      failedSteps: []
+    });
+    expect(snapshot.ops?.latestCycleFollowUp).toMatchObject({
+      label: 'cycle 갱신',
+      command: 'npm run ai:ops:cycle',
+      tone: 'warning'
+    });
+    expect(snapshot.ops?.doctor).toMatchObject({
+      status: 'warn',
+      recommendedCommand: 'npm run ai:ops:cycle'
+    });
+    expect(snapshot.ops?.status).toMatchObject({
+      id: 'cycle-stale',
+      label: 'Cycle stale'
+    });
   });
 
   it('should start a new run and accept an available quest', () => {
@@ -74,8 +383,30 @@ describe('Frontend runtime', () => {
     expect(snapshot.shops?.[0].inventory[0]?.description).toContain('전투 장비');
 
     const firstQuest = snapshot.questBoard?.available.flatMap(group => group.quests)[0];
+    const reconQuest = snapshot.questBoard?.available.flatMap(group =>
+      group.quests.find(quest => quest.id === 'ai-contract-frontier-recon') ? [group.quests.find(quest => quest.id === 'ai-contract-frontier-recon')] : []
+    )[0];
+    const cullQuest = snapshot.questBoard?.available.flatMap(group =>
+      group.quests.find(quest => quest.id === 'ai-contract-frontier-cull') ? [group.quests.find(quest => quest.id === 'ai-contract-frontier-cull')] : []
+    )[0];
+    const availableQuestIds = snapshot.questBoard?.available.flatMap(group =>
+      group.quests.map(quest => quest.id)
+    ) ?? [];
+    expect(availableQuestIds).toContain('ai-contract-frontier-recon');
+    expect(availableQuestIds).toContain('ai-contract-frontier-cull');
     expect(firstQuest).toBeDefined();
     expect(firstQuest?.narrative?.npcLine).toBeTruthy();
+    expect(reconQuest?.aiContract).toMatchObject({
+      templateId: 'frontier-recon',
+      directive: 'push',
+      adaptive: false,
+      sessionWindow: 'opening'
+    });
+    expect(cullQuest?.aiContract).toMatchObject({
+      templateId: 'frontier-cull',
+      directive: 'push',
+      adaptive: true
+    });
 
     snapshot = performFrontendAction(session, {
       type: 'accept-quest',
@@ -136,6 +467,74 @@ describe('Frontend runtime', () => {
     expect(snapshot.location?.bossProgress?.target).toBeGreaterThan(0);
   });
 
+  it('should expose encounter director preview in dungeon snapshots', () => {
+    const session = createFrontendSession();
+
+    performFrontendAction(session, {
+      type: 'new-game',
+      name: 'EncounterReader',
+      characterClass: CharacterClass.Cleric,
+      gameMode: GameMode.Adventure
+    });
+
+    performFrontendAction(session, {
+      type: 'travel',
+      destinationId: 'memory-forest'
+    });
+
+    if (!session.gameState) {
+      throw new Error('game state missing');
+    }
+
+    session.gameState.player.stats.hp = Math.floor(session.gameState.player.stats.maxHp * 0.35);
+    session.gameState.player.stats.mp = Math.floor(session.gameState.player.stats.maxMp * 0.25);
+
+    const snapshot = getFrontendSnapshot(session);
+
+    expect(snapshot.ai?.encounterDirector).toMatchObject({
+      mode: 'recovery',
+      preferredEventId: 'maintenance-niche'
+    });
+    expect(snapshot.ai?.encounterDirector?.encounterChance).toBeLessThan(0.3);
+    expect(snapshot.ai?.encounterDirector?.reason).toContain('회복 이벤트');
+  });
+
+  it('should expose endgame challenge context inside encounter director snapshots', () => {
+    const session = createFrontendSession();
+
+    performFrontendAction(session, {
+      type: 'new-game',
+      name: 'AbyssReader',
+      characterClass: CharacterClass.Warrior,
+      gameMode: GameMode.Challenge
+    });
+
+    if (!session.gameState) {
+      throw new Error('game state missing');
+    }
+
+    session.gameState.player.currentLocation = 'corruption-space';
+    session.gameState.position.locationId = 'corruption-space';
+    session.gameState.player.unlockedLocations.push('corruption-space');
+    session.gameState.statistics.endgameChallengeUnlocked = true;
+    session.gameState.statistics.endgameChallengeClears = 7;
+    session.gameState.statistics.endgameChallengeTier = 3;
+    session.gameState.statistics.endgameChallengeCurrentStreak = 4;
+    session.gameState.statistics.endgameChallengeBestStreak = 4;
+
+    const snapshot = getFrontendSnapshot(session);
+
+    expect(snapshot.ai?.encounterDirector).toMatchObject({
+      mode: 'pressure',
+      challengeContext: {
+        tier: 3,
+        streak: 4,
+        modifierName: expect.any(String)
+      }
+    });
+    expect(snapshot.ai?.encounterDirector?.reason).toContain('심연 T3');
+  });
+
   it('should enter combat after exploring a dungeon with an encounter roll', () => {
     const session = createFrontendSession({
       random: () => 0.1
@@ -168,6 +567,49 @@ describe('Frontend runtime', () => {
       entry.speaker === '숲 순찰대' &&
       entry.category === 'combat'
     )).toBe(true);
+  });
+
+  it('should pivot a repeated combat streak into a directed dungeon event', () => {
+    const random = jest.fn()
+      .mockReturnValueOnce(0.9)
+      .mockReturnValueOnce(0.5);
+    const session = createFrontendSession({ random });
+
+    performFrontendAction(session, {
+      type: 'new-game',
+      name: 'PacingPilot',
+      characterClass: CharacterClass.Rogue,
+      gameMode: GameMode.Adventure
+    });
+
+    performFrontendAction(session, {
+      type: 'travel',
+      destinationId: 'memory-forest'
+    });
+
+    if (!session.gameState) {
+      throw new Error('game state missing');
+    }
+
+    session.gameState.position.locationId = 'memory-forest';
+    session.gameState.position.stepsTaken = 8;
+    const aiState = ensureAiState(session.gameState);
+    aiState.fatigueSnapshot.consecutiveCombats = 3;
+    aiState.fatigueSnapshot.repeatActionCount = 3;
+    aiState.fatigueSnapshot.consecutiveNonProgressLoops = 3;
+
+    const snapshot = performFrontendAction(session, {
+      type: 'dungeon-explore'
+    });
+
+    expect(snapshot.scene).toBe('dungeon');
+    expect(session.battle).toBeNull();
+    expect(snapshot.feed.some(entry =>
+      entry.category === 'travel' &&
+      entry.text.includes('우회 동선')
+    )).toBe(true);
+    expect(aiState.fatigueSnapshot.consecutiveCombats).toBe(0);
+    expect(aiState.fatigueSnapshot.consecutiveNonProgressLoops).toBe(0);
   });
 
   it('should add boss intro and victory voice lines during a boss clear', () => {

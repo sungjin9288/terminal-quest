@@ -113,6 +113,28 @@ export enum QuestFatigueClass {
   Long = 'long'
 }
 
+export type AiContractDirective = 'push' | 'recovery' | 'supply';
+export type AiContractSessionWindow = 'opening' | 'mid' | 'extended';
+
+export interface AiContractMetadata {
+  /** Contract template identifier */
+  templateId: string;
+  /** High-level directive for the slot */
+  directive: AiContractDirective;
+  /** Human-readable directive label */
+  directiveLabel: string;
+  /** Session length bucket used when composing this slot */
+  sessionWindow: AiContractSessionWindow;
+  /** Human-readable session window label */
+  sessionWindowLabel: string;
+  /** Why this contract was selected now */
+  rationale: string;
+  /** Optional target area or support target */
+  targetLabel?: string;
+  /** Whether this slot adapts to runtime conditions */
+  adaptive: boolean;
+}
+
 /**
  * Narrative metadata layered on top of quest objectives
  */
@@ -176,6 +198,8 @@ export interface Quest {
   seasonalEventId?: string;
   /** Narrative framing shown in the board UI */
   narrative?: QuestNarrative;
+  /** AI-composed contract metadata (optional) */
+  aiContract?: AiContractMetadata;
   /** Time limit in seconds (if any) */
   timeLimit?: number;
   /** Failure conditions */

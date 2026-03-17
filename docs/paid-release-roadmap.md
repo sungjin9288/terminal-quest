@@ -91,23 +91,68 @@ Exit criteria:
 - [x] Narrative Companion AI (Initial)
   - [x] Context-aware voice/feed selection
   - [x] Short-term moment memory for payoff lines
-- [ ] Contract Composer AI
-  - [ ] Template-driven dynamic contracts
-  - [ ] Balance guardrail integration
-- [ ] Encounter Director AI
-  - [ ] Tension pacing across combat and dungeon events
-  - [ ] Endgame-specific pressure rules
+- [x] Contract Composer AI (Initial)
+  - [x] Template-driven dynamic contracts
+  - [x] Adaptive contract sloting by session window and recovery pressure
+  - [x] Accept/complete telemetry metadata
+  - [x] Balance guardrail integration
+- [x] Encounter Director AI
+  - [x] Tension pacing across combat and dungeon events
+  - [x] Endgame-specific pressure rules
 - [ ] Ops Analyst AI
-  - [ ] Telemetry-to-insight reporting
-  - [ ] Playtest observation prioritization
+  - [x] Telemetry-to-insight reporting
+  - [x] Playtest observation prioritization
+  - [x] AI backlog draft generation
+  - [x] Linear-ready issue draft export
+  - [x] Linear export plan and state tracking
 
 Reference:
 - `docs/internal-ai-roadmap.md`
 
-Latest snapshot (2026-03-10):
+Latest snapshot (2026-03-11):
 - `GameState.aiState` is the shared AI intent SSOT for browser, terminal, and save metadata.
 - Browser Action Rail now renders an `AI Director` card with follow/dismiss telemetry.
 - Browser Action Rail now renders a `Companion Note` card backed by recent AI memory.
+- Browser Action Rail and HUD now surface `Encounter Director` pacing cards with mode, combat chance, preferred event, and fatigue context.
+- Endgame challenge runs now feed tier/streak/modifier context into Encounter Director, producing sharper pressure rules inside `corruption-space`.
+- Browser/terminal dungeon explore now records `encounter_director_decision` telemetry, and `npm run ai:insights` generates a markdown ops summary from local telemetry.
+- `npm run ai:insights` now also reads active playtest notes and emits prioritized observation bullets that line up with recommendation/encounter telemetry.
+- `npm run ai:backlog:dry` now turns those findings into `P0/P1/P2` backlog drafts for the next playtest or patch pass.
+- `npm run ai:linear:dry` now turns the same backlog into issue-ready markdown drafts that can be copied into Linear.
+- `npm run ai:linear:export:dry` now reads `config/ai-ops-linear.json` and previews the real create/update plan for Linear, defaulting to `Sungjin-an` and `P0` scope.
+- Successful `ai:linear:export` runs persist issue IDs and sync state in `docs/ai-linear-drafts/export-state.json`.
+- Exported drafts now keep a telemetry baseline so the browser `Ops` tab can show `improved/flat/regressed` impact after later playtests.
+- Browser `Ops` tabs now include export-state and impact-trend filters so operators can isolate pending or regressed drafts immediately.
+- `npm run ai:linear:sync` now re-reads exported issues from Linear so remote `Done/In Progress/Canceled` state is reflected in local Ops status and filters.
+- Browser `Ops` surfaces now distinguish `closed` from `shipped` and warn on `stale sync`, so operators can separate resolved issues from effect-confirmed wins.
+- Landing `AI Ops Pulse` and the browser `Ops` workspace now surface a `Next Command` recommendation so operators can jump straight to `ai:linear:export:dry`, `ai:linear:sync`, or `ai:insights:dry` based on current draft state.
+- `npm run playtest:report` now echoes the same `Next Command` guidance when a build artifact is present, keeping browser and terminal ops flows aligned.
+- `npm run playtest:report:json` now carries telemetry/note path hints, and downstream `ai:insights`, `ai:backlog`, `ai:linear`, `ai:linear:export` scripts can reuse that payload through `--report-json`.
+- `npm run ai:ops:cycle` now bundles `playtest report -> insights -> backlog -> linear preview/export/sync` into one local ops artifact run, with `ai:ops:cycle:apply` available for real Linear push/sync when credentials are present.
+- `npm run ai:ops:cycle:latest` and `npm run playtest:report` now read the persisted latest cycle summary so terminal operators can inspect the last full ops run without rerunning the pipeline first.
+- Landing `AI Ops Pulse` and the `Ops` workspace now surface a `Cycle Follow-up` command when the latest persisted ops cycle failed or diverged from the current ops recommendation.
+- Persisted ops cycle summaries now expose failed step names in both terminal latest-cycle output and browser Ops surfaces, so operators can see the broken stage before rerunning the pipeline.
+- Persisted ops cycle summaries now also expose freshness/staleness, and stale bundles surface a direct `cycle 갱신` rerun recommendation in both terminal and browser Ops surfaces.
+- `playtest:report` and `playtest:report:json` now embed the same latest-cycle health block, so CLI review and downstream automation read the same freshness/failure/follow-up data.
+- `playtest:report` and its JSON payload now also expose a normalized Ops status code/label, so automation can key off `Cycle 실패`, `Cycle stale`, or `Export 대기` without reparsing the full narrative output.
+- `ai:ops:cycle` persisted summaries now snapshot the same normalized Ops status, so `latest` cycle artifacts preserve both the command recommendation and the machine-readable operating state.
+- `ai:ops:cycle:latest:json` now exposes the persisted cycle snapshot as JSON, so external automation can read freshness, failed steps, and the stored Ops status without parsing CLI text.
+- `ai:ops:doctor` now turns the persisted cycle snapshot into an `ok/warn/fail` operating gate with a recommended command, and `ai:ops:doctor:json` exposes the same verdict for CI or lightweight automation.
+- `playtest:report`, its JSON payload, and the browser `AI Ops Pulse` / `Ops` dashboard now surface the same doctor verdict, so local operators and automation read one shared Ops health gate.
+- `ai:ops:cycle` now persists standalone `doctor.json` / `doctor.md` artifacts alongside each bundle and `latest-doctor.*`, so operators can inspect the health gate directly from the cycle artifact directory.
+- `ai:ops:doctor:strict` and `ai:ops:cycle:gate(:strict)` now promote the doctor verdict into an actual automation gate, so stale or action-required Ops states can fail CI/preflight runs without parsing report text.
+- Release automation now has `release:check:ops`, `release:smoke:ops`, and `release:candidate:ops`, so paid-release preflight can opt into the same strict Ops doctor gate without changing the baseline release commands.
+- `release:smoke:ops` now persists the normalized `opsDoctor` snapshot into smoke summaries, and `release:candidate:ops` failure output includes the doctor reason and next command instead of a bare `overallPass=false`.
+- `release:smoke:latest` and `release:smoke:latest:json` now expose the persisted smoke summary directly, so operators and automation can inspect release readiness and `opsDoctor` state without rerunning the packaging flow.
+- `release:doctor`, `release:doctor:json`, and `release:doctor:strict` now evaluate persisted smoke/sign-off state against the current checkout, so operators can see version/branch/commit mismatches and pending sign-offs before rerunning full release gates.
+- `release:doctor` now also persists `release-doctor-latest.json/.md` plus timestamped snapshots in `releases/smoke-reports/`, so release readiness checks leave an auditable doctor trail similar to the ops-cycle artifacts.
+- `release:status` and `release:status:json` now aggregate persisted smoke, doctor, and sign-off latest artifacts into one machine-readable candidate snapshot, so operators can inspect overall release state without cross-checking three separate reports.
+- Playtest browser landing now surfaces an `AI Ops Pulse` card so testers can see the current top finding and draft priority without leaving the frontend.
+- Playtest browser sessions now expose an `Ops` workspace tab with backlog cards, Linear draft previews, export status, observation bullets, and recent AI signals.
+- Terminal guidance now renders the same narrative cue as `동행 브리프`, with duplicate companion lines suppressed in browser feed.
+- Quest boards now receive AI-composed `전초 정찰` plus adaptive `압력 제거/회복 루프/보급 재정렬` contracts from shared frontier state.
+- Browser and terminal quest cards surface AI contract badges, session-window labels, and director rationale.
+- Dungeon explore loops now use a shared Encounter Director that reduces repeated combat streaks, protects low-resource states, and sharpens boss-approach pacing.
 - Save metadata stores `aiDirectorMode`, `aiIntentTitle`, and `aiIntentReason`.
 
 Exit criteria:

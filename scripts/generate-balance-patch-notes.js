@@ -23,6 +23,11 @@ const VALIDATION_STEPS = [
     args: ['scripts/validate-economy-balance.js']
   },
   {
+    label: 'AI contract balance',
+    command: 'node',
+    args: ['scripts/validate-ai-contract-balance.js']
+  },
+  {
     label: 'Playtime balance',
     command: 'node',
     args: ['scripts/validate-playtime-balance.js']
@@ -55,6 +60,7 @@ function main() {
   const outputs = {
     questOutput: '',
     economyOutput: '',
+    aiContractOutput: '',
     playtimeOutput: ''
   };
 
@@ -65,6 +71,8 @@ function main() {
       outputs.questOutput = output;
     } else if (step.label === 'Economy balance') {
       outputs.economyOutput = output;
+    } else if (step.label === 'AI contract balance') {
+      outputs.aiContractOutput = output;
     } else if (step.label === 'Playtime balance') {
       outputs.playtimeOutput = output;
     }

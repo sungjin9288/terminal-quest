@@ -15,6 +15,9 @@ describe('Balance Patch Notes', () => {
         'Economy balance metrics:\n' +
         '- Act 1 | Lv 1-12 | combatGold=57.52\n' +
         '- Act 2 | Lv 12-22 | combatGold=156\n',
+      aiContractOutput:
+        'AI contract balance metrics:\n' +
+        '- scenarios: 15\n',
       playtimeOutput:
         'Playtime balance metrics:\n' +
         '- firstClearAverage=778.5분 (12.97시간)\n'
@@ -24,11 +27,13 @@ describe('Balance Patch Notes', () => {
     expect(metrics.branchRoots).toBe(4);
     expect(metrics.multiObjectiveQuestCount).toBe(24);
     expect(metrics.economyActSnapshots).toHaveLength(2);
+    expect(metrics.aiContractScenarioCount).toBe(15);
     expect(metrics.firstClearAverageMinutes).toBeCloseTo(778.5, 3);
     expect(metrics.firstClearAverageHours).toBeCloseTo(12.97, 3);
     expect(metrics.warnings).toEqual({
       quest: 0,
       economy: 0,
+      aiContracts: 0,
       playtime: 0
     });
   });
@@ -42,17 +47,20 @@ describe('Balance Patch Notes', () => {
         branchRoots: 4,
         multiObjectiveQuestCount: 24,
         economyActSnapshots: ['Act 1 | Lv 1-12 | combatGold=57.52'],
+        aiContractScenarioCount: 15,
         firstClearAverageMinutes: 778.5,
         firstClearAverageHours: 12.97,
         warnings: {
           quest: 1,
           economy: 2,
+          aiContracts: 3,
           playtime: 0
         }
       },
       outputs: {
         questOutput: 'quest output',
         economyOutput: 'economy output',
+        aiContractOutput: 'ai contract output',
         playtimeOutput: 'playtime output'
       }
     });
@@ -60,11 +68,14 @@ describe('Balance Patch Notes', () => {
     expect(content).toContain('# Balance Patch Notes - 2026-03-04');
     expect(content).toContain('Generated at: 2026-03-04T02:00:00.000Z');
     expect(content).toContain('- Quests: 33');
-    expect(content).toContain('- Validation warnings: quest=1, economy=2, playtime=0');
+    expect(content).toContain('- AI contract scenarios: 15');
+    expect(content).toContain('- Validation warnings: quest=1, economy=2, aiContracts=3, playtime=0');
     expect(content).toContain('### Quest Balance');
     expect(content).toContain('quest output');
     expect(content).toContain('### Economy Balance');
     expect(content).toContain('economy output');
+    expect(content).toContain('### AI Contract Balance');
+    expect(content).toContain('ai contract output');
     expect(content).toContain('### Playtime Balance');
     expect(content).toContain('playtime output');
   });

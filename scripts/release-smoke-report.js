@@ -1,8 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
+import {
+  normalizeReleaseOpsDoctorSnapshot
+} from './release-ops-common.js';
 
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const WITH_OPS_DOCTOR = process.argv.includes('--with-ops-doctor');
 const REPORT_DIR = path.join(process.cwd(), 'releases', 'smoke-reports');
 const LOG_TAIL_LINES = 220;
 const RUNTIME_SMOKE_SUMMARY_PATH = path.join(REPORT_DIR, 'runtime-smoke-latest.json');
@@ -82,6 +86,14 @@ function writeJson(filePath, payload) {
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf-8');
 }
 
+function readJsonFromOutput(output) {
+  try {
+    return JSON.parse(output);
+  } catch {
+    return null;
+  }
+}
+
 function readRuntimeSmokeSummary() {
   if (!fs.existsSync(RUNTIME_SMOKE_SUMMARY_PATH)) {
     return null;
@@ -157,6 +169,8 @@ function buildSummaryPayload({
   packageName,
   branch,
   commit,
+  opsDoctorGate,
+  opsDoctor,
   reportPath,
   steps,
   runtimeSmokeSummary,
@@ -169,6 +183,8 @@ function buildSummaryPayload({
     packageName,
     branch,
     commit,
+    opsDoctorGate,
+    opsDoctor,
     reportPath: path.relative(process.cwd(), reportPath),
     overallPass,
     steps: steps.map(step => ({
@@ -200,6 +216,8 @@ function buildReportContent({
   commit,
   versionTag,
   packageName,
+  opsDoctorGate,
+  opsDoctor,
   nodeVersion,
   platform,
   steps,
@@ -248,8 +266,14 @@ function buildReportContent({
     `- Commit: ${commit}\n` +
     `- Version: ${versionTag}\n` +
     `- Package: ${packageName}\n` +
+    `- Ops doctor gate: ${opsDoctorGate ? 'strict enabled' : 'disabled'}\n` +
     `- Node: ${nodeVersion}\n` +
     `- Platform: ${platform}\n\n` +
+    `## Ops Doctor\n` +
+    `- Status: ${opsDoctor ? opsDoctor.status.toUpperCase() : 'n/a'}\n` +
+    `- Freshness: ${opsDoctor?.freshnessLabel ?? 'n/a'}\n` +
+    `- Recommended command: ${opsDoctor?.recommendedCommand ?? 'n/a'}\n` +
+    `- Primary reason: ${opsDoctor?.reasons?.[0] ?? 'n/a'}\n\n` +
     `## Automated Steps\n` +
     `| Step | Command | Result | Duration |\n` +
     `|---|---|---|---|\n` +
@@ -298,7 +322,11 @@ function main() {
   );
 
   const steps = [];
-  steps.push(runCommand('Release readiness gate', npmCommand, ['run', 'release:check']));
+  steps.push(runCommand(
+    WITH_OPS_DOCTOR ? 'Release readiness gate with Ops doctor' : 'Release readiness gate',
+    npmCommand,
+    ['run', WITH_OPS_DOCTOR ? 'release:check:ops' : 'release:check']
+  ));
   if (steps[steps.length - 1].ok) {
     steps.push(runCommand('Package launch verification', npmCommand, ['run', 'verify:package-launch']));
   }
@@ -320,12 +348,20 @@ function main() {
   const commit = safeGitValue(['rev-parse', '--short', 'HEAD']);
   const runtimeSmokeSummary = readRuntimeSmokeSummary();
   const releaseSignoffSummary = readReleaseSignoffSummary();
+  const opsDoctorResult = WITH_OPS_DOCTOR
+    ? runCommand('Ops doctor snapshot', process.execPath, ['scripts/ai-ops-doctor.js', '--json'])
+    : null;
+  const opsDoctor = normalizeReleaseOpsDoctorSnapshot(
+    opsDoctorResult ? readJsonFromOutput(opsDoctorResult.output) : null
+  );
   const reportContent = buildReportContent({
     generatedAtIso,
     branch,
     commit,
     versionTag,
     packageName,
+    opsDoctorGate: WITH_OPS_DOCTOR,
+    opsDoctor,
     nodeVersion: process.version,
     platform: process.platform,
     steps,
@@ -347,6 +383,8 @@ function main() {
     packageName,
     branch,
     commit,
+    opsDoctorGate: WITH_OPS_DOCTOR,
+    opsDoctor,
     reportPath,
     steps,
     runtimeSmokeSummary,

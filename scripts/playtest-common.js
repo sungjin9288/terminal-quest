@@ -25,6 +25,44 @@ export function getPlaytestPaths(rootDir = process.cwd()) {
   };
 }
 
+export function readPlaytestReportSummary(reportPath) {
+  const absolutePath = path.resolve(process.cwd(), reportPath);
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`Playtest report not found: ${absolutePath}`);
+  }
+
+  return JSON.parse(fs.readFileSync(absolutePath, 'utf-8'));
+}
+
+export function resolvePlaytestOpsInputs(options = {}) {
+  const {
+    rootDir = process.cwd(),
+    reportJsonPath = null,
+    telemetryPath = null,
+    notesDir = null
+  } = options;
+  const playtestPaths = getPlaytestPaths(rootDir);
+  const report = reportJsonPath
+    ? readPlaytestReportSummary(path.resolve(rootDir, reportJsonPath))
+    : null;
+
+  return {
+    playtestPaths,
+    report,
+    reportJsonPath: reportJsonPath ? path.resolve(rootDir, reportJsonPath) : null,
+    telemetryPath: telemetryPath
+      ? path.resolve(rootDir, telemetryPath)
+      : report?.paths?.telemetryFilePath
+        ? path.resolve(rootDir, report.paths.telemetryFilePath)
+        : playtestPaths.telemetryFilePath,
+    notesDir: notesDir
+      ? path.resolve(rootDir, notesDir)
+      : report?.paths?.notesDir
+        ? path.resolve(rootDir, report.paths.notesDir)
+        : playtestPaths.notesDir
+  };
+}
+
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
@@ -158,6 +196,7 @@ export function buildPlaytestEnvironment(paths, baseEnv = process.env) {
     TERMINAL_QUEST_SAVE_DIR: paths.savesDir,
     TERMINAL_QUEST_SETTINGS_DIR: paths.settingsDir,
     TERMINAL_QUEST_TELEMETRY_DIR: paths.telemetryDir,
+    TERMINAL_QUEST_PLAYTEST_NOTES_DIR: paths.notesDir,
     TERMINAL_QUEST_LOGS_DIR: paths.logsDir
   };
 }
@@ -172,6 +211,23 @@ export function readPlaytestTelemetry(paths) {
     .map(line => line.trim())
     .filter(line => line.length > 0)
     .map(line => JSON.parse(line));
+}
+
+export function readPlaytestNotes(paths) {
+  if (!fs.existsSync(paths.notesDir)) {
+    return [];
+  }
+
+  return fs.readdirSync(paths.notesDir)
+    .filter(entry => entry.endsWith('.md'))
+    .sort((left, right) => left.localeCompare(right))
+    .map(entry => {
+      const notePath = path.join(paths.notesDir, entry);
+      return {
+        notePath,
+        content: fs.readFileSync(notePath, 'utf-8')
+      };
+    });
 }
 
 export function readPlaytestSaveSummaries(paths) {

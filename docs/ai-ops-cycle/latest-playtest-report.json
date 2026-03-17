@@ -1,0 +1,55 @@
+{
+  "generatedAtIso": "2026-03-16T08:11:22.495Z",
+  "paths": {
+    "baseDir": "/Users/sungjin/dev/personal/terminal-quest/playtest-data/active",
+    "notesDir": "/Users/sungjin/dev/personal/terminal-quest/playtest-data/active/notes",
+    "telemetryFilePath": "/Users/sungjin/dev/personal/terminal-quest/playtest-data/active/telemetry/events.ndjson"
+  },
+  "saves": {
+    "slotCount": 0,
+    "slots": []
+  },
+  "telemetry": {
+    "totalEvents": 0,
+    "firstEvent": null,
+    "lastEvent": null,
+    "counts": {},
+    "recentEvents": []
+  },
+  "notes": {
+    "totalNotes": 7,
+    "recentNotePaths": [
+      "notes/session-20260310-134633.md",
+      "notes/session-20260310-134658.md",
+      "notes/session-20260310-134725.md"
+    ]
+  },
+  "ops": {
+    "guidanceAvailable": true,
+    "doctor": {
+      "status": "warn",
+      "summaryPresent": false,
+      "freshnessLabel": "age unknown",
+      "reasons": [
+        "persisted ai ops cycle summary가 아직 없습니다. cycle을 먼저 생성하세요."
+      ],
+      "recommendedCommand": "npm run ai:ops:cycle",
+      "opsStatus": null
+    },
+    "status": {
+      "id": "backlog-seed",
+      "label": "Backlog 준비",
+      "tone": "recommended",
+      "actionRequired": true,
+      "summary": "아직 Linear draft가 없으므로 backlog 초안부터 생성합니다."
+    },
+    "nextCommand": {
+      "label": "backlog 생성",
+      "command": "npm run ai:backlog:dry",
+      "reason": "아직 Linear draft가 없으므로 backlog 초안부터 생성합니다.",
+      "tone": "recommended"
+    },
+    "latestCycle": null,
+    "latestCycleFollowUp": null
+  }
+}

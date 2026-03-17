@@ -106,6 +106,9 @@ describe('Distribution Scripts', () => {
     expect(packageJson.scripts?.['release:status:json']).toBe(
       'node scripts/show-release-status.js --json'
     );
+    expect(packageJson.scripts?.['release:status:strict']).toBe(
+      'node scripts/show-release-status.js --fail-on-pending'
+    );
     expect(packageJson.scripts?.['release:candidate:ops']).toBe(
       'node scripts/release-candidate-gate.js --with-ops-doctor'
     );

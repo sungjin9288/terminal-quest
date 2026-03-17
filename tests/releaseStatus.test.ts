@@ -206,4 +206,84 @@ describe('Release status latest helpers', () => {
       fs.rmSync(rootDir, { recursive: true, force: true });
     }
   });
+
+  it('should fail with strict mode when persisted release status is pending or blocked', () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'terminal-quest-release-status-gate-'));
+
+    try {
+      const reportDir = path.join(rootDir, 'releases', 'smoke-reports');
+      fs.mkdirSync(reportDir, { recursive: true });
+      writeJson(path.join(reportDir, 'release-smoke-latest.json'), {
+        generatedAt: '2026-03-16T08:24:25.714Z',
+        versionTag: 'v1.0.2',
+        packageName: 'terminal-quest',
+        branch: 'main',
+        commit: 'abc1234',
+        opsDoctorGate: false,
+        opsDoctor: null,
+        reportPath: 'releases/smoke-reports/release-smoke-2026-03-16.md',
+        overallPass: true,
+        steps: []
+      });
+      writeJson(path.join(reportDir, 'release-doctor-latest.json'), {
+        status: 'warn',
+        smokeSummaryPresent: true,
+        signoffSummaryPresent: true,
+        currentVersionTag: 'v1.0.2',
+        currentBranch: 'main',
+        currentCommit: 'abc1234',
+        smokeSnapshot: {
+          overallPass: true,
+          versionTag: 'v1.0.2',
+          branch: 'main',
+          commit: 'abc1234',
+          opsDoctorGate: false,
+          opsDoctor: null,
+          failedSteps: []
+        },
+        signoffSnapshot: {
+          versionTag: 'v1.0.2',
+          branch: 'main',
+          commit: 'abc1234',
+          allApproved: false,
+          pendingRoles: ['release-manager']
+        },
+        reasons: ['sign-off pending: release-manager'],
+        recommendedCommand: 'npm run release:signoff --status'
+      });
+      writeJson(path.join(reportDir, 'release-signoff-latest.json'), {
+        updatedAt: '2026-03-16T08:30:00.000Z',
+        versionTag: 'v1.0.2',
+        branch: 'main',
+        commit: 'abc1234',
+        reportPath: 'releases/smoke-reports/release-smoke-2026-03-16.md',
+        allApproved: false,
+        signoffs: {
+          qa: { approved: true, signedBy: 'qa', signedAt: '2026-03-16T08:30:00.000Z' },
+          engineering: { approved: true, signedBy: 'eng', signedAt: '2026-03-16T08:31:00.000Z' },
+          releaseManager: { approved: false, signedBy: null, signedAt: null }
+        }
+      });
+
+      const result = spawnSync(
+        process.execPath,
+        [
+          path.join(process.cwd(), 'scripts', 'show-release-status.js'),
+          '--fail-on-pending',
+          '--report-dir',
+          path.join('releases', 'smoke-reports')
+        ],
+        {
+          cwd: rootDir,
+          encoding: 'utf-8'
+        }
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain('[release-status] status: pending');
+      expect(result.stdout).toContain('- recommended command: npm run release:signoff --status');
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
 });

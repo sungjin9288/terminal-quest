@@ -73,3 +73,10 @@ export function buildReleaseStatusSnapshot(input: {
 }): ReleaseStatusSnapshot;
 export function readReleaseStatusSnapshot(rootDir?: string, reportDir?: string | null): ReleaseStatusSnapshot;
 export function formatReleaseStatusLines(snapshot: ReleaseStatusSnapshot): string[];
+export function evaluateReleaseStatusGate(
+  snapshot: ReleaseStatusSnapshot,
+  options?: { failOnPending?: boolean }
+): {
+  blocked: boolean;
+  threshold: 'pending' | 'blocked';
+};

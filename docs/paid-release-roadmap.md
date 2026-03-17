@@ -147,6 +147,7 @@ Latest snapshot (2026-03-11):
 - `release:doctor`, `release:doctor:json`, and `release:doctor:strict` now evaluate persisted smoke/sign-off state against the current checkout, so operators can see version/branch/commit mismatches and pending sign-offs before rerunning full release gates.
 - `release:doctor` now also persists `release-doctor-latest.json/.md` plus timestamped snapshots in `releases/smoke-reports/`, so release readiness checks leave an auditable doctor trail similar to the ops-cycle artifacts.
 - `release:status` and `release:status:json` now aggregate persisted smoke, doctor, and sign-off latest artifacts into one machine-readable candidate snapshot, so operators can inspect overall release state without cross-checking three separate reports.
+- `release:status:strict` now promotes that persisted aggregate into a no-rerun automation gate, so CI or release handoff steps can fail fast on `pending` or `blocked` candidate state without recomputing smoke or doctor artifacts.
 - Playtest browser landing now surfaces an `AI Ops Pulse` card so testers can see the current top finding and draft priority without leaving the frontend.
 - Playtest browser sessions now expose an `Ops` workspace tab with backlog cards, Linear draft previews, export status, observation bullets, and recent AI signals.
 - Terminal guidance now renders the same narrative cue as `동행 브리프`, with duplicate companion lines suppressed in browser feed.

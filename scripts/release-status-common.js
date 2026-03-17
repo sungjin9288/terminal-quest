@@ -202,3 +202,24 @@ export function formatReleaseStatusLines(snapshot) {
     `- recommended command: ${snapshot.recommendedCommand ?? 'n/a'}`
   ];
 }
+
+export function evaluateReleaseStatusGate(snapshot, { failOnPending = false } = {}) {
+  if (snapshot.status === 'blocked') {
+    return {
+      blocked: true,
+      threshold: failOnPending ? 'pending' : 'blocked'
+    };
+  }
+
+  if (snapshot.status === 'pending' && failOnPending) {
+    return {
+      blocked: true,
+      threshold: 'pending'
+    };
+  }
+
+  return {
+    blocked: false,
+    threshold: failOnPending ? 'pending' : 'blocked'
+  };
+}

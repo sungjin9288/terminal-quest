@@ -71,6 +71,7 @@
     "release:doctor:latest:json": "node scripts/show-release-doctor-latest.js --json",
     "release:status": "node scripts/show-release-status.js",
     "release:status:json": "node scripts/show-release-status.js --json",
+    "release:status:strict": "node scripts/show-release-status.js --fail-on-pending",
     "release:candidate": "node scripts/release-candidate-gate.js",
     "release:candidate:ops": "node scripts/release-candidate-gate.js --with-ops-doctor",
     "release:package": "npm run build && node scripts/release-package.js",

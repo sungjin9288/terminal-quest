@@ -11,6 +11,7 @@ This checklist is required for every release candidate before distribution.
 - [ ] `npm run release:doctor` writes `releases/smoke-reports/release-doctor-latest.json` and `.md` plus a timestamped snapshot.
 - [ ] `npm run release:doctor:latest` shows the current persisted doctor snapshot without recomputing release state.
 - [ ] `npm run release:status` summarizes persisted smoke/doctor/sign-off readiness in one view without rerunning release checks.
+- [ ] `npm run release:status:strict` can fail automation immediately when the persisted release state is still `pending` or `blocked`.
 - [ ] `npm run release:check` passes without failures.
 - [ ] AI/ops 상태까지 포함한 후보 검증이 필요하면 `npm run release:check:ops` passes without failures.
 - [ ] AI/ops 상태까지 포함한 smoke 검증이 필요하면 `npm run release:smoke:ops` completes and records `opsDoctorGate: true`.

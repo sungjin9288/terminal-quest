@@ -1,9 +1,11 @@
 import {
+  evaluateReleaseStatusGate,
   formatReleaseStatusLines,
   readReleaseStatusSnapshot
 } from './release-status-common.js';
 
 const JSON_OUTPUT = process.argv.includes('--json');
+const FAIL_ON_PENDING = process.argv.includes('--fail-on-pending');
 const reportDirArgIndex = process.argv.indexOf('--report-dir');
 const REPORT_DIR = reportDirArgIndex >= 0 ? process.argv[reportDirArgIndex + 1] : null;
 
@@ -17,6 +19,13 @@ function main() {
 
   for (const line of formatReleaseStatusLines(snapshot)) {
     console.log(line);
+  }
+
+  if (FAIL_ON_PENDING) {
+    const gate = evaluateReleaseStatusGate(snapshot, { failOnPending: true });
+    if (gate.blocked) {
+      process.exitCode = 1;
+    }
   }
 }
 
